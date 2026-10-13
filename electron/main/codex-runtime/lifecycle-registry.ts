@@ -1,4 +1,5 @@
 import { createLogger } from '../logger';
+import { swarmCodexSessionCap, swarmCodexShield, type SwarmCodexShield } from './swarm-session-guard';
 import type { CodexRunHandle, CodexRunSessionKey } from './types';
 
 const logger = createLogger('codex-runtime:lifecycle-registry');
@@ -188,6 +189,11 @@ export class CodexLifecycleRegistry {
     return handle.createdAt ?? handle.lastActivityAt ?? 0;
   }
 
+  private swarmShield(handle: CodexRunHandle): SwarmCodexShield {
+    if (handle.key.ownerKind !== 'swarm') return 'none';
+    return swarmCodexShield(handle.key.ownerId);
+  }
+
   private detach(handle: CodexRunHandle): void {
     this.remove(handle.key);
   }
@@ -199,6 +205,7 @@ export class CodexLifecycleRegistry {
       if (handle.status === 'closed' || handle.status === 'failed') continue;
       if (handle.status === 'running') continue;
       if (handle.hasStartedTurn === false) continue;
+      if (this.swarmShield(handle) !== 'none') continue;
       const sameScope =
         incoming.ownerKind === 'chat'
           ? k.ownerKind === 'chat' && !!incoming.ownerId && k.ownerId === incoming.ownerId
@@ -216,13 +223,41 @@ export class CodexLifecycleRegistry {
     return reaped;
   }
 
-  reapForCap(cap: number = MAX_LIVE_OFFICIAL_APP_SERVERS, now: number = Date.now()): CodexRunHandle[] {
+  liveUnshieldedCount(): number {
+    let n = 0;
+    for (const handle of this.runs.values()) {
+      if (handle.status === 'closed' || handle.status === 'failed') continue;
+      if (this.swarmShield(handle) !== 'none') continue;
+      n += 1;
+    }
+    return n;
+  }
+
+  liveSwarmShieldedCount(): number {
+    let n = 0;
+    for (const handle of this.runs.values()) {
+      if (handle.status === 'closed' || handle.status === 'failed') continue;
+      if (this.swarmShield(handle) === 'none') continue;
+      n += 1;
+    }
+    return n;
+  }
+
+  reapForCap(
+    cap: number = MAX_LIVE_OFFICIAL_APP_SERVERS,
+    now: number = Date.now(),
+    swarmCap: number = swarmCodexSessionCap(),
+    incoming?: Pick<CodexRunSessionKey, 'ownerKind'>,
+  ): CodexRunHandle[] {
+    const swarmThreshold = incoming?.ownerKind === 'swarm' ? swarmCap : swarmCap + 1;
     const reaped: CodexRunHandle[] = [];
+    const live = (h: CodexRunHandle) => h.status !== 'closed' && h.status !== 'failed';
+    const byAge = (a: CodexRunHandle, b: CodexRunHandle) => this.ageStamp(a) - this.ageStamp(b);
     const candidates = [...this.runs.values()]
-      .filter((h) => h.status !== 'closed' && h.status !== 'failed' && this.isReapSafe(h, now))
-      .sort((a, b) => this.ageStamp(a) - this.ageStamp(b));
+      .filter((h) => live(h) && this.isReapSafe(h, now) && this.swarmShield(h) === 'none')
+      .sort(byAge);
     let idx = 0;
-    while (this.liveCount() >= cap && idx < candidates.length) {
+    while (this.liveUnshieldedCount() >= cap && idx < candidates.length) {
       const handle = candidates[idx++];
       this.detach(handle);
       reaped.push(handle);
@@ -233,7 +268,23 @@ export class CodexLifecycleRegistry {
         'KI-2 cap: reaped oldest idle official app-server handle(s) to stay under cap',
       );
     }
-    return reaped;
+    const swarmCandidates = [...this.runs.values()]
+      .filter((h) => live(h) && this.isReapSafe(h, now) && this.swarmShield(h) === 'protected')
+      .sort(byAge);
+    const swarmReaped: CodexRunHandle[] = [];
+    let swarmIdx = 0;
+    while (this.liveSwarmShieldedCount() >= swarmThreshold && swarmIdx < swarmCandidates.length) {
+      const handle = swarmCandidates[swarmIdx++];
+      this.detach(handle);
+      swarmReaped.push(handle);
+    }
+    if (swarmReaped.length > 0) {
+      logger.warn(
+        { swarmCap, reaped: swarmReaped.length, liveSwarmAfter: this.liveSwarmShieldedCount() },
+        'Swarm cap: reaped oldest open swarm agent session(s) to stay under the swarm cap',
+      );
+    }
+    return [...reaped, ...swarmReaped];
   }
 
   reapIdle(idleMs: number = OFFICIAL_APP_SERVER_IDLE_REAP_MS, now: number = Date.now()): CodexRunHandle[] {
@@ -241,6 +292,7 @@ export class CodexLifecycleRegistry {
     for (const handle of [...this.runs.values()]) {
       if (handle.status === 'closed' || handle.status === 'failed') continue;
       if (!this.isReapSafe(handle, now)) continue;
+      if (this.swarmShield(handle) !== 'none') continue;
       const last = handle.lastActivityAt ?? handle.createdAt;
       if (typeof last !== 'number') continue;
       if (now - last < idleMs) continue;

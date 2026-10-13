@@ -6,7 +6,7 @@ export const techSecurity: Omit<AgentConfig, 'sortOrder'> = {
   id: TECH_SECURITY_ID,
   name: 'Tech Security',
   description: 'Agente responsavel pelas decisoes tecnicas de Seguranca, auth e permissoes do projeto.',
-  model: 'claude-sonnet-4-6',
+  model: 'claude-sonnet-5-5',
   effort: 'high' as const,
   thinking: 'enabled' as const,
   thinkingBudget: 10000,

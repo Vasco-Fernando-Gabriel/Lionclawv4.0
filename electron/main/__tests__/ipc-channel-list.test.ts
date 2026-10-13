@@ -44,6 +44,17 @@ const GOLDEN: string[] = [
   'agents:list',
   'agents:sync-to-orchestrator',
   'agents:update',
+  'archmap:build',
+  'archmap:cancel',
+  'archmap:estimate',
+  'archmap:file',
+  'archmap:freshness',
+  'archmap:graph',
+  'archmap:meta',
+  'archmap:runs',
+  'archmap:runtime-capabilities',
+  'archmap:status',
+  'archmap:update',
   'artifact:get-state',
   'artifact:set-state',
   'auth:enable-totp',
@@ -174,6 +185,9 @@ const GOLDEN: string[] = [
   'higgsfield:disconnect',
   'image:edit',
   'image:generate',
+  'jev:check',
+  'jev:file-tools-roots',
+  'jev:file-tools-stats',
   'kanban:archive-card',
   'kanban:attach-file',
   'kanban:create-board',
@@ -344,6 +358,16 @@ const GOLDEN: string[] = [
   'settings:get',
   'settings:set-api-key',
   'settings:update',
+  'swarm:abort',
+  'swarm:get-catalog',
+  'swarm:get-messages',
+  'swarm:get-run-state',
+  'swarm:get-settings',
+  'swarm:list-runs',
+  'swarm:open-findings',
+  'swarm:set-settings',
+  'swarm:start',
+  'swarm:stop-agent',
   'shell:open-file',
   'shell:open-path',
   'shell:show-in-folder',
@@ -395,14 +419,14 @@ const GOLDEN: string[] = [
 ];
 
 describe('ipc channel list (gate de equivalencia do refactor)', () => {
-  it('conjunto de nomes == golden (352, diff vazio)', () => {
+  it('conjunto de nomes == golden (379, diff vazio)', () => {
     const names = channelNames();
     expect([...new Set(names)].sort()).toEqual([...GOLDEN].sort());
   });
-  it('355 registros, 355 nomes unicos, 0 duplicatas', () => {
+  it('379 registros, 379 nomes unicos, 0 duplicatas', () => {
     const names = channelNames();
-    expect(names.length).toBe(355);
-    expect(new Set(names).size).toBe(355);
+    expect(names.length).toBe(379);
+    expect(new Set(names).size).toBe(379);
   });
   it('0 listeners ipcMain.on (so ipcMain.handle no projeto)', () => {
     expect(countOnListeners()).toBe(0);

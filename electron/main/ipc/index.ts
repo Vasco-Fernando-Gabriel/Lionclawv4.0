@@ -24,6 +24,7 @@ import { registerDriveHandlers } from './drive';
 import { registerRepoGraphHandlers } from './repo-graph';
 import { registerDynamicWorkflowHandlers } from './dynamic-workflow';
 import { registerKanbanHandlers } from './kanban';
+import { registerArchmapHandlers } from './archmap';
 
 export function registerAllIpcHandlers(ctx: IpcContext): void {
   registerSwarmHandlers(ctx);
@@ -51,4 +52,5 @@ export function registerAllIpcHandlers(ctx: IpcContext): void {
   registerRepoGraphHandlers(ctx);
   registerDynamicWorkflowHandlers(ctx);
   registerKanbanHandlers(ctx);
+  registerArchmapHandlers(ctx);
 }

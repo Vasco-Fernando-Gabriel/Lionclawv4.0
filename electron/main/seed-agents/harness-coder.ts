@@ -8,7 +8,7 @@ export const harnessCoder: Omit<AgentConfig, 'sortOrder'> = {
   name: 'Harness Coder',
   description:
     'Implementa sprints do Agent Harness. Recebe features com criterios de aceite e entrega codigo funcional, testado e validado tecnicamente.',
-  model: 'claude-sonnet-4-6',
+  model: 'claude-sonnet-5-5',
   effort: 'high' as const,
   thinking: 'adaptive' as const,
   maxTurns: 80,

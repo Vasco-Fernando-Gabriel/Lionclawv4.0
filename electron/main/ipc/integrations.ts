@@ -21,6 +21,7 @@ import {
 import { getAllChannels, getChannel, upsertChannel, toggleChannel } from '../channels-db';
 import { startTelegramBot, stopTelegramBot, isTelegramRunning } from '../telegram-bridge';
 import { syncCodexMcpConfig } from '../codex-sdk/mcp-config-sync';
+import { JEV_API_KEY_VAULT_KEY } from '../jev-settings';
 import {
   connectHiggsfield,
   deleteHiggsfieldSession,
@@ -29,6 +30,19 @@ import {
 } from '../higgsfield-auth';
 
 const logger = createLogger('ipc');
+
+async function notifyJevKeyChange(key: string): Promise<void> {
+  if (key !== JEV_API_KEY_VAULT_KEY) return;
+  try {
+    const { applyJevFileToolsChange } = await import('../jev-file-tools');
+    await applyJevFileToolsChange('key');
+  } catch (err) {
+    logger.warn(
+      { err: err instanceof Error ? err.message : String(err) },
+      'apply da troca da chave do Jev para arquivos falhou (chave gravada; restart resolve)',
+    );
+  }
+}
 
 export function registerIntegrationsHandlers(ctx: IpcContext): void {
   const getMainWindow = ctx.getMainWindow;
@@ -39,10 +53,12 @@ export function registerIntegrationsHandlers(ctx: IpcContext): void {
 
   ipcMain.handle('vault:set', async (_event, key: string, value: string) => {
     await setVaultSecret(key, value);
+    await notifyJevKeyChange(key);
   });
 
   ipcMain.handle('vault:delete', async (_event, key: string) => {
     await deleteVaultSecret(key);
+    await notifyJevKeyChange(key);
   });
 
   ipcMain.handle('vault:check', async (_event, key: string) => {
@@ -58,11 +74,27 @@ export function registerIntegrationsHandlers(ctx: IpcContext): void {
     try {
       registerVaultEntry(entry);
       await setVaultSecret(entry.key, value);
+      await notifyJevKeyChange(entry.key);
       return { ok: true };
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       return { error: message };
     }
+  });
+
+  ipcMain.handle('jev:check', async () => {
+    const { checkJev } = await import('../jev-client');
+    return checkJev();
+  });
+
+  ipcMain.handle('jev:file-tools-stats', async () => {
+    const { readJevFileToolsStats } = await import('../jev-file-tools');
+    return readJevFileToolsStats();
+  });
+
+  ipcMain.handle('jev:file-tools-roots', async () => {
+    const { resolveJevFileToolsRoots } = await import('../jev-file-tools');
+    return resolveJevFileToolsRoots();
   });
 
   ipcMain.handle('higgsfield:auth-status', async () => {

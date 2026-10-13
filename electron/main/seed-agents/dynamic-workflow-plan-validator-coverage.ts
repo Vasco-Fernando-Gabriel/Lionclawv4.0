@@ -8,7 +8,7 @@ export const dynamicWorkflowPlanValidatorCoverage: Omit<AgentConfig, 'sortOrder'
   name: 'Dynamic Workflow Plan Validator (Cobertura)',
   description:
     'Validador adversarial read-only do PLANO de sprints do workflow dinamico, eixo COBERTURA: confere se as sprints cobrem TODA a SPEC, sem buracos nem escopo inventado. Retorna verdict + findings sobre o plano.',
-  model: 'claude-haiku-4-5-20251001',
+  model: 'claude-haiku-5-5',
   effort: 'high' as const,
   thinking: 'enabled' as const,
   thinkingBudget: 8000,

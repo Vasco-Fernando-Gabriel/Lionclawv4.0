@@ -12,8 +12,26 @@ import {
   CircleDashed,
   TrendingDown,
   Info,
+  Map,
+  XCircle,
+  ExternalLink,
 } from 'lucide-react';
 import { useRepoGraphStore } from '@/stores/repo-graph-store';
+import { useAppStore } from '@/stores/app-store';
+import {
+  useArchmapStore,
+  archmapCancelRefusedMessage,
+  archmapCountersLabel,
+  archmapFallbackNotice,
+  archmapJevNotice,
+  archmapFreshnessReason,
+  archmapHasMap,
+  archmapLastRunError,
+  archmapStatusLabel,
+  selectArchmapSlot,
+  type ArchmapRepoSlot,
+} from '@/stores/archmap-store';
+import { ArchmapGenerateModal, type ArchmapGenerateMode } from '@/archmap/ArchmapGenerateModal';
 import type {
   LocalRepositoryRecord,
   RepoGraphStatusEvent,
@@ -177,16 +195,188 @@ function SavingsMetricsCard({ metrics }: { metrics: RepoGraphSavingsMetrics | nu
   );
 }
 
+const ARCHMAP_STATUS_CLASS: Record<string, string> = {
+  'nao gerado': 'bg-zinc-800 text-zinc-400',
+  'na fila': 'bg-blue-500/15 text-blue-300',
+  estimando: 'bg-blue-500/15 text-blue-300',
+  pronto: 'bg-emerald-500/15 text-emerald-300',
+  'pronto (automatico)': 'bg-amber-500/15 text-amber-300',
+  desatualizado: 'bg-amber-500/15 text-amber-300',
+  'desatualizado (automatico)': 'bg-amber-500/15 text-amber-300',
+  parcial: 'bg-amber-500/15 text-amber-300',
+  'parcial (automatico)': 'bg-amber-500/15 text-amber-300',
+  erro: 'bg-red-500/15 text-red-300',
+};
+
+function archmapStatusClass(label: string): string {
+  if (label.startsWith('gerando')) return 'bg-blue-500/15 text-blue-300';
+  return ARCHMAP_STATUS_CLASS[label] ?? 'bg-zinc-800 text-zinc-400';
+}
+
+interface ArchmapControlsProps {
+  repo: LocalRepositoryRecord;
+  slot: ArchmapRepoSlot;
+  onGenerate: (repo: LocalRepositoryRecord, mode: ArchmapGenerateMode) => void;
+  onCancel: (repo: LocalRepositoryRecord) => void;
+  onOpen?: (repo: LocalRepositoryRecord) => void;
+}
+
+export function ArchmapControls({ repo, slot, onGenerate, onCancel, onOpen }: ArchmapControlsProps) {
+  const label = archmapStatusLabel(slot);
+  const status = slot.status?.status ?? 'absent';
+  const progress = slot.progress ?? slot.status?.run?.progress ?? null;
+  const counters = status === 'building' ? archmapCountersLabel(progress) : null;
+  const lastError = status === 'building' ? (progress?.lastError ?? null) : null;
+  const fallbackNotice = status === 'building' || status === 'queued' ? null : archmapFallbackNotice(slot.status);
+  const lastRunError = status === 'building' || status === 'queued' ? null : archmapLastRunError(slot.status);
+  const jevNotice = status === 'building' || status === 'queued' ? null : archmapJevNotice(slot.status);
+  const runWarnings = slot.status?.lastRun?.warnings ?? [];
+  const statusTitle = [
+    status === 'building' || status === 'queued' ? null : archmapFreshnessReason(slot.status),
+    slot.status?.pendingFiles && !slot.status.freshness ? `${slot.status.pendingFiles} arquivo(s) pendente(s)` : null,
+    slot.status?.error ?? null,
+    runWarnings.length > 0
+      ? `${runWarnings.length} aviso(s) da ultima rodada:\n${runWarnings.slice(0, 8).join('\n')}`
+      : null,
+  ]
+    .filter(Boolean)
+    .join('\n');
+  const busy = slot.estimating || status === 'building' || status === 'queued';
+  const hasMap = archmapHasMap(slot.status);
+  const buttonBase =
+    'inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs transition-colors disabled:opacity-50';
+  return (
+    <div className="flex items-center gap-2 mt-2 flex-wrap" data-testid={`archmap-controls-${repo.id}`}>
+      <span className="inline-flex items-center gap-1 text-[11px] text-zinc-500">
+        <Map size={12} className="text-amber-400" />
+        Mapa de arquitetura
+      </span>
+      <span
+        className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium ${archmapStatusClass(label)}`}
+        data-testid={`archmap-status-${repo.id}`}
+        title={statusTitle || undefined}
+      >
+        {busy && <Loader2 size={11} className="animate-spin" />}
+        {label}
+      </span>
+      {counters && (
+        <span className="text-[10px] text-zinc-500" data-testid={`archmap-counters-${repo.id}`}>
+          {counters}
+        </span>
+      )}
+      {slot.status?.stats && status !== 'building' && (
+        <span className="text-[10px] text-zinc-600">
+          {slot.status.stats.fileCount} arquivos / {slot.status.stats.nodeCount} nos
+        </span>
+      )}
+      <span className="flex-1" />
+      {busy ? (
+        <button
+          onClick={() => onCancel(repo)}
+          title="Cancelar a operacao do mapa em andamento"
+          className={`${buttonBase} border border-zinc-700 text-zinc-400 hover:bg-zinc-800`}
+        >
+          <XCircle size={12} />
+          Cancelar
+        </button>
+      ) : hasMap ? (
+        <>
+          <button
+            onClick={() => onGenerate(repo, 'update')}
+            title="Atualizar o mapa a partir do que mudou no repositorio"
+            className={`${buttonBase} bg-amber-600/20 text-amber-300 hover:bg-amber-600/30`}
+          >
+            <RefreshCw size={12} />
+            Atualizar mapa
+          </button>
+          <button
+            onClick={() => onGenerate(repo, 'rebuild')}
+            title="Regerar o mapa do zero"
+            className={`${buttonBase} border border-zinc-700 text-zinc-400 hover:bg-zinc-800`}
+          >
+            <Hammer size={12} />
+            Regerar
+          </button>
+        </>
+      ) : (
+        <button
+          onClick={() => onGenerate(repo, 'build')}
+          title="Gerar o Mapa de arquitetura deste repositorio"
+          className={`${buttonBase} bg-amber-600/20 text-amber-300 hover:bg-amber-600/30`}
+        >
+          <Map size={12} />
+          Gerar mapa
+        </button>
+      )}
+      <button
+        disabled={!hasMap || !onOpen}
+        onClick={() => onOpen?.(repo)}
+        title={hasMap ? 'Abrir o Mapa de arquitetura deste repositorio' : 'gere o mapa antes de abrir'}
+        data-testid={`archmap-open-${repo.id}`}
+        className={`${buttonBase} ${hasMap && onOpen ? 'border border-amber-700/60 text-amber-300 hover:bg-amber-600/20' : 'border border-zinc-800 text-zinc-500'}`}
+      >
+        <ExternalLink size={12} />
+        Abrir mapa
+      </button>
+      {lastError && (
+        <span className="basis-full text-[10px] text-amber-400" data-testid={`archmap-last-error-${repo.id}`}>
+          ultimo erro: {lastError}
+        </span>
+      )}
+      {fallbackNotice && (
+        <span className="basis-full text-[10px] text-amber-400" data-testid={`archmap-fallback-${repo.id}`}>
+          {fallbackNotice}
+        </span>
+      )}
+      {lastRunError && (
+        <span className="basis-full text-[10px] text-red-400" data-testid={`archmap-run-error-${repo.id}`}>
+          {lastRunError}
+        </span>
+      )}
+      {jevNotice && (
+        <span className="basis-full text-[10px] text-zinc-400" data-testid={`archmap-jev-${repo.id}`}>
+          {jevNotice}
+        </span>
+      )}
+      {slot.status?.error && status !== 'building' && (
+        <span className="basis-full text-[10px] text-red-400" data-testid={`archmap-status-error-${repo.id}`}>
+          {slot.status.error}
+        </span>
+      )}
+      {slot.error && (
+        <span className="basis-full text-[10px] text-red-400" data-testid={`archmap-error-${repo.id}`}>
+          {slot.error}
+        </span>
+      )}
+    </div>
+  );
+}
+
 interface RepositoryRowProps {
   repo: LocalRepositoryRecord;
   pending: boolean;
   progress: string | null;
+  archmap: ArchmapRepoSlot;
   onBuild: (repo: LocalRepositoryRecord) => void;
   onUpdate: (repo: LocalRepositoryRecord) => void;
   onRemove: (repo: LocalRepositoryRecord) => void;
+  onArchmapGenerate: (repo: LocalRepositoryRecord, mode: ArchmapGenerateMode) => void;
+  onArchmapCancel: (repo: LocalRepositoryRecord) => void;
+  onArchmapOpen: (repo: LocalRepositoryRecord) => void;
 }
 
-function RepositoryRow({ repo, pending, progress, onBuild, onUpdate, onRemove }: RepositoryRowProps) {
+function RepositoryRow({
+  repo,
+  pending,
+  progress,
+  archmap,
+  onBuild,
+  onUpdate,
+  onRemove,
+  onArchmapGenerate,
+  onArchmapCancel,
+  onArchmapOpen,
+}: RepositoryRowProps) {
   const visual = STATUS_VISUALS[repo.status];
   const stats = parseStats(repo.statsJson);
   const building = repo.status === 'building';
@@ -230,6 +420,13 @@ function RepositoryRow({ repo, pending, progress, onBuild, onUpdate, onRemove }:
               {progress}
             </pre>
           )}
+          <ArchmapControls
+            repo={repo}
+            slot={archmap}
+            onGenerate={onArchmapGenerate}
+            onCancel={onArchmapCancel}
+            onOpen={onArchmapOpen}
+          />
         </div>
 
         <div className="flex items-center gap-1.5 shrink-0">
@@ -279,9 +476,19 @@ export default function RepositoriesPage() {
   const build = useRepoGraphStore((s) => s.build);
   const update = useRepoGraphStore((s) => s.update);
 
+  const archmapRepos = useArchmapStore((s) => s.repos);
+  const loadArchmapStatus = useArchmapStore((s) => s.loadStatus);
+  const cancelArchmap = useArchmapStore((s) => s.cancel);
+  const initArchmap = useArchmapStore((s) => s.init);
+  const openArchmap = useArchmapStore((s) => s.openMap);
+  const setPage = useAppStore((s) => s.setPage);
+
   const [metrics, setMetrics] = useState<RepoGraphSavingsMetrics | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [progressByRepo, setProgressByRepo] = useState<Record<string, string>>({});
+  const [archmapModal, setArchmapModal] = useState<{ repo: LocalRepositoryRecord; mode: ArchmapGenerateMode } | null>(
+    null,
+  );
 
   const loadMetrics = useCallback(async () => {
     try {
@@ -300,6 +507,12 @@ export default function RepositoriesPage() {
     void loadRepositories();
     void loadMetrics();
   }, [loadRepositories, loadMetrics]);
+
+  useEffect(() => initArchmap(), [initArchmap]);
+
+  useEffect(() => {
+    for (const repo of repositories) void loadArchmapStatus(repo.id);
+  }, [repositories, loadArchmapStatus]);
 
   useEffect(() => {
     const unsub = window.lionclaw.repoGraph.onStatus((event: RepoGraphStatusEvent) => {
@@ -347,6 +560,28 @@ export default function RepositoriesPage() {
       if ('error' in result) setError(result.error);
     },
     [update],
+  );
+
+  const handleArchmapGenerate = useCallback((repo: LocalRepositoryRecord, mode: ArchmapGenerateMode) => {
+    setArchmapModal({ repo, mode });
+  }, []);
+
+  const handleArchmapOpen = useCallback(
+    (repo: LocalRepositoryRecord) => {
+      openArchmap(repo.id);
+      setPage('archmap');
+    },
+    [openArchmap, setPage],
+  );
+
+  const handleArchmapCancel = useCallback(
+    async (repo: LocalRepositoryRecord) => {
+      const result = await cancelArchmap(repo.id);
+      if ('error' in result) setError(result.error);
+      else if (!result.cancelled) setError(archmapCancelRefusedMessage(result.reason));
+      void loadArchmapStatus(repo.id);
+    },
+    [cancelArchmap, loadArchmapStatus],
   );
 
   const handleRemove = useCallback(
@@ -413,14 +648,25 @@ export default function RepositoriesPage() {
                 repo={repo}
                 pending={pending}
                 progress={progressByRepo[repo.id] ?? null}
+                archmap={selectArchmapSlot({ repos: archmapRepos }, repo.id)}
                 onBuild={handleBuild}
                 onUpdate={handleUpdate}
                 onRemove={handleRemove}
+                onArchmapGenerate={handleArchmapGenerate}
+                onArchmapCancel={handleArchmapCancel}
+                onArchmapOpen={handleArchmapOpen}
               />
             ))}
           </div>
         )}
       </div>
+
+      <ArchmapGenerateModal
+        open={archmapModal !== null}
+        repo={archmapModal?.repo ?? null}
+        mode={archmapModal?.mode ?? 'build'}
+        onClose={() => setArchmapModal(null)}
+      />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import './boot-env-snapshot';
 import { getSwarmService } from './swarm';
+import { shutdownArchmapEngine } from './ipc/archmap';
 import { startSwarmDeliveryPump } from './swarm/delivery';
 import { app, BrowserWindow, Menu, shell, powerMonitor, ipcMain, protocol, net, dialog } from 'electron';
 import { pathToFileURL } from 'url';
@@ -50,6 +51,7 @@ import {
   publishExternalClientServers,
 } from './local-ipc';
 import { resolveToolScriptRegistration } from './tool-script/tool-script-availability';
+import { resolveJevFileToolsRegistration, watchJevFileToolsProjectRoots, writeJevFilesConfig } from './jev-file-tools';
 import { syncCodexMcpConfig } from './codex-sdk/mcp-config-sync';
 import { restoreHiggsfieldSessionFromVault, watchHiggsfieldSession } from './higgsfield-auth';
 import { getRemoteSeedMcps } from './seed-mcps';
@@ -720,6 +722,14 @@ function ensureBuiltinMCPServers(): void {
       isActive: true,
     },
     {
+      id: 'jev-files',
+      name: 'Jev Files',
+      dir: 'jev-files',
+      envKeys: ['TYPESAFE_JEV_API_KEY'],
+      isActive: resolveJevFileToolsRegistration().isActive,
+      forceActive: true,
+    },
+    {
       id: 'excalidraw',
       name: 'Excalidraw',
       dir: 'excalidraw',
@@ -834,7 +844,8 @@ function ensureBuiltinMCPServers(): void {
 
     const existingEntry = existing.find((s) => s.id === srv.id);
     if (existingEntry) {
-      const shouldBeActive = srv.isActive === false ? existingEntry.isActive : true;
+      const forced = 'forceActive' in srv && srv.forceActive === true;
+      const shouldBeActive = forced ? srv.isActive : srv.isActive === false ? existingEntry.isActive : true;
       updateMCPServer(srv.id, {
         command: 'node',
         args: [serverPath],
@@ -1222,6 +1233,13 @@ html,body,#root{width:100%;height:100%;overflow:hidden;background:#191919}
     logger.error({ error }, 'Dynamic workflow boot recovery failed (boot continues)');
   }
 
+  try {
+    await writeJevFilesConfig();
+    watchJevFileToolsProjectRoots();
+  } catch (error) {
+    logger.warn({ error }, 'jev-files.json nao foi escrito no boot (ferramenta fica inativa)');
+  }
+
   ensureBuiltinMCPServers();
 
   await startLocalIpcServer();
@@ -1359,6 +1377,7 @@ app.on('before-quit', async (e) => {
     /* ignore */
   }
   await getSwarmService().shutdown();
+  await shutdownArchmapEngine().catch(() => undefined);
   stopWatchingMemoryFiles();
   stopIngestQueueWatcher();
   try {

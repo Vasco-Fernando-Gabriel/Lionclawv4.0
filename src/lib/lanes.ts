@@ -105,6 +105,14 @@ export function pickMostRecentLane(lanes: readonly OpenChatSession[]): OpenChatS
   return best;
 }
 
+export function pickFirstLane(lanes: readonly OpenChatSession[]): OpenChatSession | null {
+  let best: OpenChatSession | null = null;
+  for (const lane of lanes) {
+    if (best === null || lane.laneBadge < best.laneBadge) best = lane;
+  }
+  return best;
+}
+
 export const CHAT_LANE_ERROR_TITLES: Record<string, string> = {
   session_required: 'Sem lane selecionada',
   session_not_found: 'Conversa nao encontrada',

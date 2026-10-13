@@ -8,7 +8,7 @@ export const repoProfiler: Omit<AgentConfig, 'sortOrder'> = {
   name: 'Repo Profiler',
   description:
     'Analisa repositorio local: detecta linguagem, framework, classifica arquivos por role. Usa LLM apenas como fallback quando a deteccao deterministica falha.',
-  model: 'claude-haiku-4-5-20251001',
+  model: 'claude-haiku-5-5',
   effort: 'low' as const,
   thinking: 'disabled' as const,
   thinkingBudget: 0,

@@ -1,21 +1,20 @@
 import type { AgentConfig } from '../../../src/types';
 import { SWARM_CONTRACT } from './_shared/swarm-contract';
-import { CODEX_DEFAULT_MODEL } from '../../../src/constants/codex-models';
+import { CLAUDE_DEFAULT_MODEL } from '../../../src/constants/claude-models';
 
 export const swarmBugHypothesisHunter: Omit<AgentConfig, 'sortOrder'> = {
   id: 'swarm-bug-hypothesis-hunter',
   name: 'Swarm Bug Hypothesis Hunter',
   description: 'Você é um investigador de bugs por hipóteses. Recebe um SINTOMA e produz causa raiz nomeável.',
-  model: CODEX_DEFAULT_MODEL,
-  runtime: 'codex',
+  model: CLAUDE_DEFAULT_MODEL,
+  runtime: 'cloud',
   squad: 'swarm',
-  codexConfig: { model: CODEX_DEFAULT_MODEL, sandbox: 'read-only', reasoningEffort: 'high' },
   effort: 'high',
   thinking: 'adaptive',
   maxTurns: 80,
   maxToolRounds: 50,
   allowedTools: ['Read', 'Grep', 'Glob', 'Bash', 'Write'],
-  mcpServers: [],
+  mcpServers: ['repo-graph'],
   skills: [],
   isActive: true,
   systemPrompt:

@@ -8,7 +8,7 @@ export const dynamicWorkflowValidatorTests: Omit<AgentConfig, 'sortOrder'> = {
   name: 'Dynamic Workflow Validator (Testes)',
   description:
     'Validador adversarial read-only do workflow dinamico: cobertura e qualidade de testes por criterio de aceite. Retorna verdict + findings.',
-  model: 'claude-haiku-4-5-20251001',
+  model: 'claude-haiku-5-5',
   effort: 'high' as const,
   thinking: 'enabled' as const,
   thinkingBudget: 8000,

@@ -368,9 +368,9 @@ describe('pricing: SPEC-004 MiniMax Token Plan (MODEL_PRICING top-level)', () =>
       ['MiniMax-M3', 'MiniMax-Text-01', 'abab6.5g-chat', 'abab6.5s-chat', 'minimax-m2'].sort(),
     );
     expect(PRESET_MODEL_PRICING.minimax['MiniMax-M3']).toEqual({
-      input: 0.6,
-      output: 2.4,
-      cacheRead: 0.12,
+      input: 0.3,
+      output: 1.2,
+      cacheRead: 0.06,
       cacheCreation: 0,
     });
     expect(PRESET_MODEL_PRICING.minimax['MiniMax-Text-01']).toEqual({

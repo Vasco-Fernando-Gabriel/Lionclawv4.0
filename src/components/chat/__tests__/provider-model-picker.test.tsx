@@ -131,6 +131,19 @@ describe('ProviderModelPicker (7.3/7.4 lado UI)', () => {
     expect(pop!.querySelector('[data-testid="model-picker-footer"]')).toBeNull();
   });
 
+  it('placement: abre para cima por padrao (composer) e para baixo quando pedido (modais com rolagem)', () => {
+    render({});
+    open();
+    const up = container.querySelector('[data-testid="model-picker-popover"]')!;
+    expect(up.getAttribute('data-placement')).toBe('top');
+    expect(up.className).toContain('bottom-[calc(100%+6px)]');
+    render({ placement: 'bottom' });
+    const down = container.querySelector('[data-testid="model-picker-popover"]')!;
+    expect(down.getAttribute('data-placement')).toBe('bottom');
+    expect(down.className).toContain('top-[calc(100%+6px)]');
+    expect(down.className).not.toContain('bottom-[calc(100%+6px)]');
+  });
+
   it('selecionar um modelo de outro provider em lane vazia chama onSelect com o modelo e fecha', () => {
     const onSelect = vi.fn();
     render({ onSelect });

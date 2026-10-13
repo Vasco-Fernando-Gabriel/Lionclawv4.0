@@ -452,10 +452,12 @@ describe('inferRuntimeFromModel / isModelInRuntime', () => {
     expect(__internal.isModelInRuntime('claude-opus-4-7', 'codex-sdk')).toBe(false);
   });
 
-  it('maps gpt-5.* to codex-sdk and rejects under claude-sdk', () => {
+  it('maps gpt-* to codex-sdk and rejects under claude-sdk; gpt-5.5 saiu do catalogo estatico do Codex', () => {
     expect(__internal.inferRuntimeFromModel('gpt-5.5')).toBe('codex-sdk');
-    expect(__internal.isModelInRuntime('gpt-5.5', 'codex-sdk')).toBe(true);
-    expect(__internal.isModelInRuntime('gpt-5.5', 'claude-sdk')).toBe(false);
+    expect(__internal.inferRuntimeFromModel('gpt-6.1-sol')).toBe('codex-sdk');
+    expect(__internal.isModelInRuntime('gpt-6.1-sol', 'codex-sdk')).toBe(true);
+    expect(__internal.isModelInRuntime('gpt-5.5', 'codex-sdk')).toBe(false);
+    expect(__internal.isModelInRuntime('gpt-6.1-sol', 'claude-sdk')).toBe(false);
   });
 
   it('maps glm-* to claude-compat-sdk and rejects under lion-sdk', () => {

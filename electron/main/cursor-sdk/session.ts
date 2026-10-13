@@ -10,6 +10,9 @@ import { getCursorModel } from '../../../src/constants/cursor-models';
 import { TypedProviderError } from '../agent-runtime/llm-error';
 import { createPermissionGuard } from '../permission-guard';
 import { PERM_DEFAULT_WITH_GUARD } from '../agent-runtime/permission-profiles';
+import { isSwarmConductionToolName } from '../swarm/aggregation-policy';
+import { assertSwarmConductionMounted, isSwarmConductionMounted } from '../swarm/conduction-mcp';
+import type { SwarmDeliveryKind } from '../../../src/types/swarm';
 import {
   createSubagentDispatchContext,
   pendingSubagentProviderAuthError,
@@ -60,6 +63,7 @@ export interface CreateChatCursorSessionOptions {
   isOnboarding?: boolean;
   capabilities?: ChatFeatureToggles;
   turnBinding?: { sessionId: string; turnId: string };
+  swarmDelivery?: { kind: SwarmDeliveryKind };
 }
 
 export interface CursorSessionContextMeta {
@@ -71,6 +75,7 @@ export interface ChatCursorSession {
   resuming: boolean;
   contextMeta: CursorSessionContextMeta;
   workspace: CursorChatWorkspace;
+  swarmConductionMounted?: boolean;
   send(prompt: string, onEvent: (event: CursorSidecarStreamEvent) => void): Promise<CursorSidecarExecutionResult>;
   close(): void;
 }
@@ -203,6 +208,14 @@ export async function createChatCursorSession(opts: CreateChatCursorSessionOptio
     abortSignal: opts.abortController.signal,
   });
 
+  const swarmMount = () => ({
+    runtime: 'cursor-sdk',
+    serverIds: bridge.allowedServerIds,
+    toolCount: bridge.catalogToolNames.filter((name) => isSwarmConductionToolName(name)).length,
+  });
+  const swarmConductionMounted = opts.swarmDelivery ? isSwarmConductionMounted(swarmMount()) : false;
+  if (opts.swarmDelivery?.kind === 'question') assertSwarmConductionMounted(swarmMount());
+
   const guardedToolset = buildCursorGuardedToolset({
     cwd: lionHome,
     canUseTool: permission.canUseTool,
@@ -234,6 +247,7 @@ export async function createChatCursorSession(opts: CreateChatCursorSessionOptio
     resuming: resumeAgentId !== undefined,
     contextMeta,
     workspace,
+    swarmConductionMounted,
     async send(prompt, onEvent) {
       const executionId = `cursor-chat-${randomUUID()}`;
       try {

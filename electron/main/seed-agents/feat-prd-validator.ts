@@ -7,7 +7,7 @@ export const featPrdValidator: Omit<AgentConfig, 'sortOrder'> = {
   name: 'Feature PRD Validator',
   description:
     'Valida user stories contra o feature-discovery-notes E o codigo real do repo. Identifica conflitos com a arquitetura existente.',
-  model: 'claude-sonnet-4-6',
+  model: 'claude-sonnet-5-5',
   effort: 'high' as const,
   thinking: 'adaptive' as const,
   maxTurns: 80,

@@ -38,7 +38,7 @@ export const PROVIDER_PRESETS: Record<
     protocol: 'openai-compatible',
     baseUrl: 'https://api.openai.com/v1',
     modelsEndpoint: '/models',
-    defaultModel: 'gpt-6-sol',
+    defaultModel: 'gpt-6.1-sol',
     requiresApiKey: true,
     pricingUrl: 'https://openai.com/api/pricing/',
     vaultKey: 'HARNESS_OPENAI_KEY',
@@ -119,6 +119,14 @@ export interface CatalogedModel {
 export const MODEL_CATALOG: Record<string, CatalogedModel[]> = {
   openai: [
     {
+      id: 'gpt-6.1-sol',
+      label: 'GPT-6.1 Sol CTX 1M',
+      pricingKey: 'gpt-6.1-sol',
+      supportsTools: true,
+      contextWindow: 1_050_000,
+      notes: 'Sucessor do GPT-6 Sol ($2/$10, cache read $0.10). Input >272k cobra 2x e output 1.5x.',
+    },
+    {
       id: 'gpt-6-sol',
       label: 'GPT-6 Sol CTX 1M',
       pricingKey: 'gpt-6-sol',
@@ -133,6 +141,14 @@ export const MODEL_CATALOG: Record<string, CatalogedModel[]> = {
       supportsTools: true,
       contextWindow: 1_050_000,
       notes: 'GPT-6 rapido e barato ($0.10/$0.50). Input >272k cobra 2x e output 1.5x.',
+    },
+    {
+      id: 'gpt-6-astra',
+      label: 'GPT-6 Astra CTX 1M',
+      pricingKey: 'gpt-6-astra',
+      supportsTools: true,
+      contextWindow: 1_050_000,
+      notes: 'Frontier GPT-6 ($10/$50). Input >272k cobra 2x e output 1.5x.',
     },
     {
       id: 'gpt-5.5',
@@ -159,6 +175,30 @@ export const MODEL_CATALOG: Record<string, CatalogedModel[]> = {
       supportsTools: true,
       contextWindow: 1_000_000,
       notes: 'Opus 5.5 via OpenRouter ($4/$20).',
+    },
+    {
+      id: 'anthropic/claude-sonnet-5.5',
+      label: 'Claude Sonnet 5.5 CTX 1M',
+      pricingKey: 'or:anthropic/claude-sonnet-5.5',
+      supportsTools: true,
+      contextWindow: 1_000_000,
+      notes: 'Sonnet 5.5 via OpenRouter ($2/$10).',
+    },
+    {
+      id: 'anthropic/claude-haiku-5.5',
+      label: 'Claude Haiku 5.5 CTX 1M',
+      pricingKey: 'or:anthropic/claude-haiku-5.5',
+      supportsTools: true,
+      contextWindow: 1_000_000,
+      notes: 'Haiku 5.5 via OpenRouter ($0.10/$0.50). Prompt acima de 100K cobra 5x.',
+    },
+    {
+      id: 'openai/gpt-6.1-sol',
+      label: 'GPT-6.1 Sol CTX 1M',
+      pricingKey: 'or:openai/gpt-6.1-sol',
+      supportsTools: true,
+      contextWindow: 1_050_000,
+      notes: 'Sucessor do GPT-6 Sol via OpenRouter ($2/$10, cache read $0.10).',
     },
     {
       id: 'openai/gpt-6-sol',
@@ -297,6 +337,24 @@ export const MODEL_CATALOG: Record<string, CatalogedModel[]> = {
       notes: 'Kimi K2.6. Cache hit $0.16, cache miss $0.95, output $4.00 por 1M.',
     },
     {
+      id: 'kimi-k2.7-code',
+      label: 'Kimi K2.7 Code CTX 262K',
+      pricingKey: 'kimi-k2.7-code',
+      supportsTools: true,
+      contextWindow: 262_144,
+      reasoning: { kind: 'none' },
+      notes: 'Kimi K2.7 Code. Cache hit $0.19, cache miss $0.95, output $4.00 por 1M.',
+    },
+    {
+      id: 'kimi-k2.7-code-highspeed',
+      label: 'Kimi K2.7 Code Highspeed CTX 262K',
+      pricingKey: 'kimi-k2.7-code-highspeed',
+      supportsTools: true,
+      contextWindow: 262_144,
+      reasoning: { kind: 'none' },
+      notes: 'Variante highspeed do K2.7 Code: 2x o custo. Cache hit $0.38, cache miss $1.90, output $8.00 por 1M.',
+    },
+    {
       id: 'kimi-k2-turbo-preview',
       label: 'Kimi K2 Turbo Preview CTX 128K',
       pricingKey: null,
@@ -316,7 +374,17 @@ export const MODEL_CATALOG: Record<string, CatalogedModel[]> = {
       contextWindow: 1_000_000,
       reasoning: { kind: 'none' },
       notes:
-        'V4 Pro. Promo 75% off ativa: input $0.435 (cache miss), $0.003625 (cache hit), output $0.87 por 1M. Max output 384K. Suporta thinking mode.',
+        'V4 Pro. Fora de pico: input $0.66 (cache miss), $0.022 (cache hit), output $1.98 por 1M; pico cobra 2x. Max output 384K. Suporta thinking mode.',
+    },
+    {
+      id: 'deepseek-flash',
+      label: 'DeepSeek Flash (V4.1) CTX 1M',
+      pricingKey: 'deepseek-flash',
+      supportsTools: true,
+      contextWindow: 1_000_000,
+      reasoning: { kind: 'none' },
+      notes:
+        'DeepSeek-V4.1-Flash. Fora de pico: input $0.15 (cache miss), $0.003 (cache hit), output $0.60 por 1M; pico cobra 2x. Max output 384K.',
     },
     {
       id: 'deepseek-v4-flash',
@@ -325,7 +393,7 @@ export const MODEL_CATALOG: Record<string, CatalogedModel[]> = {
       supportsTools: true,
       contextWindow: 1_000_000,
       reasoning: { kind: 'none' },
-      notes: 'V4 Flash. Input $0.14 (cache miss), $0.0028 (cache hit), output $0.28 por 1M. Max output 384K.',
+      notes: 'Alias legado de deepseek-flash (servido pelo V4.1-Flash, mesmo preco). Max output 384K.',
     },
     {
       id: 'deepseek-chat',
@@ -384,7 +452,8 @@ export const MODEL_CATALOG: Record<string, CatalogedModel[]> = {
       supportsTools: true,
       contextWindow: 196_608,
       reasoning: { kind: 'none' },
-      notes: 'Default. Mesmo pricing do TokenPlan ($0.30/$1.20). Cache read $0.06 / write $0.375.',
+      notes:
+        'Default. Mesmo pricing do TokenPlan ($0.30/$1.20). Cache read $0.06 / write $0.375. PAYG do M2.7 termina em 18/11/2026; no M Plan / Token Plan e roteado para o M3.1 Flash Preview a partir de 19/10/2026.',
     },
     {
       id: 'MiniMax-M2.7-highspeed',
@@ -393,7 +462,8 @@ export const MODEL_CATALOG: Record<string, CatalogedModel[]> = {
       supportsTools: true,
       contextWindow: 196_608,
       reasoning: { kind: 'none' },
-      notes: 'Variante highspeed: 2x o custo do M2.7 ($0.60/$2.40). Latencia menor.',
+      notes:
+        'Variante highspeed: 2x o custo do M2.7 ($0.60/$2.40). Latencia menor. PAYG do M2.7 termina em 18/11/2026; no M Plan / Token Plan e roteado para o M3.1 Flash Preview a partir de 19/10/2026.',
     },
     {
       id: 'MiniMax-M2.5',
@@ -420,7 +490,7 @@ export const MODEL_CATALOG: Record<string, CatalogedModel[]> = {
       supportsTools: true,
       contextWindow: 196_608,
       reasoning: { kind: 'none' },
-      notes: 'Sem prompt caching (cache read/write nao cobrados/aplicaveis). $0.30/$1.20.',
+      notes: 'Retirado pela MiniMax. Sem prompt caching (cache read/write nao cobrados/aplicaveis). $0.30/$1.20.',
     },
   ],
 

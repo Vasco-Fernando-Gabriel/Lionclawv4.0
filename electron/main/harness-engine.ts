@@ -165,13 +165,13 @@ export function mapReasoningParams(
 ): Partial<Record<string, unknown>> {
   const reasoningEffort = effort === 'max' ? 'high' : (effort ?? 'medium');
 
-  if (provider === 'openai' && (model.startsWith('gpt-5.5') || model.startsWith('o'))) {
+  if (provider === 'openai' && (model.startsWith('gpt-6') || model.startsWith('gpt-5.5') || model.startsWith('o'))) {
     if (thinking === 'disabled') return {};
     return { reasoning_effort: reasoningEffort };
   }
 
   if (provider === 'openrouter') {
-    if (model.startsWith('openai/gpt-5')) {
+    if (model.startsWith('openai/gpt-6') || model.startsWith('openai/gpt-5')) {
       return thinking === 'disabled' ? {} : { reasoning_effort: reasoningEffort };
     }
     if (model.startsWith('qwen/qwen3.6') && thinking !== 'disabled') {

@@ -5,11 +5,7 @@ import {
   SECURITY_PIPELINE_PHASES,
   ARCHITECTURE_REVIEW_PIPELINE_PHASES,
 } from '../../../src/types/pipeline';
-import {
-  getArchitectureReviewConversationGreeting,
-  getPhaseNumberForAgent,
-  getPhaseAgentId,
-} from '../pipeline-engine/phase-helpers';
+import { getArchitectureReviewConversationGreeting, getPhaseNumberForAgent, getPhaseAgentId } from '../pipeline-engine';
 
 const EXPECTED_PIPELINE_AGENTS: Record<number, string> = {
   1: 'discovery-agent',

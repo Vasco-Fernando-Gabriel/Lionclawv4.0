@@ -10,7 +10,7 @@ export const archSpecValidator: Omit<AgentConfig, 'sortOrder'> = {
   name: 'Architecture Spec Validator',
   description:
     'Fase 6 do pipeline architecture-review: valida a SPEC arquitetural contra Map/Candidates/Diagnosis/Decisions e, quando o usuario concorda com um achado, aplica a correcao direto na SPEC via Edit.',
-  model: 'claude-sonnet-4-6',
+  model: 'claude-sonnet-5-5',
   effort: 'high' as const,
   thinking: 'enabled' as const,
   thinkingBudget: 12000,

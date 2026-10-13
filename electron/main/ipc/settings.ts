@@ -1,7 +1,21 @@
 import { ipcMain } from 'electron';
+import os from 'os';
 import { createLogger } from '../logger';
 import { CODEX_EFFORT_ORDER } from '../../../src/constants/codex-models';
 import { getSetting, setSetting, setOrchestratorCompactionSelection, getAuthRow, getDreamingTurnInterval } from '../db';
+import { getLionClawHome } from '../paths';
+import {
+  JEV_FILE_TOOLS_ENABLED_SETTING_KEY,
+  JEV_FILE_TOOLS_ROOTS_SETTING_KEY,
+  JEV_MODEL_SETTING_KEY,
+  JEV_SHADOW_ENABLED_SETTING_KEY,
+  JEV_MODEL_MAX_LENGTH,
+  defaultJevFileToolsRoot,
+  normalizeJevFileToolsRoots,
+  normalizeJevModel,
+  parseJevFileToolsRoots,
+  resolveJevModel,
+} from '../jev-settings';
 import { DEFAULT_ELEVENLABS_VOICE_ID } from '../voice-engine';
 import {
   DEFAULT_CARTESIA_LANGUAGE,
@@ -34,6 +48,17 @@ import { listSeedAgentIds } from '../seed-agents';
 import { PRODUCT_DEFAULT_ORCHESTRATOR } from '../orchestrator-defaults';
 import { validateOrchestratorTriple } from '../orchestrator-selection-matrix';
 import { smokeAudit } from '../smoke-audit';
+import {
+  ARCHMAP_BATCH_PARALLELISM_SETTING_KEY,
+  ARCHMAP_ENABLED_SETTING_KEY,
+  ARCHMAP_JEV_KEEP_THRESHOLD_SETTING_KEY,
+  ARCHMAP_JEV_TRIAGE_ENABLED_SETTING_KEY,
+  ARCHMAP_MAX_PARALLEL_REPOS_SETTING_KEY,
+  parseArchmapBatchParallelism,
+  parseArchmapJevKeepThreshold,
+  parseArchmapMaxParallelRepos,
+  readArchmapSettings,
+} from '../archmap/settings';
 
 const logger = createLogger('ipc');
 
@@ -131,6 +156,7 @@ export function registerSettingsHandlers(ctx: IpcContext): void {
     const { readToolScriptSettings } = await import('../tool-script/tool-script-settings');
     const toolScriptDecision = resolveToolScriptRegistration();
     const toolScriptSettings = readToolScriptSettings();
+    const archmapSettings = readArchmapSettings(getSetting);
 
     return {
       defaultModel: orchestratorModel,
@@ -193,6 +219,17 @@ export function registerSettingsHandlers(ctx: IpcContext): void {
       dreamingTurnBasedEnabled: getSetting('dreaming_turn_based_enabled') === 'true',
       dreamingTurnBasedInterval: getDreamingTurnInterval(),
       dreamingTurnBasedModel: getSetting('dreaming_turn_based_model') || '',
+      jevShadowEnabled: getSetting(JEV_SHADOW_ENABLED_SETTING_KEY) === 'true',
+      jevModel: resolveJevModel(getSetting(JEV_MODEL_SETTING_KEY)),
+      jevFileToolsEnabled: getSetting(JEV_FILE_TOOLS_ENABLED_SETTING_KEY) === 'true',
+      jevFileToolsRoots: parseJevFileToolsRoots(getSetting(JEV_FILE_TOOLS_ROOTS_SETTING_KEY), [
+        defaultJevFileToolsRoot(getLionClawHome()),
+      ]),
+      archmapEnabled: archmapSettings.enabled,
+      archmapMaxParallelRepos: archmapSettings.maxParallelRepos,
+      archmapBatchParallelism: archmapSettings.batchParallelism,
+      archmapJevTriageEnabled: archmapSettings.jevTriageEnabled,
+      archmapJevKeepThreshold: archmapSettings.jevKeepThreshold,
       toolScriptEnabled: toolScriptSettings.enabled,
       toolScriptAvailable: toolScriptDecision.available,
       ...(toolScriptDecision.available ? {} : { toolScriptAvailabilityReason: toolScriptDecision.reason }),
@@ -256,6 +293,17 @@ export function registerSettingsHandlers(ctx: IpcContext): void {
           };
         }
       }
+    }
+
+    const jevModelNormalized = settings.jevModel === undefined ? undefined : normalizeJevModel(settings.jevModel);
+    if (jevModelNormalized === null) {
+      return { error: `Modelo do Jev invalido: informe um nome nao vazio com ate ${JEV_MODEL_MAX_LENGTH} caracteres.` };
+    }
+    let jevFileToolsRootsNormalized: string[] | undefined;
+    if (settings.jevFileToolsRoots !== undefined) {
+      const normalized = normalizeJevFileToolsRoots(settings.jevFileToolsRoots, { homeDir: os.homedir() });
+      if (!normalized.ok) return { error: normalized.error };
+      jevFileToolsRootsNormalized = normalized.roots;
     }
 
     const touchesCompactionTriple =
@@ -558,6 +606,62 @@ export function registerSettingsHandlers(ctx: IpcContext): void {
     }
     if (settings.dreamingTurnBasedModel !== undefined) {
       setSetting('dreaming_turn_based_model', settings.dreamingTurnBasedModel);
+    }
+    if (settings.jevShadowEnabled !== undefined) {
+      setSetting(JEV_SHADOW_ENABLED_SETTING_KEY, settings.jevShadowEnabled ? 'true' : 'false');
+    }
+    if (settings.archmapEnabled !== undefined) {
+      setSetting(ARCHMAP_ENABLED_SETTING_KEY, settings.archmapEnabled ? 'true' : 'false');
+    }
+    if (settings.archmapMaxParallelRepos !== undefined) {
+      setSetting(
+        ARCHMAP_MAX_PARALLEL_REPOS_SETTING_KEY,
+        String(parseArchmapMaxParallelRepos(String(settings.archmapMaxParallelRepos))),
+      );
+    }
+    if (settings.archmapBatchParallelism !== undefined) {
+      setSetting(
+        ARCHMAP_BATCH_PARALLELISM_SETTING_KEY,
+        String(parseArchmapBatchParallelism(String(settings.archmapBatchParallelism))),
+      );
+    }
+    if (settings.archmapJevTriageEnabled !== undefined) {
+      setSetting(ARCHMAP_JEV_TRIAGE_ENABLED_SETTING_KEY, settings.archmapJevTriageEnabled ? 'true' : 'false');
+    }
+    if (settings.archmapJevKeepThreshold !== undefined) {
+      setSetting(
+        ARCHMAP_JEV_KEEP_THRESHOLD_SETTING_KEY,
+        String(parseArchmapJevKeepThreshold(settings.archmapJevKeepThreshold)),
+      );
+    }
+    const jevFileToolsReasons: Array<'flag' | 'roots' | 'model'> = [];
+    if (jevModelNormalized !== undefined) {
+      const previousJevModel = resolveJevModel(getSetting(JEV_MODEL_SETTING_KEY));
+      setSetting(JEV_MODEL_SETTING_KEY, jevModelNormalized);
+      if (previousJevModel !== jevModelNormalized) jevFileToolsReasons.push('model');
+    }
+    if (settings.jevFileToolsEnabled !== undefined) {
+      const wasEnabled = getSetting(JEV_FILE_TOOLS_ENABLED_SETTING_KEY) === 'true';
+      const willBeEnabled = settings.jevFileToolsEnabled === true;
+      setSetting(JEV_FILE_TOOLS_ENABLED_SETTING_KEY, willBeEnabled ? 'true' : 'false');
+      if (wasEnabled !== willBeEnabled) jevFileToolsReasons.unshift('flag');
+    }
+    if (jevFileToolsRootsNormalized !== undefined) {
+      const previousRoots = getSetting(JEV_FILE_TOOLS_ROOTS_SETTING_KEY);
+      const nextRoots = JSON.stringify(jevFileToolsRootsNormalized);
+      setSetting(JEV_FILE_TOOLS_ROOTS_SETTING_KEY, nextRoots);
+      if (previousRoots !== nextRoots) jevFileToolsReasons.push('roots');
+    }
+    if (jevFileToolsReasons.length > 0) {
+      try {
+        const { applyJevFileToolsChange } = await import('../jev-file-tools');
+        await applyJevFileToolsChange(jevFileToolsReasons[0]);
+      } catch (err) {
+        logger.error(
+          { err: err instanceof Error ? err.message : String(err), reasons: jevFileToolsReasons },
+          'apply da mudanca do Jev para arquivos falhou (setting gravado; restart resolve)',
+        );
+      }
     }
     if (settings.toolScriptEnabled !== undefined) {
       const wasEnabled = getSetting('tool_script_enabled') !== 'false';

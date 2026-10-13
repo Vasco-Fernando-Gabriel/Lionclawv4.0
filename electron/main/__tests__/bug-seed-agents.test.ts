@@ -163,7 +163,7 @@ describe('B-AC2/TB-19 - os 6 seed agents do Bug Pipe no registry', () => {
       'bug-context-historian': { model: 'claude-opus-5-5', budget: 10000, turns: 80, rounds: 30 },
       'bug-hypothesis-refuter': { model: 'claude-opus-5-5', budget: 10000, turns: 80, rounds: 30 },
       'bug-solution-consolidator': { model: 'claude-opus-5-5', budget: 8000, turns: 100, rounds: 25 },
-      'bug-spec-validator': { model: 'claude-sonnet-4-6', budget: 6000, turns: 80, rounds: 25 },
+      'bug-spec-validator': { model: 'claude-sonnet-5-5', budget: 6000, turns: 80, rounds: 25 },
     };
     for (const seed of BUG_SEED_AGENTS) {
       const want = expected[seed.id];
@@ -301,9 +301,9 @@ describe('TB-30 - R10: os 6 seeds existem no .ts E na V143', () => {
 });
 
 describe('TB-29 - V143 aplica em DB existente e e idempotente', () => {
-  it('LATEST_SCHEMA_VERSION acompanha a maior migration (>= 143, hoje 153)', () => {
+  it('LATEST_SCHEMA_VERSION acompanha a maior migration (>= 143, hoje 169)', () => {
     expect(LATEST_SCHEMA_VERSION).toBeGreaterThanOrEqual(143);
-    expect(LATEST_SCHEMA_VERSION).toBe(153);
+    expect(LATEST_SCHEMA_VERSION).toBe(169);
   });
 
   it('a V143 esta plugada no runner de db.ts (import + gate + INSERT da versao)', () => {

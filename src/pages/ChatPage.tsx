@@ -152,6 +152,7 @@ export function ChatPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const isAtBottomRef = useRef(true);
+  const sessionSwitchRef = useRef(false);
   const programmaticScrollRef = useRef(false);
   const lastScrollTopRef = useRef(0);
   const expectedTopRef = useRef<number | null>(null);
@@ -267,10 +268,28 @@ export function ChatPage() {
   }, [currentSessionId]);
 
   useEffect(() => {
-    isAtBottomRef.current = pinnedToBottom;
+    isAtBottomRef.current = true;
     expectedTopRef.current = null;
     lastSeenMessageCountRef.current = 0;
-  }, [currentSessionId]);
+    sessionSwitchRef.current = true;
+    setPinnedToBottom(true);
+    const frame = window.requestAnimationFrame(() => {
+      sessionSwitchRef.current = false;
+      const el = scrollContainerRef.current;
+      if (!el) return;
+      const target = el.scrollHeight - el.clientHeight;
+      if (target - el.scrollTop > 4) {
+        programmaticScrollRef.current = true;
+        el.scrollTop = target;
+      }
+      lastScrollTopRef.current = el.scrollTop;
+      expectedTopRef.current = el.scrollTop;
+    });
+    return () => {
+      window.cancelAnimationFrame(frame);
+      sessionSwitchRef.current = false;
+    };
+  }, [currentSessionId, setPinnedToBottom]);
 
   useEffect(() => {
     if (
@@ -431,6 +450,7 @@ export function ChatPage() {
     if (!el) return;
     const previousTop = lastScrollTopRef.current;
     lastScrollTopRef.current = el.scrollTop;
+    if (sessionSwitchRef.current) return;
     if (programmaticScrollRef.current) {
       programmaticScrollRef.current = false;
       return;
@@ -1184,24 +1204,17 @@ export function ChatPage() {
                       onClick={() => setRepoControlsOpen((open) => !open)}
                       title={
                         repoGraphRepo
-                          ? `Repositorio ativo: ${repoGraphRepo.canonicalRootPath}`
+                          ? `Repositorio ativo: ${repoGraphRepo.name} (${repoGraphRepo.canonicalRootPath})`
                           : 'Vincular um repositorio a esta conversa'
                       }
                       aria-label={repoGraphRepo ? `Repositorio: ${repoGraphRepo.name}` : 'Vincular repositorio'}
                       className={`inline-flex items-center gap-1 rounded-full border transition-colors shrink-0 ${
                         repoGraphRepo
-                          ? 'border-blue-500/40 bg-blue-500/10 px-2 py-0.5 text-[10px] font-medium text-blue-300 hover:bg-blue-500/20'
+                          ? 'border-blue-500/40 bg-blue-500/10 p-1 text-blue-300 hover:bg-blue-500/20'
                           : 'border-zinc-700 bg-zinc-900 p-1 text-zinc-500 hover:text-zinc-300'
                       }`}
                     >
-                      {repoGraphRepo ? (
-                        <>
-                          <FolderGit2 size={10} />
-                          {repoGraphRepo.name}
-                        </>
-                      ) : (
-                        <Plus size={12} />
-                      )}
+                      {repoGraphRepo ? <FolderGit2 size={12} /> : <Plus size={12} />}
                     </button>
                   </>
                 )}

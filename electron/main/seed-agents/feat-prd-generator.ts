@@ -7,7 +7,7 @@ export const featPrdGenerator: Omit<AgentConfig, 'sortOrder'> = {
   name: 'Feature PRD Generator',
   description:
     'Le feature-discovery-notes + analisa o repo para gerar user stories e requisitos alinhados com a arquitetura existente. Roda em modo auto e omite o que nao tem certeza para o Validator pegar.',
-  model: 'claude-sonnet-4-6',
+  model: 'claude-sonnet-5-5',
   effort: 'high' as const,
   thinking: 'adaptive' as const,
   maxTurns: 80,

@@ -271,12 +271,12 @@ describe('checkProvider: claude-compat-sdk / minimax', () => {
     expect(status.reason).toMatch(/not configured/i);
     const minimax = CLAUDE_COMPAT_PRESETS.find((p) => p.id === 'minimax');
     expect(status.models?.length).toBe(minimax?.models.length);
-    expect(status.models?.length).toBe(5);
+    expect(status.models?.length).toBe(6);
     expect(fetchSpy?.mock.calls.length ?? 0).toBe(0);
     expect(mockedGetSecret).not.toHaveBeenCalled();
   });
 
-  it('returns connected=true with the 5 MiniMax models when vault has the key', async () => {
+  it('returns connected=true with the 6 MiniMax models when vault has the key', async () => {
     setSettings({ orchestrator_minimax_api_key_ref: 'ORCHESTRATOR_MINIMAX_API_KEY' });
     mockedGetSecret.mockResolvedValueOnce('mx-fake-token');
     stubFetch(async () => makeResponse({ status: 500 }));
@@ -286,7 +286,7 @@ describe('checkProvider: claude-compat-sdk / minimax', () => {
     expect(status.runtime).toBe('claude-compat-sdk');
     expect(status.provider).toBe('minimax');
     expect(status.connected).toBe(true);
-    expect(status.models?.length).toBe(5);
+    expect(status.models?.length).toBe(6);
     const ids = (status.models ?? []).map((m) => m.id);
     expect(ids).toEqual(
       expect.arrayContaining([
@@ -295,6 +295,7 @@ describe('checkProvider: claude-compat-sdk / minimax', () => {
         'MiniMax-M2.5',
         'MiniMax-M2.5-highspeed',
         'MiniMax-M3',
+        'MiniMax-M3.1-Flash-Preview',
       ]),
     );
     expect(fetchSpy?.mock.calls.length ?? 0).toBe(0);

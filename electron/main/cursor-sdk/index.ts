@@ -43,6 +43,14 @@ import {
 } from '../onboarding';
 import { buildCursorHistoryPreamble } from './history';
 import { createChatCursorSession, type ChatCursorSession } from './session';
+import { persistSwarmResponse } from '../swarm/chat-persistence';
+import { SWARM_CONDUCTION_READ_ONLY_NOTICE } from '../swarm/aggregation-policy';
+import {
+  SWARM_CONDUCTION_UNGUARDED_LOG,
+  SWARM_CONDUCTION_UNMOUNTED_LOG,
+  SwarmConductionMountError,
+  failSwarmConductionDelivery,
+} from '../swarm/conduction-mcp';
 import { buildCursorUsageSnapshot, createCursorStreamTranslator } from './stream-translator';
 import {
   beginTimelineTurn,
@@ -171,12 +179,46 @@ export async function executeCursorSdkQuery(
       isOnboarding,
       capabilities,
       turnBinding: getActiveChatTurnBinding({ sessionId, lane: lane.kind }),
+      ...(options.swarmDelivery ? { swarmDelivery: { kind: options.swarmDelivery.kind } } : {}),
     });
   } catch (error) {
+    if (options.swarmDelivery && error instanceof SwarmConductionMountError) {
+      logger.warn({ sessionId, runId: options.swarmDelivery.runId, kind: options.swarmDelivery.kind }, error.message);
+      await failSwarmConductionDelivery({ delivery: options.swarmDelivery, reason: error.message }).catch((err) =>
+        logger.warn({ err, runId: options.swarmDelivery?.runId }, 'entrega Swarm nao marcada como undeliverable'),
+      );
+    }
     emit({ type: 'error', error: error instanceof Error ? error.message : String(error) });
     lane.currentAbortController = null;
     if (lane.kind !== 'desktop') throw error;
     return;
+  }
+  if (options.swarmDelivery) {
+    const swarmToolsMounted = session.swarmConductionMounted === true;
+    logger.warn(
+      {
+        sessionId,
+        runtime: 'cursor-sdk',
+        runId: options.swarmDelivery.runId,
+        kind: options.swarmDelivery.kind,
+        swarmToolsMounted,
+      },
+      `Swarm: ${SWARM_CONDUCTION_UNGUARDED_LOG} (D8) no runtime cursor-sdk${swarmToolsMounted ? '' : SWARM_CONDUCTION_UNMOUNTED_LOG}`,
+    );
+    audit(getWindow, {
+      sessionId,
+      subagent: options.agentId,
+      eventType: 'tool_call',
+      toolName: 'swarm.consolidation',
+      input: JSON.stringify({
+        runtime: 'cursor-sdk',
+        runId: options.swarmDelivery.runId,
+        kind: options.swarmDelivery.kind,
+        revision: options.swarmDelivery.revision,
+        swarmToolsMounted,
+      }),
+      output: SWARM_CONDUCTION_UNGUARDED_LOG,
+    });
   }
 
   const timelineOrigin = resolveCliTimelineOrigin({
@@ -244,7 +286,8 @@ export async function executeCursorSdkQuery(
     basePrompt = history ? `Conversation so far:\n${history}\n\nNew user message:\n${message}` : message;
   }
   const pendingSeed = row?.pendingSeed ?? null;
-  const prompt = pendingSeed ? `${pendingSeed}\n\n${basePrompt}` : basePrompt;
+  const seededPrompt = pendingSeed ? `${pendingSeed}\n\n${basePrompt}` : basePrompt;
+  const prompt = options.swarmDelivery ? `${SWARM_CONDUCTION_READ_ONLY_NOTICE}\n\n${seededPrompt}` : seededPrompt;
   audit(getWindow, {
     sessionId,
     subagent: options.agentId,
@@ -293,7 +336,7 @@ export async function executeCursorSdkQuery(
     }
 
     let finalText = result.finalText.length > 0 ? result.finalText : (result.resultText ?? translator.assistantText());
-    if (finalText.trim()) {
+    if (finalText.trim() && !options.swarmDelivery) {
       const cleaned = extractAndProcessOnboardingData(finalText, {
         sendStream: emit,
         onAudit: ({ toolName, input, output }) =>
@@ -333,13 +376,10 @@ export async function executeCursorSdkQuery(
     const hasAssistantText = finalText.trim().length > 0;
     const hasValidToolOnlyTurn = !hasAssistantText && toolUses > 0;
     if (hasAssistantText) {
-      insertMessage(
-        sessionId,
-        'assistant',
-        finalText,
-        options.agentId,
-        artifacts.length > 0 ? JSON.stringify({ artifacts }) : undefined,
-      );
+      const metadata = artifacts.length > 0 ? JSON.stringify({ artifacts }) : undefined;
+      if (!persistSwarmResponse(options, sessionId, finalText, metadata)) {
+        insertMessage(sessionId, 'assistant', finalText, options.agentId, metadata);
+      }
       recordCompletedMainChatTurn(sessionId, getWindow);
     }
     if ((hasAssistantText || hasValidToolOnlyTurn) && pendingSeed) {

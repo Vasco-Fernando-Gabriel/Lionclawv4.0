@@ -13,6 +13,7 @@ import { googleGenAiExecutor } from './google-genai-executor';
 import type { AgentQueryConfig } from '../agent-config-resolver';
 import type { RuntimeExecutor, AgentExecutionRequest, AgentExecutionResult } from './types';
 import { builtinToolsToOllamaSchemas } from './tool-schemas';
+import { swarmRepoGraphToolSchemas } from '../swarm/repo-graph';
 import { emptyResponseExecutionError } from './llm-error';
 
 const logger = createLogger('external-executor');
@@ -53,7 +54,10 @@ async function run(req: AgentExecutionRequest, config: AgentQueryConfig): Promis
     extCfg.provider,
     extCfg.model,
   );
-  const ollamaTools = builtinToolsToOllamaSchemas(config.allowedTools);
+  const ollamaTools = [
+    ...builtinToolsToOllamaSchemas(config.allowedTools),
+    ...(req.swarmToolDispatch ? swarmRepoGraphToolSchemas(config.allowedTools) : []),
+  ];
   const startedAt = Date.now();
 
   logger.info(

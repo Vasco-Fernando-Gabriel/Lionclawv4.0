@@ -52,43 +52,6 @@ export function ChatCapabilityToggles({
   disabled = false,
   isCodexRuntime = false,
 }: ChatCapabilityTogglesProps) {
-  const [swarmProgress, setSwarmProgress] = useState<string | null>(null);
-  useEffect(() => {
-    let live = true;
-    setSwarmProgress(null);
-    const api = window.lionclaw.swarm;
-    if (!api) return;
-    const revisions = new Map<string, number>();
-    let activeRunId: string | null = null;
-    const refresh = async (runId: string) => {
-      activeRunId = runId;
-      try {
-        const run = await api.getRunState(sessionId, runId);
-        if (!live || activeRunId !== runId || 'error' in run || run.revision < (revisions.get(runId) ?? -1)) return;
-        revisions.set(runId, run.revision);
-        setSwarmProgress(
-          ['queued', 'running', 'aborting'].includes(run.status)
-            ? `${run.items.filter((item) => ['ok', 'failed', 'cancelled'].includes(item.status)).length}/${run.items.length}`
-            : null,
-        );
-      } catch {
-        /* O painel Swarm apresenta erros de consulta. */
-      }
-    };
-    const dispose = api.onStream((event) => {
-      if (event.chatSessionId === sessionId) void refresh(event.runId);
-    });
-    api
-      .listRuns(sessionId, undefined, 1)
-      .then((result) => {
-        if (live && !('error' in result) && result.runs[0] && !activeRunId) void refresh(result.runs[0].runId);
-      })
-      .catch(() => {});
-    return () => {
-      live = false;
-      dispose();
-    };
-  }, [sessionId]);
   const hydrate = useChatFeatureTogglesStore((s) => s.hydrate);
   const slot = useFeatureToggles(sessionId);
   const { toggles, loading, pending, actionError } = slot;
@@ -112,7 +75,6 @@ export function ChatCapabilityToggles({
           <ChatCapabilityChip
             key={capability}
             capability={capability}
-            progress={capability === 'swarm' ? swarmProgress : null}
             state={state}
             disabled={disabled}
             isCodexRuntime={isCodexRuntime}
@@ -130,7 +92,6 @@ export function ChatCapabilityToggles({
 }
 
 interface ChatCapabilityChipProps {
-  progress?: string | null;
   capability: ChatCapabilityKey;
   state: ChipVisualState;
   disabled: boolean;
@@ -138,14 +99,7 @@ interface ChatCapabilityChipProps {
   onToggle: () => void;
 }
 
-function ChatCapabilityChip({
-  progress,
-  capability,
-  state,
-  disabled,
-  isCodexRuntime,
-  onToggle,
-}: ChatCapabilityChipProps) {
+function ChatCapabilityChip({ capability, state, disabled, isCodexRuntime, onToggle }: ChatCapabilityChipProps) {
   const def = CHIP_DEFS[capability];
   const Icon = state === 'unavailable' ? AlertTriangle : def.icon;
   const isOn = state === 'on' || state === 'unavailable';
@@ -182,13 +136,12 @@ function ChatCapabilityChip({
       data-capability={capability}
       data-state={state}
       className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium transition-colors shrink-0 disabled:opacity-50 disabled:cursor-not-allowed ${
-        state === 'loading' || progress ? 'animate-pulse' : ''
+        state === 'loading' ? 'animate-pulse' : ''
       } ${colorClasses}`}
     >
       <Icon size={10} />
       {/* <768: icon-only + tooltip (A.8 responsivo) */}
       <span className="hidden md:inline">{def.label}</span>
-      {progress && <span>{progress}</span>}
     </button>
   );
 }

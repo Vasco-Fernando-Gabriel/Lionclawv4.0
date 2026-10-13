@@ -239,6 +239,7 @@ export function SyncAgentsModal({ open, onClose, filteredAgentIds, totalAgents, 
           phase={pickerPhase}
           error={pickerError}
           align="left"
+          placement="bottom"
           disabled={confirmState.kind === 'in-flight'}
           onOpen={loadPickerStatuses}
           onRefresh={refreshPickerStatuses}
@@ -249,6 +250,7 @@ export function SyncAgentsModal({ open, onClose, filteredAgentIds, totalAgents, 
           options={selectedModel?.reasoningOptions ?? []}
           defaultReasoning={selectedModel?.defaultReasoning ?? null}
           contextWindow={selectedModel?.contextWindow}
+          placement="bottom"
           disabled={confirmState.kind === 'in-flight'}
           onChange={handleEffortChange}
         />

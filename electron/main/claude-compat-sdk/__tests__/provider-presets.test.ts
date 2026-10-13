@@ -21,11 +21,20 @@ describe('CLAUDE_COMPAT_PRESETS', () => {
     expect(zai!.apiKeyVaultRef).toBe('orchestratorZaiApiKeyRef');
   });
 
-  it('lists the GLM models of the curated catalog (SPEC §10.3 + GLM-5.3)', () => {
+  it('lists the GLM models of the curated catalog (SPEC §10.3 + GLM-5.3 + GLM-5.3 Flash/FlashX)', () => {
     const zai = CLAUDE_COMPAT_PRESETS.find((p) => p.id === 'zai');
-    expect(zai!.models).toHaveLength(6);
+    expect(zai!.models).toHaveLength(8);
     const ids = zai!.models.map((m) => m.id);
-    expect(ids).toEqual(['glm-5.2', 'glm-5.3', 'glm-5.1', 'glm-5-turbo', 'glm-4.7', 'glm-4.5-air']);
+    expect(ids).toEqual([
+      'glm-5.2',
+      'glm-5.3',
+      'glm-5.3-flash',
+      'glm-5.3-flashx',
+      'glm-5.1',
+      'glm-5-turbo',
+      'glm-4.7',
+      'glm-4.5-air',
+    ]);
   });
 
   it('has a human-friendly displayName on every model', () => {

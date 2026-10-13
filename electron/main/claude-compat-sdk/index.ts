@@ -1,4 +1,4 @@
-import { swarmAggregationSdkOptions } from '../swarm/aggregation-policy';
+import { SWARM_MCP_SERVER_ID, swarmAggregationSdkOptions } from '../swarm/aggregation-policy';
 import { persistSwarmResponse } from '../swarm/chat-persistence';
 
 import { BrowserWindow } from 'electron';
@@ -755,7 +755,7 @@ export async function executeClaudeCompatSdkQuery(
           }
         },
         ...(!isOnboarding && mcpServers ? { mcpServers } : {}),
-        ...(options.swarmDelivery ? swarmAggregationSdkOptions() : {}),
+        ...(options.swarmDelivery ? swarmAggregationSdkOptions(mcpServers?.[SWARM_MCP_SERVER_ID]) : {}),
       },
     });
 

@@ -6,7 +6,7 @@ export const techBackend: Omit<AgentConfig, 'sortOrder'> = {
   id: TECH_BACKEND_ID,
   name: 'Tech Backend',
   description: 'Agente responsavel pelas decisoes tecnicas de Backend, servicos e API do projeto.',
-  model: 'claude-sonnet-4-6',
+  model: 'claude-sonnet-5-5',
   effort: 'high' as const,
   thinking: 'enabled' as const,
   thinkingBudget: 10000,

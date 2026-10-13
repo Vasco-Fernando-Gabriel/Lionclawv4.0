@@ -20,7 +20,7 @@ export type PersistMessageTarget =
   | {
       kind: 'chat';
       sessionId: string;
-      swarmDelivery: { runId: string; terminalRevision: number; claimId: string };
+      swarmDelivery: import('../../../src/types/swarm').SwarmDeliveryRef;
       messageKind: 'event' | 'response';
       serializedMetadata?: string;
     }

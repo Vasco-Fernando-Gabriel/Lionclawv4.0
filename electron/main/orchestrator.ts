@@ -1,4 +1,4 @@
-import { swarmAggregationSdkOptions } from './swarm/aggregation-policy';
+import { SWARM_MCP_SERVER_ID, swarmAggregationSdkOptions } from './swarm/aggregation-policy';
 import { persistSwarmResponse, releaseSwarmTurn, canBeginSwarmTurn } from './swarm/chat-persistence';
 import { BrowserWindow } from 'electron';
 import { createLogger } from './logger';
@@ -579,7 +579,7 @@ export async function buildAgentDefinitions(
 }
 
 export interface QueryOptions {
-  swarmDelivery?: { runId: string; terminalRevision: number; claimId: string };
+  swarmDelivery?: import('../../src/types/swarm').SwarmDeliveryRef;
   sessionId?: string;
   agentId?: string;
   model?: string;
@@ -775,20 +775,6 @@ export async function executeQuery(
     agentModel: options.agentId ? getAgent(options.agentId)?.model : undefined,
   });
 
-  if (options.swarmDelivery && (selection.runtime === 'grok-sdk' || selection.runtime === 'cursor-sdk')) {
-    releaseSwarmTurn(options, `SWARM-AGGREGATOR-UNSUPPORTED:${selection.runtime}`);
-    sendStream(
-      getWindow,
-      options.silent,
-      {
-        type: 'error',
-        code: 'SWARM-AGGREGATOR-UNSUPPORTED',
-        error: 'A agregação Swarm requer runtime compatível. Relatórios preservados.',
-      },
-      options.authorizationGeneration,
-    );
-    return;
-  }
   smokeAudit('turn_selection', {
     lane: lane.name,
     runtime: selection.runtime,
@@ -1401,7 +1387,7 @@ export async function executeClaudeSdkQuery(
             : { sessionId: sdkThreadId }),
         abortController: lane.currentAbortController,
         ...(!isOnboarding && mcpServers ? { mcpServers } : {}),
-        ...(options.swarmDelivery ? swarmAggregationSdkOptions() : {}),
+        ...(options.swarmDelivery ? swarmAggregationSdkOptions(mcpServers?.[SWARM_MCP_SERVER_ID]) : {}),
       },
     });
 

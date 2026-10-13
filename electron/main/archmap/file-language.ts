@@ -1,0 +1,75 @@
+const BY_EXTENSION: Record<string, string> = {
+  ts: 'typescript',
+  tsx: 'tsx',
+  mts: 'typescript',
+  cts: 'typescript',
+  js: 'javascript',
+  jsx: 'jsx',
+  mjs: 'javascript',
+  cjs: 'javascript',
+  py: 'python',
+  go: 'go',
+  rs: 'rust',
+  java: 'java',
+  kt: 'kotlin',
+  kts: 'kotlin',
+  swift: 'swift',
+  dart: 'dart',
+  rb: 'ruby',
+  php: 'php',
+  c: 'c',
+  h: 'c',
+  cc: 'cpp',
+  cpp: 'cpp',
+  cxx: 'cpp',
+  hpp: 'cpp',
+  cs: 'csharp',
+  scala: 'scala',
+  sh: 'bash',
+  bash: 'bash',
+  zsh: 'bash',
+  sql: 'sql',
+  vue: 'vue',
+  svelte: 'svelte',
+  html: 'html',
+  htm: 'html',
+  css: 'css',
+  scss: 'scss',
+  less: 'less',
+  json: 'json',
+  jsonc: 'json',
+  yml: 'yaml',
+  yaml: 'yaml',
+  toml: 'toml',
+  md: 'markdown',
+  mdx: 'markdown',
+  xml: 'xml',
+  lua: 'lua',
+  ex: 'elixir',
+  exs: 'elixir',
+  hs: 'haskell',
+  clj: 'clojure',
+  tf: 'hcl',
+  proto: 'protobuf',
+  graphql: 'graphql',
+  gql: 'graphql',
+  prisma: 'prisma',
+  zig: 'zig',
+  r: 'r',
+  jl: 'julia',
+  pl: 'perl',
+};
+
+const BY_BASENAME: Record<string, string> = {
+  dockerfile: 'docker',
+  makefile: 'makefile',
+};
+
+export function detectFileLanguage(relPath: string): string {
+  const base = relPath.slice(relPath.lastIndexOf('/') + 1).toLowerCase();
+  const byName = BY_BASENAME[base];
+  if (byName) return byName;
+  const dot = base.lastIndexOf('.');
+  if (dot < 0) return 'text';
+  return BY_EXTENSION[base.slice(dot + 1)] ?? 'text';
+}

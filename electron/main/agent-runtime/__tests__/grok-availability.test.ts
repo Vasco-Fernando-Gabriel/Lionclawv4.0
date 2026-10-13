@@ -165,7 +165,7 @@ describe('Grok availability/isolation', () => {
       onRequest: async (method) => {
         if (method === 'initialize') return { authMethods: [{ id: 'cached_token' }] };
         if (method === 'authenticate') return auth;
-        if (method === 'session/new') return { models: { currentModelId: 'grok-4.6' } };
+        if (method === 'session/new') return { models: { currentModelId: 'grok-4.7' } };
         throw new Error(`unexpected ${method}`);
       },
     });
@@ -202,7 +202,7 @@ describe('Grok availability/isolation', () => {
       onRequest: async (method) => {
         if (method === 'initialize') return { authMethods: [{ id: 'cached_token' }] };
         if (method === 'authenticate') return { authenticated: true, subscription: { active: true } };
-        if (method === 'session/new') return { models: { currentModelId: 'grok-4.6' } };
+        if (method === 'session/new') return { models: { currentModelId: 'grok-4.7' } };
         throw new Error(`unexpected ${method}`);
       },
     });
@@ -219,7 +219,7 @@ describe('Grok availability/isolation', () => {
         if (method === 'initialize') return { authMethods: [{ id: 'cached_token' }] };
         if (method === 'authenticate') return { authenticated: true, subscription: { active: true } };
         if (method === 'session/new') {
-          return { modelId: 'grok-4.6', models: { currentModelId: 'grok-internal' } };
+          return { modelId: 'grok-4.7', models: { currentModelId: 'grok-internal' } };
         }
         throw new Error(`unexpected ${method}`);
       },

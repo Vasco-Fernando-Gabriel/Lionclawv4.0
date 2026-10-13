@@ -8,7 +8,7 @@ export const dynamicWorkflowScout: Omit<AgentConfig, 'sortOrder'> = {
   name: 'Dynamic Workflow Scout',
   description:
     'Mapeia a SPEC contra o repositorio: arquivos relevantes, criterios de aceite e riscos. Read-only; sugestoes apenas estreitam o escopo manifestado, nunca ampliam.',
-  model: 'claude-sonnet-4-6',
+  model: 'claude-sonnet-5-5',
   effort: 'high' as const,
   thinking: 'enabled' as const,
   thinkingBudget: 8000,

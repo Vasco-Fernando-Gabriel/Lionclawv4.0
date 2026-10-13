@@ -99,13 +99,27 @@ export function tomlKeyForConfigPath(name: string): string | null {
   return null;
 }
 
-const FALLBACK_CONFIG_TOML = [
-  '# CODEX_HOME dedicado das sessoes de pipeline do LionClaw (B6, fallback).',
-  '# Gerado por codex-pipeline-config.ts - NAO editar a mao.',
-  '# Sem nenhum [mcp_servers.*]: frota MCP zero para agentes de fase.',
-  '# auth.json deste home e um SYMLINK para o auth real do codex.',
-  '',
-].join('\n');
+export const PIPELINE_WINDOWS_SANDBOX_MODE = 'unelevated';
+
+export function pipelineCodexHomeConfigToml(platform: NodeJS.Platform = process.platform): string {
+  const lines = [
+    '# CODEX_HOME dedicado das sessoes de pipeline do LionClaw (B6, fallback).',
+    '# Gerado por codex-pipeline-config.ts - NAO editar a mao.',
+    '# Sem nenhum [mcp_servers.*]: frota MCP zero para agentes de fase.',
+    '# auth.json deste home e um link (symlink ou hardlink) ou copia do auth real do codex.',
+  ];
+  if (platform === 'win32') {
+    lines.push(
+      '# Sandbox do Windows sem elevacao: o modo elevated exige preparo por maquina que este home nao tem',
+      '# e sem a secao o Codex recusa todo comando em read-only ("blocked by policy").',
+      '',
+      '[windows]',
+      `sandbox = "${PIPELINE_WINDOWS_SANDBOX_MODE}"`,
+    );
+  }
+  lines.push('');
+  return lines.join('\n');
+}
 
 export function getPipelineCodexHomeFallbackExtras(): CodexSpawnExtras {
   const home = getPipelineCodexHomeDir();
@@ -118,25 +132,59 @@ export function getPipelineCodexHomeFallbackExtras(): CodexSpawnExtras {
   } catch {
     currentConfig = null;
   }
-  if (currentConfig !== FALLBACK_CONFIG_TOML) {
-    fs.writeFileSync(configPath, FALLBACK_CONFIG_TOML, 'utf-8');
+  const expectedConfig = pipelineCodexHomeConfigToml();
+  if (currentConfig !== expectedConfig) {
+    fs.writeFileSync(configPath, expectedConfig, 'utf-8');
   }
 
-  const realAuthPath = path.join(resolveCodexHome(), 'auth.json');
-  const linkPath = path.join(home, 'auth.json');
-  let needsLink = true;
-  try {
-    const stat = fs.lstatSync(linkPath);
-    if (stat.isSymbolicLink() && fs.readlinkSync(linkPath) === realAuthPath) {
-      needsLink = false;
-    } else {
-      logger.warn({ linkPath }, 'auth.json do home dedicado nao e symlink para o auth real; recriando symlink');
-      fs.unlinkSync(linkPath);
-    }
-  } catch {}
-  if (needsLink) {
-    fs.symlinkSync(realAuthPath, linkPath);
-  }
+  ensurePipelineAuthLink(path.join(resolveCodexHome(), 'auth.json'), path.join(home, 'auth.json'));
 
   return { args: [], env: { ...process.env, CODEX_HOME: home } };
+}
+
+export type PipelineAuthLinkKind = 'symlink' | 'hardlink' | 'copy';
+
+function sameInode(a: fs.Stats, b: fs.Stats): boolean {
+  return a.ino !== 0 && a.ino === b.ino && a.dev === b.dev;
+}
+
+export function ensurePipelineAuthLink(realAuthPath: string, linkPath: string): PipelineAuthLinkKind {
+  let existing: fs.Stats | null = null;
+  try {
+    existing = fs.lstatSync(linkPath);
+  } catch {
+    existing = null;
+  }
+  if (existing) {
+    if (existing.isSymbolicLink()) {
+      if (fs.readlinkSync(linkPath) === realAuthPath) return 'symlink';
+      logger.warn({ linkPath }, 'auth.json do home dedicado aponta para outro alvo; recriando');
+      fs.unlinkSync(linkPath);
+    } else if (existing.isFile()) {
+      const real = fs.statSync(realAuthPath);
+      if (sameInode(existing, real)) return 'hardlink';
+      if (existing.mtimeMs >= real.mtimeMs && existing.size === real.size) return 'copy';
+      logger.info({ linkPath }, 'auth.json copiado do home dedicado esta desatualizado; recopiando do auth real');
+      fs.unlinkSync(linkPath);
+    } else {
+      fs.rmSync(linkPath, { recursive: true, force: true });
+    }
+  }
+  try {
+    fs.symlinkSync(realAuthPath, linkPath);
+    return 'symlink';
+  } catch (symlinkError) {
+    logger.warn(
+      { err: symlinkError, linkPath },
+      'symlink do auth.json indisponivel (Windows sem modo desenvolvedor?); tentando hardlink',
+    );
+  }
+  try {
+    fs.linkSync(realAuthPath, linkPath);
+    return 'hardlink';
+  } catch (linkError) {
+    logger.warn({ err: linkError, linkPath }, 'hardlink do auth.json indisponivel; copiando o arquivo');
+  }
+  fs.copyFileSync(realAuthPath, linkPath);
+  return 'copy';
 }

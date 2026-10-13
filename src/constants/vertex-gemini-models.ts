@@ -38,6 +38,27 @@ export const VERTEX_MODEL_CATALOG: VertexModelEntry[] = [
     outputCap: 65536,
   },
   {
+    id: 'gemini-3.8-flash',
+    displayName: 'Gemini 3.8 Flash',
+    stage: 'Current',
+    contextWindow: 1048576,
+    outputCap: 65536,
+  },
+  {
+    id: 'gemini-3.6-flash',
+    displayName: 'Gemini 3.6 Flash',
+    stage: 'Current',
+    contextWindow: 1048576,
+    outputCap: 65536,
+  },
+  {
+    id: 'gemini-3.5-flash-lite',
+    displayName: 'Gemini 3.5 Flash-Lite',
+    stage: 'Current',
+    contextWindow: 1048576,
+    outputCap: 65536,
+  },
+  {
     id: 'gemini-3.1-flash-lite',
     displayName: 'Gemini 3.1 Flash-Lite',
     stage: 'Current',

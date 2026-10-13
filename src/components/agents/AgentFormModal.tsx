@@ -14,6 +14,13 @@ import type {
 import { PROVIDER_PRESETS, MODEL_CATALOG } from '@/lib/provider-presets';
 import type { CatalogedModel } from '@/lib/provider-presets';
 import { AGENT_CATEGORIES, CANONICAL_CATEGORY_VALUES, normalizeCategory } from '@/lib/agent-categories';
+import {
+  REPO_GRAPH_MARK,
+  isRepoGraphMark,
+  repoGraphMarkOf,
+  userMcpServersWithoutMarks,
+  withRepoGraphMark,
+} from '@/lib/swarm-repo-graph-mark';
 import { ApiKeyStatusIndicator } from './ApiKeyStatusIndicator';
 import type { ApiKeyStatus } from './ApiKeyStatusIndicator';
 import { ContextWindowDisplay } from './ContextWindowDisplay';
@@ -141,7 +148,7 @@ export function AgentFormModal({ mode, agent, existingSquads = [], onSave, onClo
   const [thinkingBudget, setThinkingBudget] = useState<string>(agent?.thinkingBudget?.toString() || '');
 
   const [cloudModel, setCloudModel] = useState<string>(
-    agent?.runtime === 'cloud' ? agent?.model || 'claude-sonnet-4-6' : 'claude-sonnet-4-6', // gate-allow: default do picker de agent.model (cloud), DADO por agente (SPEC 4.6)
+    agent?.runtime === 'cloud' ? agent?.model || 'claude-sonnet-5-5' : 'claude-sonnet-5-5', // gate-allow: default do picker de agent.model (cloud), DADO por agente (SPEC 4.6)
   );
   const [maxTurns, setMaxTurns] = useState<string>(agent?.maxTurns?.toString() || '');
 
@@ -567,11 +574,16 @@ export function AgentFormModal({ mode, agent, existingSquads = [], onSave, onClo
   };
 
   const toggleMCP = (id: string) => {
+    if (id === REPO_GRAPH_MARK && squad === 'swarm') {
+      setMcpServers(new Set(withRepoGraphMark(Array.from(mcpServers), !mcpServers.has(REPO_GRAPH_MARK))));
+      return;
+    }
     const next = new Set(mcpServers);
     if (next.has(id)) next.delete(id);
     else next.add(id);
     setMcpServers(next);
   };
+  const userMcpCount = userMcpServersWithoutMarks(Array.from(mcpServers)).length;
 
   const toggleSkill = (skillName: string) => {
     const next = new Set(skills);
@@ -707,7 +719,10 @@ export function AgentFormModal({ mode, agent, existingSquads = [], onSave, onClo
                       : cloudModel,
         allowedTools:
           runtime === 'local' && localMode === 'simple' ? [] : runtime === 'codex' ? [] : Array.from(allowedTools),
-        mcpServers: runtime === 'local' || runtime === 'codex' ? [] : Array.from(mcpServers),
+        mcpServers:
+          runtime === 'local' || runtime === 'codex'
+            ? Array.from(mcpServers).filter(isRepoGraphMark)
+            : Array.from(mcpServers),
         isActive: agent?.isActive ?? true,
         effort,
         thinking,
@@ -1859,8 +1874,15 @@ export function AgentFormModal({ mode, agent, existingSquads = [], onSave, onClo
             </div>
           )}
 
+          {(runtime === 'codex' || runtime === 'local') && squad === 'swarm' && (
+            <p data-testid="swarm-repo-graph-mark" className="text-xs text-zinc-500">
+              repo-graph (swarm): {repoGraphMarkOf(Array.from(mcpServers)) === 'off' ? 'desmarcado' : 'marcado'} - a
+              marca fica salva neste runtime; a run usa o repo-graph quando o cwd esta num repositorio registrado.
+            </p>
+          )}
+
           {/* Skills/KB warning for Codex */}
-          {runtime === 'codex' && (skills.size > 0 || mcpServers.size > 0) && (
+          {runtime === 'codex' && (skills.size > 0 || userMcpCount > 0) && (
             <div className="flex items-start gap-2 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
               <AlertTriangle size={14} className="text-yellow-400 mt-0.5 shrink-0" />
               <p className="text-xs text-yellow-400">

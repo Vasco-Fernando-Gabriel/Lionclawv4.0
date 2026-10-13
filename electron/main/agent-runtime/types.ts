@@ -56,12 +56,15 @@ export interface AgentExecutionRequest {
     onTimeout: (reason: 'timeout-idle' | 'timeout-hard') => void;
   };
   swarmToolDispatch?: (name: string, input: Record<string, unknown>) => Promise<{ result: string; isError: boolean }>;
+  codexConfigOverrides?: readonly string[];
   agentId: string;
   prompt: string;
   cwd: string;
   abortController: AbortController;
   permission: AgentPermissionProfile;
   continueSession?: boolean;
+  resumeSessionId?: string;
+  sessionScope?: { runId: string; slug: string; generation: number };
   priorMessages?: OllamaChatMessage[];
   systemPromptTransform?: (resolved: string) => string;
   onText?: (chunk: string) => void;
@@ -69,6 +72,7 @@ export interface AgentExecutionRequest {
   onToolUse?: (tool: string) => void;
   onToolUseComplete?: (tool: string, input: unknown) => void;
   onActivity?: () => void;
+  onUsage?: (usage: { inputTokens: number; outputTokens: number }) => void;
   onStalled?: (info: { lastChunkAt: number; secondsSinceLastChunk: number }) => void;
   codexSession?: CodexSession;
   onCodexSessionCreated?: (session: CodexSession) => void;

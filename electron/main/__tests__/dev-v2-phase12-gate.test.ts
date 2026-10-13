@@ -98,7 +98,6 @@ vi.mock('../pipeline-paths', () => ({
   findConsolidatedSecurityReport: vi.fn(),
 }));
 vi.mock('../pipeline-report', () => ({ generatePipelineReport: vi.fn(), exportPipelineReport: vi.fn() }));
-vi.mock('../pipeline-metrics-report', () => ({}));
 
 import { PipelineEngine } from '../pipeline-engine';
 import { HarnessEngine } from '../harness-engine';

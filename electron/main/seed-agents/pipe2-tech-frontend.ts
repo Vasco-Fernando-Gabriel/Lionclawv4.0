@@ -7,7 +7,7 @@ export const pipe2TechFrontend: Omit<AgentConfig, 'sortOrder'> = {
   name: 'Pipe2 Frontend Tecnico',
   description:
     'Decisoes tecnicas de Frontend no pipeline development-v2, considerando o design lock e artifact HTML. Traduz o design travado para arquitetura frontend sem redesenhar o produto.',
-  model: 'claude-sonnet-4-6',
+  model: 'claude-sonnet-5-5',
   effort: 'high' as const,
   thinking: 'enabled' as const,
   thinkingBudget: 8000,

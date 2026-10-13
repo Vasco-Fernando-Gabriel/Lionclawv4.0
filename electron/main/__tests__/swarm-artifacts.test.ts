@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { SwarmArtifacts, parseSwarmTrailer } from '../swarm/artifacts';
+import { SwarmArtifacts, normalizeFindingsFormat, parseSwarmTrailer } from '../swarm/artifacts';
 import { normalizedItems, parseSwarmInput, validateSwarmSettings } from '../swarm/validation';
 import { DEFAULT_SWARM_SETTINGS, type SwarmRun } from '../../../src/types/swarm';
 
@@ -53,6 +53,15 @@ describe('Swarm artifacts and admission', () => {
     expect(fs.readFileSync(target, 'utf8')).toBe('preservar');
     expect(() => store.attemptPath(runId, '../escape', 'attempt-1')).toThrow();
   });
+  it('real case (Codex): trailer glued to the previous message on the same line is accepted', () => {
+    const glued =
+      'Analise concluida. Vou finalizar a entrega pelo MCP.---\nSTATUS: ok\nSUMMARY: 55 afirmacoes.\nFINDINGS: audit.md';
+    expect(parseSwarmTrailer(glued, 'audit')).toEqual({ status: 'ok', summary: '55 afirmacoes.', question: null });
+    const withEarlierRule = 'Tabela\n---\ncorpo\nFim.---\nSTATUS: ok\nSUMMARY: s\nFINDINGS: audit.md';
+    expect(parseSwarmTrailer(withEarlierRule, 'audit').status).toBe('ok');
+    expect(() => parseSwarmTrailer('corpo sem trailer. ---', 'audit')).toThrow(/Trailer/);
+  });
+
   it('does not call a malformed or missing report successful', () => {
     expect(() => store.validateFindings(runId, 'audit', 'attempt-1')).toThrow(/ausente/);
     store.writeAttempt(runId, 'audit', 'attempt-1', '# Incompleto');
@@ -60,7 +69,16 @@ describe('Swarm artifacts and admission', () => {
     expect(() => parseSwarmTrailer('---\nSTATUS: ok\nSUMMARY: ok\nFINDINGS: ../other.md', 'audit')).toThrow();
     expect(
       parseSwarmTrailer('body\r\n---\r\nSTATUS: failed\r\nSUMMARY: ambíguo\r\nFINDINGS: audit.md\r\n', 'audit'),
-    ).toEqual({ status: 'failed', summary: 'ambíguo' });
+    ).toEqual({ status: 'failed', summary: 'ambíguo', question: null });
+    expect(
+      parseSwarmTrailer(
+        '---\nSTATUS: needs-input\nQUESTION: Qual branch?\nSUMMARY: preciso do alvo\nFINDINGS: audit.md',
+        'audit',
+      ),
+    ).toEqual({ status: 'needs-input', summary: 'preciso do alvo', question: 'Qual branch?' });
+    expect(() =>
+      parseSwarmTrailer('---\nSTATUS: needs-input\nSUMMARY: sem pergunta\nFINDINGS: audit.md', 'audit'),
+    ).toThrow(/QUESTION/);
   });
   it('validates strict schemas, cwd, limits, templates and input paths', () => {
     const input = {
@@ -70,14 +88,14 @@ describe('Swarm artifacts and admission', () => {
       mode: 'fanout',
       promptTemplate: '{{item}}',
       member,
-      items: [{ target: '.' }],
+      items: [{ target: 'runs' }],
     };
     expect(parseSwarmInput(input, [root]).cwd).toBe(fs.realpathSync(root));
     expect(() => parseSwarmInput({ ...input, unknown: true }, [root])).toThrow(/inválido/);
     expect(() => parseSwarmInput({ ...input, promptTemplate: 'sem placeholder' }, [root])).toThrow();
     expect(() => parseSwarmInput({ ...input, items: [] }, [root])).toThrow();
     expect(() =>
-      parseSwarmInput({ ...input, items: Array.from({ length: 101 }, () => ({ target: '.' })) }, [root]),
+      parseSwarmInput({ ...input, items: Array.from({ length: 101 }, () => ({ target: 'runs' })) }, [root]),
     ).toThrow();
     expect(() => parseSwarmInput({ ...input, knownContext: 'x'.repeat(64 * 1024) }, [root])).toThrow(/64 KiB/);
     expect(() => parseSwarmInput({ ...input, cwd: os.tmpdir() }, [root])).toThrow(/fora/);
@@ -98,15 +116,20 @@ describe('Swarm artifacts and admission', () => {
       mode: 'comite',
       cwd: root,
       objective: 'Auditar',
+      parentRunId: null,
+      stage: null,
       status: 'queued',
       createdAt: '2026-09-13T12:00:00Z',
       startedAt: null,
       finishedAt: null,
+      openedAt: null,
+      deliveredSignatures: null,
+      deliveryError: null,
       settings: { ...DEFAULT_SWARM_SETTINGS },
       items: [
         {
           slug: 'audit',
-          target: '.',
+          target: 'runs',
           prompt: 'Audite',
           member,
           runtime: 'cloud',
@@ -116,6 +139,16 @@ describe('Swarm artifacts and admission', () => {
           currentAttemptId: null,
           nextAttemptAt: null,
           attempts: [],
+          executions: [],
+          generation: 1,
+          autoRetries: 0,
+          question: null,
+          session: null,
+          sessionLostReason: null,
+          repoGraph: 'off',
+          targetWarning: null,
+          inbox: [],
+          launch: null,
           findingsFile: null,
           summary: null,
           lastSignalAt: null,
@@ -175,6 +208,15 @@ describe('Swarm artifacts and admission', () => {
     store.writeAttempt(runId, 'audit', 'attempt-1', emptyInfo);
     expect(() => store.validateFindings(runId, 'audit', 'attempt-1')).toThrow('INFO');
   });
+  it('real case: field labels without accents or with different case are accepted', () => {
+    const content =
+      '# Auditoria\n## Resumo\nUm achado.\n## Achados\n### [MEDIA] Rotulo sem acento\n- **Evidencia:** src/a.ts:1\n- **por que importa:** Impacto.\n- **RECOMENDACAO**: Corrigir.\n## Fora de escopo / não verificado\nNada.';
+    store.writeAttempt(runId, 'audit', 'attempt-1', content);
+    expect(store.validateFindings(runId, 'audit', 'attempt-1').content).toBe(content);
+    const emptyEvidence = content.replace('- **Evidencia:** src/a.ts:1', '- **Evidencia:**');
+    store.writeAttempt(runId, 'audit', 'attempt-1', emptyEvidence);
+    expect(() => store.validateFindings(runId, 'audit', 'attempt-1')).toThrow('Evidência');
+  });
   it('requires evidence, impact and recommendation for each finding', () => {
     const content =
       '# Auditoria\n## Resumo\nDois achados.\n## Achados\n### [ALTA] Falha\n- **Evidência:** src/auth.ts:12\n- **Por que importa:** Acesso indevido.\n- **Recomendação:** Validar a sessão.\n## Fora de escopo / não verificado\nRuntime não executado.';
@@ -196,12 +238,113 @@ describe('Swarm artifacts and admission', () => {
         cwd: root,
         objective: 'auditar',
         mode: 'comite',
-        target: '.',
+        target: 'runs',
         members: ['../../', 'A', 'a', ''].map((slug) => ({ slug, objective: 'analisar', member })),
       },
       [root],
     );
     const slugs = normalizedItems(input).map((i) => i.slug);
     expect(slugs).toEqual(['item-01', 'a', 'a-2', 'item-04']);
+  });
+});
+describe('Swarm report format tolerance', () => {
+  const fields = '- **Evidência:** src/a.ts:1\n- **Por que importa:** Impacto.\n- **Recomendação:** Corrigir.\n';
+  it('accepts every severity heading variant and publishes the canonical ### [NIVEL] form', () => {
+    const variants: Array<[string, string]> = [
+      ['### [ALTA] Credencial exposta', '### [ALTA] Credencial exposta'],
+      ['### ALTA Credencial exposta', '### [ALTA] Credencial exposta'],
+      ['### [alta] Credencial exposta', '### [ALTA] Credencial exposta'],
+      ['### Alta: Credencial exposta', '### [ALTA] Credencial exposta'],
+      ['###  média - Validação de sessão', '### [MEDIA] Validação de sessão'],
+      ['### [Baixa]: Configuração ambígua', '### [BAIXA] Configuração ambígua'],
+    ];
+    for (const [heading, canonical] of variants) {
+      const content = `# Auditoria\n## Resumo\nUm achado.\n## Achados\n${heading}\n${fields}## Fora de escopo / não verificado\nNada.\n`;
+      store.writeAttempt(runId, 'audit', 'attempt-1', content);
+      const validated = store.validateFindings(runId, 'audit', 'attempt-1');
+      expect(validated.content).toContain(`\n${canonical}\n`);
+      if (heading !== canonical) expect(validated.content).not.toContain(`\n${heading}\n`);
+      store.publish(runId, 'audit', 'attempt-1', validated.sha256);
+      expect(store.read(`${runId}/audit.md`)).toBe(validated.content);
+      expect(store.read(`${runId}/_attempts/audit/attempt-1/findings.md`)).toBe(content);
+    }
+    const info = `# Auditoria\n## Resumo\nOk.\n## Achados\n### info Observação com acentuação\n- Nota.\n## Fora de escopo / não verificado\nNada.\n`;
+    store.writeAttempt(runId, 'audit', 'attempt-1', info);
+    expect(store.validateFindings(runId, 'audit', 'attempt-1').content).toContain(
+      '### [INFO] Observação com acentuação',
+    );
+  });
+  it('accepts section headings with one to three hashes, trailing colon and no accent', () => {
+    const content = `# Auditoria\n# Resumo\nOk.\n### Achados:\nNenhum achado.\n## Fora de escopo / nao verificado:\nNada.\n`;
+    store.writeAttempt(runId, 'audit', 'attempt-1', content);
+    expect(store.validateFindings(runId, 'audit', 'attempt-1').content).toBe(
+      `# Auditoria\n## Resumo\nOk.\n## Achados\nNenhum achado.\n## Fora de escopo / não verificado\nNada.\n`,
+    );
+    expect(normalizeFindingsFormat('## Tabela\n### [ALTA] fora dos achados\n')).toBe(
+      '## Tabela\n### [ALTA] fora dos achados\n',
+    );
+  });
+  it('real case: INFO findings written without brackets under a free table section are accepted and normalized', () => {
+    const content = [
+      '# Conversas paralelas: README vs código',
+      '',
+      '## Resumo',
+      'Todas as afirmações conferem; três notas de nomenclatura.',
+      '',
+      '## Tabela de veredito',
+      '',
+      '### Seção "Novidades" — README.md:81',
+      '| Afirmação | Veredito |',
+      '',
+      '## Achados',
+      '',
+      '### INFO Estados de UI do changelog são subconjunto dos estados reais',
+      '- Evidência: store.ts:10',
+      '',
+      '### INFO "Volta para ela depois de um Clear" = rebind para a conversa nova',
+      '- Evidência: page.tsx:20',
+      '',
+      '## Fora de escopo / não verificado',
+      'Não executei o app.',
+      '',
+    ].join('\n');
+    store.writeAttempt(runId, 'audit', 'attempt-1', content);
+    const validated = store.validateFindings(runId, 'audit', 'attempt-1');
+    expect(validated.content).toContain('### [INFO] Estados de UI do changelog são subconjunto dos estados reais');
+    expect(validated.content).toContain('### [INFO] "Volta para ela depois de um Clear" = rebind para a conversa nova');
+    expect(validated.content).toContain('### Seção "Novidades" — README.md:81');
+    const still = `# Auditoria\n## Resumo\nOk.\n## Achados\nTudo certo, nada a reportar aqui.\n## Fora de escopo / não verificado\nNada.\n`;
+    store.writeAttempt(runId, 'audit', 'attempt-1', still);
+    expect(() => store.validateFindings(runId, 'audit', 'attempt-1')).toThrow(/Declare os achados/);
+  });
+  it('real case: trailer with an empty QUESTION line, surrounding spaces and blank lines is accepted', () => {
+    expect(
+      parseSwarmTrailer(
+        'corpo final.\n\n---\nSTATUS: ok\nQUESTION:\nSUMMARY: 18 afirmacoes validadas: 16 conferem, 2 divergem\nFINDINGS: audit.md',
+        'audit',
+      ),
+    ).toEqual({ status: 'ok', summary: '18 afirmacoes validadas: 16 conferem, 2 divergem', question: null });
+    expect(
+      parseSwarmTrailer('--- \n  STATUS :  ok  \n\nSUMMARY:   resumo  \n\n  FINDINGS: audit.md  \n\n', 'audit'),
+    ).toEqual({ status: 'ok', summary: 'resumo', question: null });
+    expect(
+      parseSwarmTrailer(
+        '---\nSTATUS: needs-input\nSUMMARY: falta o alvo\nQUESTION: Qual branch?\nFINDINGS: audit.md',
+        'audit',
+      ),
+    ).toEqual({ status: 'needs-input', summary: 'falta o alvo', question: 'Qual branch?' });
+    expect(() =>
+      parseSwarmTrailer('---\nSTATUS: needs-input\nQUESTION:\nSUMMARY: falta o alvo\nFINDINGS: audit.md', 'audit'),
+    ).toThrow(/QUESTION/);
+    expect(() => parseSwarmTrailer('---\nSTATUS: ok\nSUMMARY: ok\nNOTA: x\nFINDINGS: audit.md', 'audit')).toThrow(
+      /Trailer/,
+    );
+    expect(() =>
+      parseSwarmTrailer('---\nSTATUS: ok\nSTATUS: failed\nSUMMARY: ok\nFINDINGS: audit.md', 'audit'),
+    ).toThrow(/Trailer/);
+    expect(() => parseSwarmTrailer('---\nSTATUS: ok\nSUMMARY:\nFINDINGS: audit.md', 'audit')).toThrow(/Trailer/);
+    expect(() => parseSwarmTrailer('---\nSTATUS: ok\nSUMMARY: ok\nFINDINGS: audit.md\ntexto depois', 'audit')).toThrow(
+      /Trailer/,
+    );
   });
 });

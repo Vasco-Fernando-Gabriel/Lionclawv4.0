@@ -228,7 +228,6 @@ vi.mock('../pipeline-paths', () => ({
   resolvePrdPath: vi.fn(() => null),
 }));
 vi.mock('../pipeline-report', () => ({ generatePipelineReport: vi.fn(), exportPipelineReport: vi.fn() }));
-vi.mock('../pipeline-metrics-report', () => ({}));
 vi.mock('../architecture-review-paths', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../architecture-review-paths')>();
   return { ...actual, getArchitectureReviewContext: () => null };

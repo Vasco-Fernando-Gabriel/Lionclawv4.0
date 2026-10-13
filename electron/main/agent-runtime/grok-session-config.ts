@@ -38,6 +38,8 @@ export interface BuildGrokSessionToolsArgs {
 export interface GrokSessionTools {
   externalTools: GrokExternalTool[];
   systemPrompt: string;
+  catalogServerIds: string[];
+  catalogToolNames: string[];
 }
 
 export interface GrokNativeToolPolicy {
@@ -346,6 +348,8 @@ export function stripUnmaterializedGrokTools(prompt: string, materializedNames: 
 export async function buildGrokSessionTools(args: BuildGrokSessionToolsArgs): Promise<GrokSessionTools> {
   let tools: GrokExternalTool[] = [];
   let index = '';
+  let catalogServerIds: string[] = [];
+  let catalogToolNames: string[] = [];
   const mcpScope: GrokMcpInvocationScope = args.turnBinding
     ? {
         sessionId: args.turnBinding.sessionId,
@@ -366,6 +370,8 @@ export async function buildGrokSessionTools(args: BuildGrokSessionToolsArgs): Pr
       const indexed = await buildIndexTools(mcpScope, catalog.tools, true);
       tools = [...hostTools, ...indexed.tools];
       index = `\n\n## Servidores MCP (indice)\n\n${indexed.index}`;
+      catalogServerIds = Object.keys(catalog.specs);
+      catalogToolNames = catalog.tools.map((tool) => tool.fullName);
       break;
     }
     case 'remote-chat': {
@@ -404,6 +410,8 @@ export async function buildGrokSessionTools(args: BuildGrokSessionToolsArgs): Pr
   return {
     externalTools: tools,
     systemPrompt: `${prompt}\n\n${steering}`.trim(),
+    catalogServerIds,
+    catalogToolNames,
   };
 }
 

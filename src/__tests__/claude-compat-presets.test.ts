@@ -19,7 +19,7 @@ describe('CLAUDE_COMPAT_PRESETS — SPEC-004 Sprint 1', () => {
 
   it('registers all five MiniMax Token Plan models with the first being MiniMax-M2.7', () => {
     const minimax = CLAUDE_COMPAT_PRESETS.find((p) => p.id === 'minimax');
-    expect(minimax?.models.length).toBe(5);
+    expect(minimax?.models.length).toBe(6);
     expect(minimax?.models[0].id).toBe('MiniMax-M2.7');
     expect(minimax?.models.some((m) => m.id === 'MiniMax-M3')).toBe(true);
   });

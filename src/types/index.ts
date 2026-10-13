@@ -576,6 +576,7 @@ export interface MCPServerConfig {
   envKeys: string[];
   isActive: boolean;
   status?: 'running' | 'stopped' | 'error';
+  error?: string;
   visibleTo?: 'all' | 'codex-lion-only';
   indexMode?: 'tools' | 'server';
 }
@@ -903,6 +904,16 @@ export interface AppSettings {
   dreamingTurnBasedInterval?: number;
   dreamingTurnBasedModel?: string;
 
+  jevShadowEnabled?: boolean;
+  jevModel?: string;
+  jevFileToolsEnabled?: boolean;
+  jevFileToolsRoots?: string[];
+  archmapEnabled?: boolean;
+  archmapMaxParallelRepos?: number;
+  archmapBatchParallelism?: number;
+  archmapJevTriageEnabled?: boolean;
+  archmapJevKeepThreshold?: number;
+
   subagentsPromptMode?: 'index' | 'full';
 
   mcpPromptMode?: 'index' | 'full';
@@ -922,6 +933,20 @@ export interface AppSettings {
 export interface SettingsUpdateResult {
   success?: boolean;
   error?: string;
+}
+
+export interface JevFileToolsStats {
+  calls: number;
+  files: number;
+  charsRead: number;
+  costUsd: number;
+  estimatedTokensAvoided: number;
+  lastAt: string | null;
+}
+
+export interface JevFileToolsRoots {
+  manual: string[];
+  projects: string[];
 }
 
 export interface LogFilters {
@@ -1386,6 +1411,11 @@ export interface LionClawAPI {
       },
       value: string,
     ) => Promise<{ ok: true } | { error: string }>;
+  };
+  jev: {
+    check: () => Promise<{ ok: boolean; model?: string; latencyMs?: number; error?: string }>;
+    fileToolsStats: () => Promise<JevFileToolsStats>;
+    fileToolsRoots: () => Promise<JevFileToolsRoots>;
   };
   higgsfield: {
     authStatus: () => Promise<{

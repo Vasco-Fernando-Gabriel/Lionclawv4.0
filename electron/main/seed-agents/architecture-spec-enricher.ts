@@ -10,7 +10,7 @@ export const architectureSpecEnricher: Omit<AgentConfig, 'sortOrder'> = {
   name: 'Architecture Spec Enricher',
   description:
     'Fase 7 do pipeline architecture-review: enriquece a SPEC arquitetural com edge cases, contratos, riscos, testes e criterios tecnicos usando os artefatos do run.',
-  model: 'claude-sonnet-4-6',
+  model: 'claude-sonnet-5-5',
   effort: 'high' as const,
   thinking: 'enabled' as const,
   thinkingBudget: 8000,

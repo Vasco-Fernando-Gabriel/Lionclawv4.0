@@ -8,7 +8,7 @@ export const dynamicWorkflowCoderCodex: Omit<AgentConfig, 'sortOrder'> = {
   name: 'Dynamic Workflow Coder (Codex/GPT)',
   description:
     'Writer do workflow dinamico em runtime Codex (GPT): implementa a SPEC dentro do writeSet do node, no workspace isolado do run. Continuation-aware; git de escrita e do host.',
-  model: 'gpt-6-sol',
+  model: 'gpt-6.1-sol',
   effort: 'high' as const,
   thinking: 'adaptive' as const,
   maxTurns: 150,
@@ -19,7 +19,7 @@ export const dynamicWorkflowCoderCodex: Omit<AgentConfig, 'sortOrder'> = {
   skills: [],
   runtime: 'codex' as const,
   codexConfig: {
-    model: 'gpt-6-sol',
+    model: 'gpt-6.1-sol',
     sandbox: 'workspace-write',
     reasoningEffort: 'medium',
   },

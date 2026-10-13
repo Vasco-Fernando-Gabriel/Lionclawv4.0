@@ -7,7 +7,7 @@ export const pipe2SpecEnricher: Omit<AgentConfig, 'sortOrder'> = {
   name: 'Pipe2 Spec Enricher',
   description:
     'Enriquece a SPEC do pipeline development-v2 com edge cases, UI states e paths alternativos considerando o design lock. Nao cria novas telas, menus ou fluxos fora do design lock.',
-  model: 'claude-sonnet-4-6',
+  model: 'claude-sonnet-5-5',
   effort: 'high' as const,
   thinking: 'enabled' as const,
   thinkingBudget: 8000,

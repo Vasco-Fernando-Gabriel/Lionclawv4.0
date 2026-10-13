@@ -1,0 +1,592 @@
+import { useEffect, useState, useMemo, lazy, Suspense } from "react";
+import { validateGraph } from "../core/schema";
+import type { GraphIssue } from "../core/schema";
+import { useDashboardStore } from "./store";
+import GraphView from "./components/GraphView";
+import SearchBar from "./components/SearchBar";
+import NodeInfo from "./components/NodeInfo";
+import LayerLegend from "./components/LayerLegend";
+import DiffToggle from "./components/DiffToggle";
+import FilterPanel from "./components/FilterPanel";
+import ProjectOverview from "./components/ProjectOverview";
+import FileExplorer from "./components/FileExplorer";
+import WarningBanner from "./components/WarningBanner";
+import StalenessBanner from "./components/StalenessBanner";
+import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
+import type { KeyboardShortcut } from "./hooks/useKeyboardShortcuts";
+import { ThemeProvider } from "./themes/index";
+import { ThemePicker } from "./components/ThemePicker";
+import type { ThemeConfig } from "./themes/index";
+import { I18nProvider, useI18n } from "./contexts/I18nContext";
+import {
+  requestFreshnessReport,
+  startFreshnessRefresh,
+  type DashboardFreshnessReport,
+} from "./freshness";
+import { getBridge } from "./bridge";
+
+const CodeViewer = lazy(() => import("./components/CodeViewer"));
+const LearnPanel = lazy(() => import("./components/LearnPanel"));
+const PathFinderModal = lazy(() => import("./components/PathFinderModal"));
+const KeyboardShortcutsHelp = lazy(
+  () => import("./components/KeyboardShortcutsHelp"),
+);
+
+type SidebarTab = "info" | "files";
+
+type LoadError = { kind: "invalid" | "failed"; detail: string };
+
+function App() {
+  return <Dashboard />;
+}
+
+function Dashboard() {
+  const setGraph = useDashboardStore((s) => s.setGraph);
+  const setDomainGraph = useDashboardStore((s) => s.setDomainGraph);
+  const setDiffOverlay = useDashboardStore((s) => s.setDiffOverlay);
+  const [loadError, setLoadError] = useState<LoadError | null>(null);
+  const [graphIssues, setGraphIssues] = useState<GraphIssue[]>([]);
+  const [graphFreshness, setGraphFreshness] =
+    useState<DashboardFreshnessReport | null>(null);
+  const [metaTheme, setMetaTheme] = useState<ThemeConfig | null>(null);
+  const [outputLanguage, setOutputLanguage] = useState<string | undefined>();
+  const [projectName, setProjectName] = useState<string | undefined>();
+
+  useEffect(() => {
+    const bridge = getBridge();
+    return bridge.onInit((init) => {
+      setProjectName(init.projectName || undefined);
+      setOutputLanguage(init.outputLanguage || undefined);
+    });
+  }, []);
+
+  useEffect(() => {
+    const bridge = getBridge();
+    bridge
+      .fetch("meta")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((meta: unknown) => {
+        if (
+          meta &&
+          typeof meta === "object" &&
+          "theme" in meta &&
+          (meta as { theme?: unknown }).theme
+        ) {
+          setMetaTheme((meta as { theme: ThemeConfig }).theme);
+        }
+      })
+      .catch(() => {});
+    bridge
+      .fetch("config")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((config: unknown) => {
+        if (
+          config &&
+          typeof config === "object" &&
+          typeof (config as { outputLanguage?: unknown }).outputLanguage === "string"
+        ) {
+          setOutputLanguage((config as { outputLanguage: string }).outputLanguage);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    getBridge()
+      .fetch("graph")
+      .then(async (res) => {
+        if (!res.ok) {
+          let detail = `HTTP ${res.status}`;
+          try {
+            const body = (await res.json()) as { error?: unknown } | null;
+            if (body && typeof body === "object" && typeof body.error === "string") {
+              detail = body.error;
+            }
+          } catch {
+          }
+          throw new Error(detail);
+        }
+        return res.json();
+      })
+      .then((data: unknown) => {
+        const result = validateGraph(data);
+        if (result.success && result.data) {
+          setGraph(result.data);
+          setGraphIssues(result.issues);
+          for (const issue of result.issues) {
+            if (issue.level === "auto-corrected") {
+              console.warn(`[graph] auto-corrected: ${issue.message}`);
+            } else if (issue.level === "dropped") {
+              console.error(`[graph] dropped: ${issue.message}`);
+            }
+          }
+        } else if (result.fatal) {
+          console.error("Knowledge graph validation failed:", result.fatal);
+          setLoadError({ kind: "invalid", detail: result.fatal });
+        } else {
+          console.error("Knowledge graph validation failed: unknown error");
+          setLoadError({ kind: "invalid", detail: "" });
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to load knowledge graph:", err);
+        setLoadError({ kind: "failed", detail: err instanceof Error ? err.message : String(err) });
+      });
+  }, [setGraph]);
+
+  useEffect(() => {
+    const bridge = getBridge();
+    return startFreshnessRefresh({
+      target: window,
+      load: (signal) => requestFreshnessReport(bridge, signal),
+      onResult: setGraphFreshness,
+    });
+  }, []);
+
+  useEffect(() => {
+    getBridge()
+      .fetch("diff-overlay")
+      .then((res) => {
+        if (!res.ok) return null;
+        return res.json();
+      })
+      .then((data: unknown) => {
+        if (
+          data &&
+          typeof data === "object" &&
+          "changedNodeIds" in data &&
+          "affectedNodeIds" in data &&
+          Array.isArray((data as Record<string, unknown>).changedNodeIds) &&
+          Array.isArray((data as Record<string, unknown>).affectedNodeIds)
+        ) {
+          const d = data as { changedNodeIds: string[]; affectedNodeIds: string[] };
+          if (d.changedNodeIds.length > 0) {
+            setDiffOverlay(d.changedNodeIds, d.affectedNodeIds);
+          }
+        }
+      })
+      .catch(() => {});
+  }, [setDiffOverlay]);
+
+  useEffect(() => {
+    getBridge()
+      .fetch("domain-graph")
+      .then((res) => {
+        if (!res.ok) return null;
+        return res.json();
+      })
+      .then((data: unknown) => {
+        if (!data) return;
+        const result = validateGraph(data);
+        if (result.success && result.data) {
+          setDomainGraph(result.data);
+        } else if (result.fatal) {
+          console.warn(`[domain-graph] validation failed: ${result.fatal}`);
+        }
+      })
+      .catch(() => {});
+  }, [setDomainGraph]);
+
+  return (
+    <I18nProvider language={outputLanguage ?? "pt-BR"}>
+      <ThemeProvider metaTheme={metaTheme} className="h-full w-full relative overflow-hidden">
+        <DashboardContent
+          loadError={loadError}
+          graphIssues={graphIssues}
+          graphFreshness={graphFreshness}
+          projectName={projectName}
+        />
+      </ThemeProvider>
+    </I18nProvider>
+  );
+}
+
+function DashboardContent({
+  loadError,
+  graphIssues,
+  graphFreshness,
+  projectName,
+}: {
+  loadError: LoadError | null;
+  graphIssues: GraphIssue[];
+  graphFreshness: DashboardFreshnessReport | null;
+  projectName?: string;
+}) {
+  const graph = useDashboardStore((s) => s.graph);
+  const selectedNodeId = useDashboardStore((s) => s.selectedNodeId);
+  const tourActive = useDashboardStore((s) => s.tourActive);
+  const persona = useDashboardStore((s) => s.persona);
+  const codeViewerOpen = useDashboardStore((s) => s.codeViewerOpen);
+  const codeViewerExpanded = useDashboardStore((s) => s.codeViewerExpanded);
+  const expandCodeViewer = useDashboardStore((s) => s.expandCodeViewer);
+  const collapseCodeViewer = useDashboardStore((s) => s.collapseCodeViewer);
+  const pathFinderOpen = useDashboardStore((s) => s.pathFinderOpen);
+  const togglePathFinder = useDashboardStore((s) => s.togglePathFinder);
+  const nodeTypeFilters = useDashboardStore((s) => s.nodeTypeFilters);
+  const toggleNodeTypeFilter = useDashboardStore((s) => s.toggleNodeTypeFilter);
+  const detailLevel = useDashboardStore((s) => s.detailLevel);
+  const setDetailLevel = useDashboardStore((s) => s.setDetailLevel);
+  const showFunctionsInClassView = useDashboardStore((s) => s.showFunctionsInClassView);
+  const toggleShowFunctionsInClassView = useDashboardStore((s) => s.toggleShowFunctionsInClassView);
+  const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
+  const [sidebarTab, setSidebarTab] = useState<SidebarTab>("info");
+  const layoutIssues = useDashboardStore((s) => s.layoutIssues);
+  const { t } = useI18n();
+  const allIssues = useMemo(
+    () => [...graphIssues, ...layoutIssues],
+    [graphIssues, layoutIssues],
+  );
+
+  useEffect(() => {
+    if (selectedNodeId) setSidebarTab("info");
+  }, [selectedNodeId]);
+
+  const shortcuts = useMemo<KeyboardShortcut[]>(
+    () => [
+      {
+        key: "?",
+        shiftKey: true,
+        description: t.keyboardShortcuts.showHelp,
+        action: () => setShowKeyboardHelp((prev) => !prev),
+        category: "General",
+      },
+      {
+        key: "Escape",
+        description: t.keyboardShortcuts.escapeDesc,
+        action: () => {
+          const state = useDashboardStore.getState();
+          if (state.pathFinderOpen) {
+            state.togglePathFinder();
+          } else if (state.filterPanelOpen) {
+            state.toggleFilterPanel();
+          } else if (state.codeViewerExpanded) {
+            state.collapseCodeViewer();
+          } else if (state.codeViewerOpen) {
+            state.closeCodeViewer();
+          } else if (state.selectedNodeId) {
+            state.selectNode(null);
+          } else if (state.navigationLevel === "layer-detail") {
+            state.navigateToOverview();
+          } else if (state.tourActive) {
+            state.stopTour();
+          } else {
+            setShowKeyboardHelp(false);
+          }
+        },
+        category: "Navigation",
+      },
+      {
+        key: "/",
+        description: t.keyboardShortcuts.focusSearch,
+        action: () => {
+          const searchInput = document.querySelector<HTMLInputElement>(
+            '[data-testid="search-input"]'
+          );
+          searchInput?.focus();
+        },
+        category: "Navigation",
+      },
+      {
+        key: "ArrowRight",
+        description: t.keyboardShortcuts.nextStep,
+        action: () => {
+          const state = useDashboardStore.getState();
+          if (state.tourActive) {
+            state.nextTourStep();
+          }
+        },
+        category: "Tour",
+      },
+      {
+        key: "ArrowLeft",
+        description: t.keyboardShortcuts.prevStep,
+        action: () => {
+          const state = useDashboardStore.getState();
+          if (state.tourActive) {
+            state.prevTourStep();
+          }
+        },
+        category: "Tour",
+      },
+      {
+        key: "d",
+        description: t.keyboardShortcuts.toggleDiff,
+        action: () => {
+          const state = useDashboardStore.getState();
+          state.toggleDiffMode();
+        },
+        category: "View",
+      },
+      {
+        key: "f",
+        description: t.keyboardShortcuts.toggleFilter,
+        action: () => {
+          const state = useDashboardStore.getState();
+          state.toggleFilterPanel();
+        },
+        category: "View",
+      },
+      {
+        key: "p",
+        description: t.keyboardShortcuts.openPathFinder,
+        action: () => {
+          const state = useDashboardStore.getState();
+          state.togglePathFinder();
+        },
+        category: "View",
+      },
+    ],
+    [t]
+  );
+
+  useKeyboardShortcuts(shortcuts);
+
+  const isLearnMode = tourActive || persona === "junior";
+  const infoSidebarContent = (
+    <>
+      {selectedNodeId && <NodeInfo />}
+      {isLearnMode && (
+        <Suspense fallback={null}>
+          <LearnPanel />
+        </Suspense>
+      )}
+      {!selectedNodeId && !isLearnMode && <ProjectOverview />}
+    </>
+  );
+
+  const sidebarContent = (
+    <div className="h-full flex flex-col min-h-0">
+      <div className="flex items-center gap-1 p-2 border-b border-border-subtle bg-surface shrink-0">
+        {(["info", "files"] as const).map((tab) => (
+          <button
+            key={tab}
+            type="button"
+            onClick={() => setSidebarTab(tab)}
+            className={`flex-1 px-3 py-1.5 rounded-md text-xs font-semibold uppercase tracking-wider transition-colors ${
+              sidebarTab === tab
+                ? "bg-accent/15 text-accent"
+                : "text-text-muted hover:text-text-primary hover:bg-elevated"
+            }`}
+          >
+            {tab === "info" ? t.sidebar.info : t.sidebar.files}
+          </button>
+        ))}
+      </div>
+      <div className="flex-1 min-h-0 overflow-auto">
+        {sidebarTab === "files" ? <FileExplorer /> : infoSidebarContent}
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="h-full w-full flex flex-col bg-root text-text-primary noise-overlay">
+      <header className="flex items-center px-3 sm:px-5 py-3 bg-surface border-b border-border-subtle shrink-0 gap-2 sm:gap-4">
+        <div className="flex items-center gap-3 sm:gap-5 shrink-0 min-w-0">
+          <h1 className="font-heading text-base sm:text-lg text-text-primary tracking-wide truncate max-w-[160px] sm:max-w-[220px] lg:max-w-none">
+            {graph?.project.name ?? projectName ?? t.common.appName}
+          </h1>
+        </div>
+
+        <div className="flex-1 min-w-0 overflow-x-auto scrollbar-hide">
+          <div className="flex items-center gap-4 w-max">
+            <DiffToggle />
+            {(
+              <>
+                <div className="w-px h-5 bg-border-subtle" />
+                <div className="flex items-center bg-elevated rounded-lg p-0.5">
+                  <button
+                    type="button"
+                    onClick={() => setDetailLevel("file")}
+                    title={t.detailLevel.filesTitle}
+                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                      detailLevel === "file"
+                        ? "bg-accent/20 text-accent"
+                        : "text-text-muted hover:text-text-secondary"
+                    }`}
+                  >
+                    {t.detailLevel.files}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDetailLevel("class")}
+                    title={t.detailLevel.classesTitle}
+                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                      detailLevel === "class"
+                        ? "bg-accent/20 text-accent"
+                        : "text-text-muted hover:text-text-secondary"
+                    }`}
+                  >
+                    {t.detailLevel.classes}
+                  </button>
+                </div>
+                {detailLevel === "class" && (
+                  <button
+                    type="button"
+                    onClick={toggleShowFunctionsInClassView}
+                    title={t.detailLevel.fnTitle}
+                    className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-1 rounded border transition-colors ${
+                      showFunctionsInClassView
+                        ? "border-amber-500/50 bg-amber-500/10 text-amber-400"
+                        : "border-border-medium bg-elevated text-text-muted hover:text-text-secondary"
+                    }`}
+                  >
+                    {t.detailLevel.fn}
+                  </button>
+                )}
+              </>
+            )}
+            <div className="flex items-center gap-1">
+              {([
+                { key: "code" as const, label: t.nodeTypeLabels.code, color: "var(--color-node-file)" },
+                { key: "config" as const, label: t.nodeTypeLabels.config, color: "var(--color-node-config)" },
+                { key: "docs" as const, label: t.nodeTypeLabels.docs, color: "var(--color-node-document)" },
+                { key: "infra" as const, label: t.nodeTypeLabels.infra, color: "var(--color-node-service)" },
+                { key: "data" as const, label: t.nodeTypeLabels.data, color: "var(--color-node-table)" },
+                { key: "domain" as const, label: t.nodeTypeLabels.domain, color: "var(--color-node-concept)" },
+                { key: "knowledge" as const, label: t.nodeTypeLabels.knowledge, color: "var(--color-node-article)" },
+              ]).map((cat) => (
+                <button
+                  key={cat.key}
+                  onClick={() => toggleNodeTypeFilter(cat.key)}
+                  className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-1 rounded border transition-colors flex items-center gap-1.5 whitespace-nowrap ${
+                    nodeTypeFilters[cat.key] !== false
+                      ? "border-border-medium bg-elevated text-text-secondary hover:text-text-primary"
+                      : "border-transparent bg-transparent text-text-muted/40 line-through hover:text-text-muted"
+                  }`}
+                  title={`${nodeTypeFilters[cat.key] !== false ? t.nodeTypeFilter.hide : t.nodeTypeFilter.show} ${cat.label} ${t.nodeTypeFilter.nodesLabel}`}
+                >
+                  <span
+                    className="w-2 h-2 rounded-full shrink-0"
+                    style={{
+                      backgroundColor: cat.color,
+                      opacity: nodeTypeFilters[cat.key] !== false ? 1 : 0.3,
+                    }}
+                  />
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+            <LayerLegend />
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+          <FilterPanel />
+          <button
+            onClick={togglePathFinder}
+            className="flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg text-sm bg-elevated text-text-secondary hover:text-text-primary transition-colors"
+            title={t.pathFinder.title}
+          >
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
+              />
+            </svg>
+            <span className="hidden md:inline">{t.common.path}</span>
+          </button>
+          <ThemePicker />
+          <button
+            onClick={() => setShowKeyboardHelp(true)}
+            className="text-text-muted hover:text-accent transition-colors"
+            title={t.keyboardShortcuts.showHelp}
+          >
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <SearchBar />
+
+      {!loadError && <StalenessBanner freshness={graphFreshness} />}
+
+      {allIssues.length > 0 && !loadError && (
+        <WarningBanner issues={allIssues} />
+      )}
+
+      {loadError && (
+        <div className="px-5 py-3 bg-red-900/30 border-b border-red-700 text-red-200 text-sm">
+          {loadError.kind === "invalid"
+            ? `${t.errors.invalidGraph}: ${loadError.detail || t.errors.unknownValidation}`
+            : `${t.errors.loadFailed}: ${loadError.detail}`}
+        </div>
+      )}
+
+      <div className="flex-1 flex min-h-0 relative">
+        <div className="flex-1 min-w-0 min-h-0 relative">
+          <GraphView />
+          <div className="absolute top-3 right-3 text-sm text-text-muted/60 pointer-events-none select-none">
+            {t.common.pressKeyboard}
+          </div>
+        </div>
+
+        <aside className="w-[260px] md:w-[300px] lg:w-[360px] shrink-0 bg-surface border-l border-border-subtle overflow-auto">
+          {sidebarContent}
+        </aside>
+
+        {codeViewerOpen && !codeViewerExpanded && (
+          <div className="absolute bottom-0 left-0 right-0 h-[40vh] bg-surface border-t border-border-subtle animate-slide-up z-20 overflow-hidden">
+            <Suspense fallback={null}>
+              <CodeViewer onExpand={expandCodeViewer} />
+            </Suspense>
+          </div>
+        )}
+      </div>
+
+      {codeViewerOpen && codeViewerExpanded && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 backdrop-blur-sm p-4 sm:p-6"
+          onMouseDown={collapseCodeViewer}
+        >
+          <div
+            className="w-[calc(100vw-32px)] max-w-[1120px] h-[calc(100vh-32px)] sm:h-[calc(100vh-48px)] max-h-[820px] rounded-lg border border-border-medium bg-surface shadow-2xl overflow-hidden"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <Suspense fallback={null}>
+              <CodeViewer
+                presentation="modal"
+                onClose={collapseCodeViewer}
+              />
+            </Suspense>
+          </div>
+        </div>
+      )}
+
+      {showKeyboardHelp && (
+        <Suspense fallback={null}>
+          <KeyboardShortcutsHelp
+            shortcuts={shortcuts}
+            onClose={() => setShowKeyboardHelp(false)}
+          />
+        </Suspense>
+      )}
+
+      {pathFinderOpen && (
+        <Suspense fallback={null}>
+          <PathFinderModal isOpen={pathFinderOpen} onClose={togglePathFinder} />
+        </Suspense>
+      )}
+    </div>
+  );
+}
+
+export default App;

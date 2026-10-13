@@ -10,7 +10,7 @@ export const securitySpecValidator: Omit<AgentConfig, 'sortOrder'> = {
   name: 'Security Spec Validator',
   description:
     'Fase 6 do pipeline security: valida a SPEC de correcoes contra o relatorio de auditoria de seguranca consolidado (NAO um PRD). Cada finding deve virar uma feature na SPEC com criterios de aceite e passos de implementacao.',
-  model: 'claude-sonnet-4-6',
+  model: 'claude-sonnet-5-5',
   effort: 'high' as const,
   thinking: 'enabled' as const,
   thinkingBudget: 12000,

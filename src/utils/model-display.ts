@@ -1,9 +1,12 @@
 const ANTHROPIC_ALIASES: Record<string, string> = {
   'claude-fable-5-1': 'fable',
   'claude-fable-5': 'fable',
+  'claude-sonnet-5-5': 'sonnet',
+  'claude-sonnet-5': 'sonnet',
   'claude-sonnet-4-6': 'sonnet',
   'claude-sonnet-4-5': 'sonnet',
   'claude-sonnet-4': 'sonnet',
+  'claude-haiku-5-5': 'haiku',
   'claude-haiku-4-5-20251001': 'haiku',
   'claude-haiku-4-5': 'haiku',
   'claude-haiku-4': 'haiku',
@@ -24,6 +27,9 @@ const GEMINI_ALIASES: Record<string, string> = {
   'gemini-3.1-pro-preview-customtools': 'Gemini 3.1 Pro',
   'gemini-3-pro-preview': 'Gemini 3 Pro',
   'gemini-3-flash-preview': 'Gemini 3 Flash',
+  'gemini-3.8-flash': 'Gemini 3.8 Flash',
+  'gemini-3.6-flash': 'Gemini 3.6 Flash',
+  'gemini-3.5-flash-lite': 'Gemini 3.5 Flash-Lite',
   'gemini-3.1-flash-lite': 'Gemini 3.1 Flash-Lite',
   'gemini-2.5-pro': 'Gemini 2.5 Pro',
   'gemini-2.5-flash': 'Gemini 2.5 Flash',
@@ -35,11 +41,13 @@ const GEMINI_ALIASES: Record<string, string> = {
 const GROK_ALIASES: Record<string, string> = {
   'grok-4.5': 'Grok 4.5',
   'grok-4.6': 'Grok 4.6',
+  'grok-4.7': 'Grok 4.7',
 };
 
 const CURSOR_ALIASES: Record<string, string> = {
   'composer-2.5': 'Composer 2.5',
   'gemini-3.7-flash': 'Gemini 3.7 Flash',
+  'gemini-3.8-flash': 'Gemini 3.8 Flash',
 };
 
 export function shortenModel(model: string | null | undefined): string {
@@ -79,7 +87,10 @@ const EXTERNAL_DISPLAY: Record<string, { name: string; ctx: string }> = {
   'anthropic/claude-sonnet-4-6': { name: 'Sonnet 4.6', ctx: '200k' },
   'anthropic/claude-haiku-4-5': { name: 'Haiku 4.5', ctx: '200k' },
   'anthropic/claude-opus-5-5': { name: 'Opus 5.5', ctx: '1M' },
+  'anthropic/claude-sonnet-5.5': { name: 'Sonnet 5.5', ctx: '1M' },
+  'anthropic/claude-haiku-5.5': { name: 'Haiku 5.5', ctx: '1M' },
   'anthropic/claude-opus-5': { name: 'Opus 5', ctx: '1M' },
+  'openai/gpt-6.1-sol': { name: 'GPT-6.1 Sol', ctx: '1M' },
   'openai/gpt-6-sol': { name: 'GPT-6 Sol', ctx: '1M' },
   'openai/gpt-6-luna': { name: 'GPT-6 Luna', ctx: '1M' },
   'anthropic/claude-opus-4-8': { name: 'Opus 4.8', ctx: '1M' },

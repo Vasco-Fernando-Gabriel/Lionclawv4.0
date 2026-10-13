@@ -37,7 +37,10 @@ const memberSchema = {
       additionalProperties: false,
       properties: {
         kind: { type: 'string', const: 'ephemeral' },
-        runtime: { type: 'string', enum: ['cloud', 'codex', 'zai', 'minimax-tp', 'kimi', 'local', 'external'] },
+        runtime: {
+          type: 'string',
+          enum: ['cloud', 'codex', 'zai', 'minimax-tp', 'kimi', 'grok', 'cursor', 'local', 'external'],
+        },
         model: { type: 'string' },
         rolePrompt: { type: 'string' },
         allowedTools: { type: 'array', items: { type: 'string' } },

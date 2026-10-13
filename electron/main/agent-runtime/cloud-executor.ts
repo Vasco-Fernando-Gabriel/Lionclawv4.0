@@ -32,6 +32,7 @@ interface CloudCostInput {
   cacheCreationTokens: number;
   totalCostUsd?: number;
   modelUsage?: ClaudeModelUsage;
+  resumedSession?: boolean;
 }
 
 export interface CloudCostResult {
@@ -42,6 +43,20 @@ export interface CloudCostResult {
 }
 
 export function reconcileCloudCost(input: CloudCostInput): CloudCostResult {
+  if (input.resumedSession) {
+    const attemptCost = calculateCost(
+      input.model,
+      input.inputTokens,
+      input.outputTokens,
+      input.cacheReadTokens,
+      input.cacheCreationTokens,
+    );
+    return {
+      costUsd: Math.round(attemptCost * 1_000_000) / 1_000_000,
+      costSource: 'calculated',
+      ...(input.totalCostUsd && input.totalCostUsd > 0 ? { sdkReportedCostUsd: input.totalCostUsd } : {}),
+    };
+  }
   const sdkModelUsageCost = input.modelUsage
     ? Object.values(input.modelUsage).reduce((sum, usage) => sum + usage.costUSD, 0)
     : undefined;
@@ -109,6 +124,7 @@ export function buildClaudeQueryOptions(
   const suppressThinking = modelLower.startsWith('claude-fable-');
 
   const isOpus5 = modelLower.startsWith('claude-opus-5');
+  const isClaude5Family = /^claude-(opus|sonnet|haiku)-5(-|$)/.test(modelLower);
   const thinkingAlwaysOn = modelLower.startsWith('claude-opus-5-5');
   const resolvedEffort = req.inheritedEffort !== undefined ? req.inheritedEffort.claude : config.effort;
 
@@ -128,7 +144,7 @@ export function buildClaudeQueryOptions(
     includePartialMessages: true,
     abortController: childAbort,
     env: sanitizeSubprocessEnv(),
-    ...(req.continueSession ? { continue: true as const } : {}),
+    ...(req.resumeSessionId ? { resume: req.resumeSessionId } : req.continueSession ? { continue: true as const } : {}),
     ...(config.maxTurns !== undefined ? { maxTurns: config.maxTurns } : {}),
     ...(req.inheritedEffort !== undefined
       ? { effort: req.inheritedEffort.claude }
@@ -141,7 +157,9 @@ export function buildClaudeQueryOptions(
         ? {
             thinking: {
               type: 'enabled' as const,
-              ...(config.thinkingBudget !== undefined && !isOpus5 ? { budgetTokens: config.thinkingBudget } : {}),
+              ...(config.thinkingBudget !== undefined && !isClaude5Family
+                ? { budgetTokens: config.thinkingBudget }
+                : {}),
             },
           }
         : config.thinking === 'disabled'
@@ -203,12 +221,28 @@ async function run(req: AgentExecutionRequest, config: AgentQueryConfig): Promis
   let resultError: Awaited<ReturnType<typeof processAgentStream>>['resultError'];
 
   try {
+    const live = { input: 0, output: 0, current: 0 };
+    const emitUsage = (): void => req.onUsage?.({ inputTokens: live.input, outputTokens: live.output + live.current });
     const result = await processAgentStream(withRuntimeActivity(q, req.onActivity), {
       shouldAbort: () => childAbort.signal.aborted,
       onText: req.onText,
       onThinking: req.onThinking,
       onToolUse: req.onToolUse,
       onToolUseComplete: req.onToolUseComplete,
+      ...(req.onUsage
+        ? {
+            onMessageStart: (usage) => {
+              live.input += usage.inputBase + usage.cacheRead + usage.cacheCreation;
+              live.output += live.current;
+              live.current = 0;
+              emitUsage();
+            },
+            onMessageDelta: (outputTokens) => {
+              live.current = Math.max(live.current, outputTokens);
+              emitUsage();
+            },
+          }
+        : {}),
     });
     output = result.output;
     streamMetrics = result.metrics;
@@ -233,6 +267,7 @@ async function run(req: AgentExecutionRequest, config: AgentQueryConfig): Promis
     cacheCreationTokens: streamMetrics.cacheCreationTokens,
     totalCostUsd,
     modelUsage,
+    resumedSession: Boolean(req.resumeSessionId || req.continueSession),
   });
   if (reconciledCost.reconciliationRelativeDelta !== undefined) {
     logger.warn(

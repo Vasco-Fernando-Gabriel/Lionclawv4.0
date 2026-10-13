@@ -7,7 +7,7 @@ export const featTechSecurity: Omit<AgentConfig, 'sortOrder'> = {
   name: 'Feature Tech Security',
   description:
     'Analisa auth, middlewares de seguranca e RLS existentes no repo, propoe ajustes coerentes com o modelo atual. Salva decisoes na secao Security do PRD.md.',
-  model: 'claude-sonnet-4-6',
+  model: 'claude-sonnet-5-5',
   effort: 'high' as const,
   thinking: 'adaptive' as const,
   maxTurns: 80,

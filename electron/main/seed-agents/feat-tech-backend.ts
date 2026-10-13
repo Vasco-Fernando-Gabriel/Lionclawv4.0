@@ -7,7 +7,7 @@ export const featTechBackend: Omit<AgentConfig, 'sortOrder'> = {
   name: 'Feature Tech Backend',
   description:
     'Analisa rotas, controllers e services existentes no repo, propoe novos endpoints/services coerentes com a arquitetura atual. Salva decisoes na secao Backend do PRD.md.',
-  model: 'claude-sonnet-4-6',
+  model: 'claude-sonnet-5-5',
   effort: 'high' as const,
   thinking: 'adaptive' as const,
   maxTurns: 80,

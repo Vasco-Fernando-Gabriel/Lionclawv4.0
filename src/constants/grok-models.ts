@@ -10,6 +10,13 @@ export interface GrokModelOption {
 
 export const GROK_MODELS: readonly GrokModelOption[] = [
   {
+    slug: 'grok-4.7',
+    label: 'Grok 4.7',
+    description: 'Flagship (Set/2026), default do Grok Build por assinatura via CLI oficial',
+    contextWindow: 500_000,
+    efforts: ['low', 'medium', 'high'],
+  },
+  {
     slug: 'grok-4.6',
     label: 'Grok 4.6',
     description: 'Flagship (Ago/2026), motor atual do Grok Build por assinatura via CLI oficial',
@@ -25,7 +32,7 @@ export const GROK_MODELS: readonly GrokModelOption[] = [
   },
 ];
 
-export const GROK_DEFAULT_MODEL = 'grok-4.6';
+export const GROK_DEFAULT_MODEL = 'grok-4.7';
 export const GROK_DEFAULT_EFFORT: GrokReasoningEffort = 'high';
 
 export function grokEffortsForModel(model: string): readonly GrokReasoningEffort[] {

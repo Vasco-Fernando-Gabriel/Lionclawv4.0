@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { Suspense, lazy, useEffect, useRef } from 'react';
 import { Sidebar } from '@/components/common/Sidebar';
 import { useAppStore } from '@/stores/app-store';
 import { useAuthStore } from '@/stores/auth-store';
@@ -23,6 +23,7 @@ import HarnessPage from '@/pages/HarnessPage';
 import PipelinePage from '@/pages/PipelinePage';
 import { DynamicWorkflowPage } from '@/pages/DynamicWorkflowPage';
 import RepositoriesPage from '@/pages/RepositoriesPage';
+const ArchmapPage = lazy(() => import('@/pages/ArchmapPage'));
 import { ConfirmDialog } from '@/components/chat/ConfirmDialog';
 import { AskQuestionDialog } from '@/components/chat/AskQuestionDialog';
 import { useMcpDistStaleStore } from '@/stores/mcp-dist-stale-store';
@@ -240,6 +241,16 @@ function LionClawApp() {
         return <DynamicWorkflowPage />;
       case 'repositories':
         return <RepositoriesPage />;
+      case 'archmap':
+        return (
+          <Suspense
+            fallback={
+              <div className="flex-1 flex items-center justify-center text-sm text-zinc-500">Carregando o mapa...</div>
+            }
+          >
+            <ArchmapPage />
+          </Suspense>
+        );
       default:
         return <ChatPage />;
     }

@@ -8,7 +8,7 @@ export const dynamicWorkflowFixer: Omit<AgentConfig, 'sortOrder'> = {
   name: 'Dynamic Workflow Fixer',
   description:
     'Writer do fix loop do workflow dinamico: julga findings contra a SPEC, aplica os procedentes e rejeita o resto, dentro do writeSet do node. Continuation-aware.',
-  model: 'claude-sonnet-4-6',
+  model: 'claude-sonnet-5-5',
   effort: 'high' as const,
   thinking: 'adaptive' as const,
   maxTurns: 150,

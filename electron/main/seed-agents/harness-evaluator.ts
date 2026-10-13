@@ -8,7 +8,7 @@ export const harnessEvaluator: Omit<AgentConfig, 'sortOrder'> = {
   name: 'Harness Evaluator',
   description:
     'Avalia entregas do Harness Coder contra criterios de aceite. Cetico, objetivo e anti-alucinacao. Nunca inventa criterios novos.',
-  model: 'claude-sonnet-4-6',
+  model: 'claude-sonnet-5-5',
   effort: 'high' as const,
   thinking: 'disabled' as const,
   maxTurns: 80,

@@ -15,18 +15,20 @@ import { mapReasoningParams } from '../agent-runtime/external-http';
 import { dynamicWorkflowCoderCodex } from '../seed-agents/dynamic-workflow-coder-codex';
 
 describe('GPT-6 Sol e Luna — catalogo Codex', () => {
-  it('gpt-6-sol e gpt-6-luna estao em CODEX_MODELS; Sol antes de Astra; nao existe gpt-6-terra', () => {
+  it('gpt-6-sol e gpt-6-luna estao em CODEX_MODELS logo depois do gpt-6.1-sol; Sol antes de Astra; nao existe gpt-6-terra', () => {
     const slugs = CODEX_MODELS.map((m) => m.slug);
-    expect(slugs.indexOf('gpt-6-sol')).toBe(0);
-    expect(slugs.indexOf('gpt-6-astra')).toBe(1);
-    expect(slugs.indexOf('gpt-6-luna')).toBe(2);
+    expect(slugs.indexOf('gpt-6.1-sol')).toBe(0);
+    expect(slugs.indexOf('gpt-6-sol')).toBe(1);
+    expect(slugs.indexOf('gpt-6-astra')).toBe(2);
+    expect(slugs.indexOf('gpt-6-luna')).toBe(3);
     expect(slugs).not.toContain('gpt-6-terra');
   });
 
-  it('gpt-6-sol e o CODEX_DEFAULT_MODEL e o modelo do seed coder-codex', () => {
-    expect(CODEX_DEFAULT_MODEL).toBe('gpt-6-sol');
-    expect(dynamicWorkflowCoderCodex.model).toBe('gpt-6-sol');
-    expect(dynamicWorkflowCoderCodex.codexConfig?.model).toBe('gpt-6-sol');
+  it('gpt-6.1-sol e o CODEX_DEFAULT_MODEL e o modelo do seed coder-codex (gpt-6-sol virou geracao anterior)', () => {
+    expect(CODEX_DEFAULT_MODEL).toBe('gpt-6.1-sol');
+    expect(dynamicWorkflowCoderCodex.model).toBe('gpt-6.1-sol');
+    expect(dynamicWorkflowCoderCodex.codexConfig?.model).toBe('gpt-6.1-sol');
+    expect(CODEX_MODELS.find((m) => m.slug === 'gpt-6-sol')?.description).toBe('GPT-6 agentic, geracao anterior');
   });
 
   it('efforts: Sol ate ultra, Luna ate max; ambos exigem o driver oficial', () => {
@@ -69,10 +71,10 @@ describe('GPT-6 Sol e Luna — pricing e janela', () => {
 });
 
 describe('GPT-6 Sol e Luna — runtime external (OpenAI direto e OpenRouter)', () => {
-  it('catalogo OpenAI lista os dois e o default do preset e gpt-6-sol', () => {
+  it('catalogo OpenAI lista os dois logo depois do gpt-6.1-sol e o default do preset e gpt-6.1-sol', () => {
     const ids = MODEL_CATALOG.openai.map((m) => m.id);
-    expect(ids.slice(0, 2)).toEqual(['gpt-6-sol', 'gpt-6-luna']);
-    expect(PROVIDER_PRESETS.openai.defaultModel).toBe('gpt-6-sol');
+    expect(ids.slice(0, 3)).toEqual(['gpt-6.1-sol', 'gpt-6-sol', 'gpt-6-luna']);
+    expect(PROVIDER_PRESETS.openai.defaultModel).toBe('gpt-6.1-sol');
   });
 
   it('catalogo OpenRouter lista openai/gpt-6-sol e openai/gpt-6-luna com pricingKey or:', () => {

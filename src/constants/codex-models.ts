@@ -7,20 +7,22 @@ export interface CodexModelOption {
 }
 
 export const CODEX_MODELS: CodexModelOption[] = [
-  { slug: 'gpt-6-sol', label: 'GPT-6-Sol', description: 'GPT-6 agentic, custo 5x menor que Astra (recomendado)' },
+  {
+    slug: 'gpt-6.1-sol',
+    label: 'GPT-6.1-Sol',
+    description: 'Sucessor do GPT-6 Sol: mesmo preco, cache 2x mais barato (recomendado)',
+  },
+  { slug: 'gpt-6-sol', label: 'GPT-6-Sol', description: 'GPT-6 agentic, geracao anterior' },
   { slug: 'gpt-6-astra', label: 'GPT-6-Astra', description: 'Frontier GPT-6, maximo de capacidade' },
   { slug: 'gpt-6-luna', label: 'GPT-6-Luna', description: 'GPT-6 rapido e barato' },
   { slug: 'gpt-5.6-sol', label: 'GPT-5.6-Sol', description: 'Frontier agentic da geracao 5.6' },
   { slug: 'gpt-5.6-terra', label: 'GPT-5.6-Terra', description: 'Equilibrado, ~5.5 pela metade do preco' },
   { slug: 'gpt-5.6-luna', label: 'GPT-5.6-Luna', description: 'Rapido e barato' },
-  { slug: 'gpt-5.5', label: 'GPT-5.5', description: 'Codex-tuned; sai do Codex em 14/10/2026' },
-  { slug: 'gpt-5.4', label: 'GPT-5.4', description: 'Generalista frontier' },
-  { slug: 'gpt-5.4-mini', label: 'GPT-5.4-Mini', description: 'Mais barato e rapido' },
-  { slug: 'gpt-5.3-codex', label: 'GPT-5.3-Codex', description: 'Variante codex-tuned (legado)' },
-  { slug: 'gpt-5.2', label: 'GPT-5.2', description: 'Anterior, generalista' },
+  { slug: 'gpt-5.3-codex', label: 'GPT-5.3-Codex', description: 'Variante codex-tuned (deprecado no Codex)' },
+  { slug: 'gpt-5.2', label: 'GPT-5.2', description: 'Anterior, generalista (deprecado no Codex)' },
 ];
 
-export const CODEX_DEFAULT_MODEL = 'gpt-6-sol';
+export const CODEX_DEFAULT_MODEL = 'gpt-6.1-sol';
 
 export const CODEX_SANDBOX_OPTIONS = ['workspace-write', 'read-only', 'danger-full-access'] as const;
 
@@ -45,6 +47,7 @@ export const CODEX_CHAT_EFFORTS_FULL: readonly CodexChatReasoningEffort[] = [
 ];
 
 const STATIC_MODEL_EFFORTS: Record<string, readonly CodexChatReasoningEffort[]> = {
+  'gpt-6.1-sol': CODEX_CHAT_EFFORTS_FULL,
   'gpt-6-astra': CODEX_CHAT_EFFORTS_FULL,
   'gpt-6-sol': CODEX_CHAT_EFFORTS_FULL,
   'gpt-6-luna': CODEX_CHAT_EFFORTS_WITH_MAX,
@@ -77,7 +80,7 @@ export function codexModelSupportsXhigh(model: string): boolean {
 
 export function codexModelRequiresOfficial(model: string): boolean {
   const slug = (model || '').trim().toLowerCase();
-  return slug === 'gpt-5.6' || slug.startsWith('gpt-5.6-') || slug === 'gpt-6' || slug.startsWith('gpt-6-');
+  return /^gpt-(5\.6|6(\.\d+)?)(-|$)/.test(slug);
 }
 
 export function codexEffortRequiresOfficial(effort: CodexChatReasoningEffort | undefined): boolean {

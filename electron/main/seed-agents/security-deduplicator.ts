@@ -7,7 +7,7 @@ export const securityDeduplicator: Omit<AgentConfig, 'sortOrder'> = {
   id: SECURITY_DEDUPLICATOR_ID,
   name: 'Deduplicador',
   description: 'Remove findings duplicados entre agentes, mantem o mais completo. Gera sumario executivo.',
-  model: 'claude-sonnet-4-6',
+  model: 'claude-sonnet-5-5',
   effort: 'medium' as const,
   thinking: 'enabled' as const,
   thinkingBudget: 6000,

@@ -41,7 +41,7 @@ const mockedGetSessionOrchestrator = vi.mocked(getSessionOrchestrator);
 const DEFAULT_SETTINGS: Record<string, string> = {
   orchestrator_runtime: 'codex-sdk',
   orchestrator_provider: 'codex',
-  orchestrator_model: 'gpt-5.5',
+  orchestrator_model: 'gpt-6.1-sol',
   orchestrator_codex_effort: 'xhigh',
 };
 
@@ -119,14 +119,14 @@ describe('7.2 (V1/V11): resolucao por lane.kind', () => {
     });
     for (const lane of [telegramLane, cronLane]) {
       const sel = await resolveOrchestratorSelection({ surface: 'main-chat', lane, sessionId: 'tg-1' });
-      expect(sel).toMatchObject({ runtime: 'codex-sdk', provider: 'codex', model: 'gpt-5.5' });
+      expect(sel).toMatchObject({ runtime: 'codex-sdk', provider: 'codex', model: 'gpt-6.1-sol' });
     }
     expect(mockedGetSessionOrchestrator).not.toHaveBeenCalled();
   });
 
   it("surface 'default' = settings + validateOrchestratorTriple (sync de subagentes, lane nova)", async () => {
     const sel = await resolveOrchestratorSelection({ surface: 'default' });
-    expect(sel).toMatchObject({ runtime: 'codex-sdk', provider: 'codex', model: 'gpt-5.5' });
+    expect(sel).toMatchObject({ runtime: 'codex-sdk', provider: 'codex', model: 'gpt-6.1-sol' });
     expect(mockedGetSessionOrchestrator).not.toHaveBeenCalled();
   });
 
@@ -141,7 +141,7 @@ describe('7.2 (V1/V11): resolucao por lane.kind', () => {
         surface: 'main-chat',
         lane: desktopLane,
         sessionId: 'lane-A',
-        requestedModel: 'gpt-5.5',
+        requestedModel: 'gpt-6.1-sol',
       }),
     ).rejects.toBeInstanceOf(InvalidOrchestratorSelectionError);
   });
@@ -150,7 +150,7 @@ describe('7.2 (V1/V11): resolucao por lane.kind', () => {
     expect(readDefaultOrchestratorColumns()).toEqual({
       runtime: 'codex-sdk',
       provider: 'codex',
-      model: 'gpt-5.5',
+      model: 'gpt-6.1-sol',
       effort: 'xhigh',
     });
   });
@@ -214,7 +214,7 @@ describe('7.6: effort por lane na OrchestratorSelection', () => {
 
   it('telegram/cron: effort vem do setting global do runtime (codex xhigh)', async () => {
     const sel = await resolveOrchestratorSelection({ surface: 'main-chat', lane: telegramLane, sessionId: 'tg' });
-    expect(sel).toMatchObject({ runtime: 'codex-sdk', model: 'gpt-5.5', effort: 'xhigh' });
+    expect(sel).toMatchObject({ runtime: 'codex-sdk', model: 'gpt-6.1-sol', effort: 'xhigh' });
   });
 
   it('runtimes sem effort (compat) nao carregam o campo', async () => {
@@ -257,7 +257,7 @@ describe('7.6: effort por lane na OrchestratorSelection', () => {
         surface: 'main-chat',
         lane: desktopLane,
         sessionId: 'a',
-        requestedModel: 'gpt-5.5',
+        requestedModel: 'gpt-6.1-sol',
       }),
     ).rejects.toMatchObject({ code: 'model_not_in_provider' });
   });
@@ -283,7 +283,7 @@ describe('7.6: effort por lane na OrchestratorSelection', () => {
     mockedGetSessionOrchestrator.mockReturnValue({
       runtime: 'codex-sdk',
       provider: 'codex',
-      model: 'gpt-5.5',
+      model: 'gpt-6.1-sol',
       effort: 'low',
     });
     mockedGetSetting.mockImplementation(

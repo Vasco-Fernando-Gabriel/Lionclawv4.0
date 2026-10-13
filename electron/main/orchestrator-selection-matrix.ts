@@ -56,7 +56,7 @@ export async function validateOrchestratorTriple(
       }
       break;
     case 'lion-sdk':
-      modelAllowed = !belongsToAnotherCuratedRuntime(model);
+      modelAllowed = findCatalogModel(runtime, provider, model) !== undefined || !belongsToAnotherCuratedRuntime(model);
       break;
     default:
       modelAllowed = false;

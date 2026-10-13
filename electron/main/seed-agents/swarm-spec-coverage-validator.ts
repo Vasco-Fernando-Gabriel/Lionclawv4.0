@@ -1,13 +1,13 @@
 import type { AgentConfig } from '../../../src/types';
 import { SWARM_CONTRACT } from './_shared/swarm-contract';
-import { bugRootCauseAnalyst } from './bug-root-cause-analyst';
+import { CLAUDE_DEFAULT_MODEL } from '../../../src/constants/claude-models';
 
 export const swarmSpecCoverageValidator: Omit<AgentConfig, 'sortOrder'> = {
   id: 'swarm-spec-coverage-validator',
   name: 'Swarm Spec Coverage Validator',
   description:
     'Você é um validador de cobertura de spec. Sua lente é EXCLUSIVAMENTE: cada regra da spec tem implementação real?',
-  model: bugRootCauseAnalyst.model,
+  model: CLAUDE_DEFAULT_MODEL,
   runtime: 'cloud',
   squad: 'swarm',
   effort: 'high',
@@ -15,7 +15,7 @@ export const swarmSpecCoverageValidator: Omit<AgentConfig, 'sortOrder'> = {
   maxTurns: 80,
   maxToolRounds: 50,
   allowedTools: ['Read', 'Grep', 'Glob', 'Bash', 'Write'],
-  mcpServers: [],
+  mcpServers: ['repo-graph'],
   skills: [],
   isActive: true,
   systemPrompt:

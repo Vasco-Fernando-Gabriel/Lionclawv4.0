@@ -67,6 +67,53 @@ export async function resolveCodexBinary(): Promise<string | null> {
   }
 }
 
+export interface CodexSpawnTarget {
+  command: string;
+  useShell: boolean;
+  resolvedFromShim: boolean;
+}
+
+function listDirs(dir: string): string[] {
+  try {
+    return fs
+      .readdirSync(dir, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => path.join(dir, entry.name));
+  } catch {
+    return [];
+  }
+}
+
+function findCodexExeUnderScope(scopeDir: string): string | null {
+  for (const pkg of listDirs(scopeDir)) {
+    if (!path.basename(pkg).startsWith('codex-win32-')) continue;
+    for (const target of listDirs(path.join(pkg, 'vendor'))) {
+      const exe = path.join(target, 'bin', 'codex.exe');
+      if (fs.existsSync(exe)) return exe;
+    }
+  }
+  return null;
+}
+
+export function resolveCodexSpawnTarget(
+  binary: string,
+  platform: NodeJS.Platform = process.platform,
+): CodexSpawnTarget {
+  const isShim = platform === 'win32' && /\.(cmd|bat)$/i.test(binary);
+  if (!isShim) return { command: binary, useShell: false, resolvedFromShim: false };
+  const dir = path.dirname(binary);
+  const scopes = [
+    path.join(dir, 'node_modules', '@openai', 'codex', 'node_modules', '@openai'),
+    path.join(dir, 'node_modules', '@openai'),
+    path.join(dir, '..', '@openai'),
+  ];
+  for (const scope of scopes) {
+    const exe = findCodexExeUnderScope(scope);
+    if (exe) return { command: exe, useShell: false, resolvedFromShim: true };
+  }
+  return { command: binary, useShell: true, resolvedFromShim: false };
+}
+
 function waitForExit(child: ChildProcess, timeoutMs: number): Promise<void> {
   if (child.exitCode !== null || child.signalCode !== null) return Promise.resolve();
   return new Promise((resolve) => {

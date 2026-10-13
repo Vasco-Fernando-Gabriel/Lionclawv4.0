@@ -2373,6 +2373,47 @@ describe('Swarm V1 IPC payload snapshots', () => {
   });
 });
 
+describe('Swarm v2 IPC payload snapshots (S5)', () => {
+  it('stop-agent devolve so a mudanca e o status do swarm agent parado', () => {
+    expect({ changed: true, status: 'stopping' }).toMatchSnapshot();
+    expect({ changed: false, status: 'ok' }).toMatchSnapshot();
+  });
+  it('get-messages devolve os registros do messages.jsonl do swarm agent sem credenciais nem caminhos', () => {
+    expect({
+      runId: 'swarm-20261011_100000-abc123',
+      slug: 'auditor',
+      messages: [
+        { id: 'msg-1-a1b2c3', kind: 'message', attemptId: 'att-1', at: '2026-10-11T10:00:30.000Z', text: 'Foque em X' },
+        {
+          id: 'msg-2-d4e5f6',
+          kind: 'answer',
+          attemptId: 'att-1',
+          at: '2026-10-11T10:02:00.000Z',
+          text: 'Ignore vendor',
+        },
+        {
+          id: 'msg-2-d4e5f6-att-2-response',
+          kind: 'response',
+          attemptId: 'att-2',
+          at: '2026-10-11T10:03:00.000Z',
+          text: 'Continuando sem vendor',
+          mechanism: 'session',
+          costUsd: 0.02,
+        },
+      ],
+    }).toMatchSnapshot();
+  });
+  it('settings carregam a janela de conducao em milissegundos', () => {
+    expect({
+      concurrencyCap: 5,
+      maxAttempts: 2,
+      idleTimeoutMs: 1200000,
+      hardTimeoutMs: 7200000,
+      openWindowMs: 1800000,
+    }).toMatchSnapshot();
+  });
+});
+
 type ListProjects = Awaited<ReturnType<LionClawAPI['pipeline']['listProjects']>>;
 
 function laneRow(id: string, laneBadge: number, title: string): OpenDesktopSessionRow {

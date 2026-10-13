@@ -105,8 +105,8 @@ describe('migration v150 (GPT-6 Astra como default do codex)', () => {
     expect(row.model).toBe(PREVIOUS);
   });
 
-  it('R10: o novo default do catalogo e o alvo da migration, e a constante de schema cobre a V150', () => {
-    expect(CODEX_DEFAULT_MODEL).toBe('gpt-6-sol');
+  it('R10: o default do catalogo seguiu em frente (gpt-6-sol na V158, gpt-6.1-sol na V169), e a constante de schema cobre a V150', () => {
+    expect(CODEX_DEFAULT_MODEL).toBe('gpt-6.1-sol');
     expect(LATEST_SCHEMA_VERSION).toBeGreaterThanOrEqual(150);
   });
 });

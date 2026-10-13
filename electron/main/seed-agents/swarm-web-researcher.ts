@@ -1,12 +1,12 @@
 import type { AgentConfig } from '../../../src/types';
 import { SWARM_CONTRACT } from './_shared/swarm-contract';
-import { bugRootCauseAnalyst } from './bug-root-cause-analyst';
+import { CLAUDE_DEFAULT_MODEL } from '../../../src/constants/claude-models';
 
 export const swarmWebResearcher: Omit<AgentConfig, 'sortOrder'> = {
   id: 'swarm-web-researcher',
   name: 'Swarm Web Researcher',
   description: 'Você é um pesquisador web. Responde a pergunta da missão com evidência da internet.',
-  model: bugRootCauseAnalyst.model,
+  model: CLAUDE_DEFAULT_MODEL,
   runtime: 'cloud',
   squad: 'swarm',
   effort: 'high',
@@ -14,7 +14,7 @@ export const swarmWebResearcher: Omit<AgentConfig, 'sortOrder'> = {
   maxTurns: 80,
   maxToolRounds: 50,
   allowedTools: ['WebSearch', 'WebFetch', 'Write'],
-  mcpServers: [],
+  mcpServers: ['repo-graph'],
   skills: [],
   isActive: true,
   systemPrompt:

@@ -1,12 +1,12 @@
 import type { AgentConfig } from '../../../src/types';
 import { SWARM_CONTRACT } from './_shared/swarm-contract';
-import { bugRootCauseAnalyst } from './bug-root-cause-analyst';
+import { CLAUDE_DEFAULT_MODEL } from '../../../src/constants/claude-models';
 
 export const swarmOwaspScanner: Omit<AgentConfig, 'sortOrder'> = {
   id: 'swarm-owasp-scanner',
   name: 'Swarm Owasp Scanner',
   description: 'Você é um auditor OWASP. Sua lente é EXCLUSIVAMENTE a OWASP Top 10 aplicada ao código.',
-  model: bugRootCauseAnalyst.model,
+  model: CLAUDE_DEFAULT_MODEL,
   runtime: 'cloud',
   squad: 'swarm',
   effort: 'high',
@@ -14,7 +14,7 @@ export const swarmOwaspScanner: Omit<AgentConfig, 'sortOrder'> = {
   maxTurns: 80,
   maxToolRounds: 50,
   allowedTools: ['Read', 'Grep', 'Glob', 'Bash', 'Write'],
-  mcpServers: [],
+  mcpServers: ['repo-graph'],
   skills: [],
   isActive: true,
   systemPrompt:

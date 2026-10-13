@@ -25,7 +25,7 @@ describe('Grok Build orchestrator selection', () => {
     expect(__internal.isModelInRuntime('grok-4.5', 'grok-sdk')).toBe(true);
     expect(__internal.isModelInRuntime('grok-4.5', 'lion-sdk')).toBe(false);
     expect(__internal.defaultProviderForRuntime('grok-sdk')).toBe('grok');
-    expect(__internal.defaultModelForRuntime('grok-sdk')).toBe('grok-4.6');
+    expect(__internal.defaultModelForRuntime('grok-sdk')).toBe('grok-4.7');
   });
 
   it('resolves the exact subscription triple and snapshots effort', async () => {

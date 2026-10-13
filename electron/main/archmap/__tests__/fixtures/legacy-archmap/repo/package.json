@@ -1,0 +1,1 @@
+{ "name": "legado", "version": "1.0.0", "dependencies": { "zod": "^3.0.0" } }

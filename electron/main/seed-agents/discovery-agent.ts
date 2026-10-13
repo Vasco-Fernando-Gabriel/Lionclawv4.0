@@ -7,7 +7,7 @@ export const discoveryAgent: Omit<AgentConfig, 'sortOrder'> = {
   name: 'Discovery Agent',
   description:
     'Conduz conversa de discovery com o usuario para entender o produto. 11 perguntas estruturadas em 5 blocos. Tambem conduz decisoes tecnicas (database, backend, frontend, security).',
-  model: 'claude-sonnet-4-6',
+  model: 'claude-sonnet-5-5',
   effort: 'high' as const,
   thinking: 'enabled' as const,
   thinkingBudget: 10000,

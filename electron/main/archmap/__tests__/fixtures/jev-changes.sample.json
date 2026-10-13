@@ -1,0 +1,1607 @@
+{
+  "source": "amostra de 40 respostas gravadas no bench de triagem do Jev (2026-10-08, modelo jev-1.13.0): caminhos, resumos, tags e diffs sinteticos; so answers, usage e model sao os gravados",
+  "sample": 40,
+  "threshold": 0.8,
+  "results": [
+    {
+      "id": "sample-01",
+      "path": "src/modulo-01/arquivo-01.ts",
+      "state": {
+        "path": "src/modulo-01/arquivo-01.ts",
+        "old_summary": "Resumo sintetico 01: modulo de exemplo com responsabilidade generica.",
+        "old_tags": [
+          "tag-1",
+          "tag-5"
+        ],
+        "old_complexity": "simple",
+        "diff": "--- a/src/modulo-01/arquivo-01.ts\n+++ b/src/modulo-01/arquivo-01.ts\n@@ -1,4 +1,4 @@\n contexto 1\n contexto 2\n-linha de exemplo 01 versao antiga\n+linha de exemplo 01 versao nova\n contexto 3\n"
+      },
+      "diff_chars": 188,
+      "model": "jev-1.13.0",
+      "answers": {
+        "summary_still_valid": {
+          "type": "noul",
+          "noul": 0.82
+        },
+        "verdict": {
+          "type": "choice",
+          "choice": "keep",
+          "confidence": 0.98,
+          "probabilities": {
+            "keep": 0.99,
+            "rewrite": 0.01,
+            "unknown": 0
+          }
+        },
+        "complexity_changed": {
+          "type": "noul",
+          "noul": 0.15
+        }
+      },
+      "usage": {
+        "input_tokens": 2743,
+        "output_tokens": 78
+      }
+    },
+    {
+      "id": "sample-02",
+      "path": "src/modulo-01/arquivo-02.html",
+      "state": {
+        "path": "src/modulo-01/arquivo-02.html",
+        "old_summary": "Resumo sintetico 02: modulo de exemplo com responsabilidade generica.",
+        "old_tags": [
+          "tag-2",
+          "tag-6"
+        ],
+        "old_complexity": "moderate",
+        "diff": "--- a/src/modulo-01/arquivo-02.html\n+++ b/src/modulo-01/arquivo-02.html\n@@ -1,4 +1,4 @@\n contexto 1\n contexto 2\n-linha de exemplo 02 versao antiga\n+linha de exemplo 02 versao nova\n contexto 3\n"
+      },
+      "diff_chars": 192,
+      "model": "jev-1.13.0",
+      "answers": {
+        "summary_still_valid": {
+          "type": "noul",
+          "noul": 0.96
+        },
+        "verdict": {
+          "type": "choice",
+          "choice": "keep",
+          "confidence": 1,
+          "probabilities": {
+            "keep": 1,
+            "unknown": 0,
+            "rewrite": 0
+          }
+        },
+        "complexity_changed": {
+          "type": "noul",
+          "noul": 0.03
+        }
+      },
+      "usage": {
+        "input_tokens": 788,
+        "output_tokens": 78
+      }
+    },
+    {
+      "id": "sample-03",
+      "path": "src/modulo-01/arquivo-03.json",
+      "state": {
+        "path": "src/modulo-01/arquivo-03.json",
+        "old_summary": "Resumo sintetico 03: modulo de exemplo com responsabilidade generica.",
+        "old_tags": [
+          "tag-3",
+          "tag-7"
+        ],
+        "old_complexity": "complex",
+        "diff": "--- a/src/modulo-01/arquivo-03.json\n+++ b/src/modulo-01/arquivo-03.json\n@@ -1,4 +1,4 @@\n contexto 1\n contexto 2\n-linha de exemplo 03 versao antiga\n+linha de exemplo 03 versao nova\n contexto 3\n"
+      },
+      "diff_chars": 192,
+      "model": "jev-1.13.0",
+      "answers": {
+        "summary_still_valid": {
+          "type": "noul",
+          "noul": 0.74
+        },
+        "verdict": {
+          "type": "choice",
+          "choice": "keep",
+          "confidence": 0.92,
+          "probabilities": {
+            "unknown": 0,
+            "keep": 0.95,
+            "rewrite": 0.05
+          }
+        },
+        "complexity_changed": {
+          "type": "noul",
+          "noul": 0.06
+        }
+      },
+      "usage": {
+        "input_tokens": 881,
+        "output_tokens": 78
+      }
+    },
+    {
+      "id": "sample-04",
+      "path": "src/modulo-01/arquivo-04.ts",
+      "state": {
+        "path": "src/modulo-01/arquivo-04.ts",
+        "old_summary": "Resumo sintetico 04: modulo de exemplo com responsabilidade generica.",
+        "old_tags": [
+          "tag-4",
+          "tag-8"
+        ],
+        "old_complexity": "simple",
+        "diff": "--- a/src/modulo-01/arquivo-04.ts\n+++ b/src/modulo-01/arquivo-04.ts\n@@ -1,4 +1,4 @@\n contexto 1\n contexto 2\n-linha de exemplo 04 versao antiga\n+linha de exemplo 04 versao nova\n contexto 3\n"
+      },
+      "diff_chars": 188,
+      "model": "jev-1.13.0",
+      "answers": {
+        "summary_still_valid": {
+          "type": "noul",
+          "noul": 0.83
+        },
+        "verdict": {
+          "type": "choice",
+          "choice": "keep",
+          "confidence": 0.94,
+          "probabilities": {
+            "keep": 0.96,
+            "rewrite": 0.04,
+            "unknown": 0
+          }
+        },
+        "complexity_changed": {
+          "type": "noul",
+          "noul": 0.17
+        }
+      },
+      "usage": {
+        "input_tokens": 2098,
+        "output_tokens": 78
+      }
+    },
+    {
+      "id": "sample-05",
+      "path": "src/modulo-01/arquivo-05.ts",
+      "state": {
+        "path": "src/modulo-01/arquivo-05.ts",
+        "old_summary": "Resumo sintetico 05: modulo de exemplo com responsabilidade generica.",
+        "old_tags": [
+          "tag-1",
+          "tag-9"
+        ],
+        "old_complexity": "moderate",
+        "diff": "--- a/src/modulo-01/arquivo-05.ts\n+++ b/src/modulo-01/arquivo-05.ts\n@@ -1,4 +1,4 @@\n contexto 1\n contexto 2\n-linha de exemplo 05 versao antiga\n+linha de exemplo 05 versao nova\n contexto 3\n"
+      },
+      "diff_chars": 188,
+      "model": "jev-1.13.0",
+      "answers": {
+        "summary_still_valid": {
+          "type": "noul",
+          "noul": 0.88
+        },
+        "verdict": {
+          "type": "choice",
+          "choice": "keep",
+          "confidence": 1,
+          "probabilities": {
+            "unknown": 0,
+            "rewrite": 0,
+            "keep": 1
+          }
+        },
+        "complexity_changed": {
+          "type": "noul",
+          "noul": 0.11
+        }
+      },
+      "usage": {
+        "input_tokens": 1818,
+        "output_tokens": 78
+      }
+    },
+    {
+      "id": "sample-06",
+      "path": "src/modulo-02/arquivo-06.tsx",
+      "state": {
+        "path": "src/modulo-02/arquivo-06.tsx",
+        "old_summary": "Resumo sintetico 06: modulo de exemplo com responsabilidade generica.",
+        "old_tags": [
+          "tag-2",
+          "tag-10"
+        ],
+        "old_complexity": "complex",
+        "diff": "--- a/src/modulo-02/arquivo-06.tsx\n+++ b/src/modulo-02/arquivo-06.tsx\n@@ -1,4 +1,4 @@\n contexto 1\n contexto 2\n-linha de exemplo 06 versao antiga\n+linha de exemplo 06 versao nova\n contexto 3\n"
+      },
+      "diff_chars": 190,
+      "model": "jev-1.13.0",
+      "answers": {
+        "summary_still_valid": {
+          "type": "noul",
+          "noul": 0.78
+        },
+        "verdict": {
+          "type": "choice",
+          "choice": "keep",
+          "confidence": 0.97,
+          "probabilities": {
+            "unknown": 0,
+            "rewrite": 0.02,
+            "keep": 0.98
+          }
+        },
+        "complexity_changed": {
+          "type": "noul",
+          "noul": 0.09
+        }
+      },
+      "usage": {
+        "input_tokens": 987,
+        "output_tokens": 78
+      }
+    },
+    {
+      "id": "sample-07",
+      "path": "src/modulo-02/arquivo-07.ts",
+      "state": {
+        "path": "src/modulo-02/arquivo-07.ts",
+        "old_summary": "Resumo sintetico 07: modulo de exemplo com responsabilidade generica.",
+        "old_tags": [
+          "tag-3",
+          "tag-11"
+        ],
+        "old_complexity": "simple",
+        "diff": "--- a/src/modulo-02/arquivo-07.ts\n+++ b/src/modulo-02/arquivo-07.ts\n@@ -1,4 +1,4 @@\n contexto 1\n contexto 2\n-linha de exemplo 07 versao antiga\n+linha de exemplo 07 versao nova\n contexto 3\n"
+      },
+      "diff_chars": 188,
+      "model": "jev-1.13.0",
+      "answers": {
+        "summary_still_valid": {
+          "type": "noul",
+          "noul": 0.91
+        },
+        "verdict": {
+          "type": "choice",
+          "choice": "keep",
+          "confidence": 1,
+          "probabilities": {
+            "keep": 1,
+            "rewrite": 0,
+            "unknown": 0
+          }
+        },
+        "complexity_changed": {
+          "type": "noul",
+          "noul": 0.06
+        }
+      },
+      "usage": {
+        "input_tokens": 811,
+        "output_tokens": 78
+      }
+    },
+    {
+      "id": "sample-08",
+      "path": "src/modulo-02/arquivo-08.tsx",
+      "state": {
+        "path": "src/modulo-02/arquivo-08.tsx",
+        "old_summary": "Resumo sintetico 08: modulo de exemplo com responsabilidade generica.",
+        "old_tags": [
+          "tag-4",
+          "tag-5"
+        ],
+        "old_complexity": "moderate",
+        "diff": "--- a/src/modulo-02/arquivo-08.tsx\n+++ b/src/modulo-02/arquivo-08.tsx\n@@ -1,4 +1,4 @@\n contexto 1\n contexto 2\n-linha de exemplo 08 versao antiga\n+linha de exemplo 08 versao nova\n contexto 3\n"
+      },
+      "diff_chars": 190,
+      "model": "jev-1.13.0",
+      "answers": {
+        "summary_still_valid": {
+          "type": "noul",
+          "noul": 0.95
+        },
+        "verdict": {
+          "type": "choice",
+          "choice": "keep",
+          "confidence": 1,
+          "probabilities": {
+            "keep": 1,
+            "rewrite": 0,
+            "unknown": 0
+          }
+        },
+        "complexity_changed": {
+          "type": "noul",
+          "noul": 0.03
+        }
+      },
+      "usage": {
+        "input_tokens": 731,
+        "output_tokens": 78
+      }
+    },
+    {
+      "id": "sample-09",
+      "path": "src/modulo-02/arquivo-09.ts",
+      "state": {
+        "path": "src/modulo-02/arquivo-09.ts",
+        "old_summary": "Resumo sintetico 09: modulo de exemplo com responsabilidade generica.",
+        "old_tags": [
+          "tag-1",
+          "tag-6"
+        ],
+        "old_complexity": "complex",
+        "diff": "--- a/src/modulo-02/arquivo-09.ts\n+++ b/src/modulo-02/arquivo-09.ts\n@@ -1,4 +1,4 @@\n contexto 1\n contexto 2\n-linha de exemplo 09 versao antiga\n+linha de exemplo 09 versao nova\n contexto 3\n"
+      },
+      "diff_chars": 188,
+      "model": "jev-1.13.0",
+      "answers": {
+        "summary_still_valid": {
+          "type": "noul",
+          "noul": 0.87
+        },
+        "verdict": {
+          "type": "choice",
+          "choice": "keep",
+          "confidence": 0.97,
+          "probabilities": {
+            "unknown": 0,
+            "rewrite": 0.02,
+            "keep": 0.98
+          }
+        },
+        "complexity_changed": {
+          "type": "noul",
+          "noul": 0.13
+        }
+      },
+      "usage": {
+        "input_tokens": 1431,
+        "output_tokens": 78
+      }
+    },
+    {
+      "id": "sample-10",
+      "path": "src/modulo-02/arquivo-10.ts",
+      "state": {
+        "path": "src/modulo-02/arquivo-10.ts",
+        "old_summary": "Resumo sintetico 10: modulo de exemplo com responsabilidade generica.",
+        "old_tags": [
+          "tag-2",
+          "tag-7"
+        ],
+        "old_complexity": "simple",
+        "diff": "--- a/src/modulo-02/arquivo-10.ts\n+++ b/src/modulo-02/arquivo-10.ts\n@@ -1,4 +1,4 @@\n contexto 1\n contexto 2\n-linha de exemplo 10 versao antiga\n+linha de exemplo 10 versao nova\n contexto 3\n"
+      },
+      "diff_chars": 188,
+      "model": "jev-1.13.0",
+      "answers": {
+        "summary_still_valid": {
+          "type": "noul",
+          "noul": 0.83
+        },
+        "verdict": {
+          "type": "choice",
+          "choice": "keep",
+          "confidence": 1,
+          "probabilities": {
+            "unknown": 0,
+            "rewrite": 0,
+            "keep": 1
+          }
+        },
+        "complexity_changed": {
+          "type": "noul",
+          "noul": 0.05
+        }
+      },
+      "usage": {
+        "input_tokens": 813,
+        "output_tokens": 78
+      }
+    },
+    {
+      "id": "sample-11",
+      "path": "src/modulo-03/arquivo-11.ts",
+      "state": {
+        "path": "src/modulo-03/arquivo-11.ts",
+        "old_summary": "Resumo sintetico 11: modulo de exemplo com responsabilidade generica.",
+        "old_tags": [
+          "tag-3",
+          "tag-8"
+        ],
+        "old_complexity": "moderate",
+        "diff": "--- a/src/modulo-03/arquivo-11.ts\n+++ b/src/modulo-03/arquivo-11.ts\n@@ -1,4 +1,4 @@\n contexto 1\n contexto 2\n-linha de exemplo 11 versao antiga\n+linha de exemplo 11 versao nova\n contexto 3\n"
+      },
+      "diff_chars": 188,
+      "model": "jev-1.13.0",
+      "answers": {
+        "summary_still_valid": {
+          "type": "noul",
+          "noul": 0.78
+        },
+        "verdict": {
+          "type": "choice",
+          "choice": "keep",
+          "confidence": 0.95,
+          "probabilities": {
+            "keep": 0.97,
+            "unknown": 0,
+            "rewrite": 0.03
+          }
+        },
+        "complexity_changed": {
+          "type": "noul",
+          "noul": 0.24
+        }
+      },
+      "usage": {
+        "input_tokens": 1457,
+        "output_tokens": 78
+      }
+    },
+    {
+      "id": "sample-12",
+      "path": "src/modulo-03/arquivo-12.ts",
+      "state": {
+        "path": "src/modulo-03/arquivo-12.ts",
+        "old_summary": "Resumo sintetico 12: modulo de exemplo com responsabilidade generica.",
+        "old_tags": [
+          "tag-4",
+          "tag-9"
+        ],
+        "old_complexity": "complex",
+        "diff": "--- a/src/modulo-03/arquivo-12.ts\n+++ b/src/modulo-03/arquivo-12.ts\n@@ -1,4 +1,4 @@\n contexto 1\n contexto 2\n-linha de exemplo 12 versao antiga\n+linha de exemplo 12 versao nova\n contexto 3\n"
+      },
+      "diff_chars": 188,
+      "model": "jev-1.13.0",
+      "answers": {
+        "summary_still_valid": {
+          "type": "noul",
+          "noul": 0.78
+        },
+        "verdict": {
+          "type": "choice",
+          "choice": "keep",
+          "confidence": 1,
+          "probabilities": {
+            "keep": 1,
+            "unknown": 0,
+            "rewrite": 0
+          }
+        },
+        "complexity_changed": {
+          "type": "noul",
+          "noul": 0.05
+        }
+      },
+      "usage": {
+        "input_tokens": 828,
+        "output_tokens": 78
+      }
+    },
+    {
+      "id": "sample-13",
+      "path": "src/modulo-03/arquivo-13.ts",
+      "state": {
+        "path": "src/modulo-03/arquivo-13.ts",
+        "old_summary": "Resumo sintetico 13: modulo de exemplo com responsabilidade generica.",
+        "old_tags": [
+          "tag-1",
+          "tag-10"
+        ],
+        "old_complexity": "simple",
+        "diff": "--- a/src/modulo-03/arquivo-13.ts\n+++ b/src/modulo-03/arquivo-13.ts\n@@ -1,4 +1,4 @@\n contexto 1\n contexto 2\n-linha de exemplo 13 versao antiga\n+linha de exemplo 13 versao nova\n contexto 3\n"
+      },
+      "diff_chars": 188,
+      "model": "jev-1.13.0",
+      "answers": {
+        "summary_still_valid": {
+          "type": "noul",
+          "noul": 0.89
+        },
+        "verdict": {
+          "type": "choice",
+          "choice": "keep",
+          "confidence": 1,
+          "probabilities": {
+            "keep": 1,
+            "rewrite": 0,
+            "unknown": 0
+          }
+        },
+        "complexity_changed": {
+          "type": "noul",
+          "noul": 0.08
+        }
+      },
+      "usage": {
+        "input_tokens": 2155,
+        "output_tokens": 78
+      }
+    },
+    {
+      "id": "sample-14",
+      "path": "src/modulo-03/arquivo-14.tsx",
+      "state": {
+        "path": "src/modulo-03/arquivo-14.tsx",
+        "old_summary": "Resumo sintetico 14: modulo de exemplo com responsabilidade generica.",
+        "old_tags": [
+          "tag-2",
+          "tag-11"
+        ],
+        "old_complexity": "moderate",
+        "diff": "--- a/src/modulo-03/arquivo-14.tsx\n+++ b/src/modulo-03/arquivo-14.tsx\n@@ -1,4 +1,4 @@\n contexto 1\n contexto 2\n-linha de exemplo 14 versao antiga\n+linha de exemplo 14 versao nova\n contexto 3\n"
+      },
+      "diff_chars": 190,
+      "model": "jev-1.13.0",
+      "answers": {
+        "summary_still_valid": {
+          "type": "noul",
+          "noul": 0.72
+        },
+        "verdict": {
+          "type": "choice",
+          "choice": "keep",
+          "confidence": 0.99,
+          "probabilities": {
+            "keep": 1,
+            "rewrite": 0,
+            "unknown": 0
+          }
+        },
+        "complexity_changed": {
+          "type": "noul",
+          "noul": 0.05
+        }
+      },
+      "usage": {
+        "input_tokens": 743,
+        "output_tokens": 78
+      }
+    },
+    {
+      "id": "sample-15",
+      "path": "src/modulo-03/arquivo-15.ts",
+      "state": {
+        "path": "src/modulo-03/arquivo-15.ts",
+        "old_summary": "Resumo sintetico 15: modulo de exemplo com responsabilidade generica.",
+        "old_tags": [
+          "tag-3",
+          "tag-5"
+        ],
+        "old_complexity": "complex",
+        "diff": "--- a/src/modulo-03/arquivo-15.ts\n+++ b/src/modulo-03/arquivo-15.ts\n@@ -1,4 +1,4 @@\n contexto 1\n contexto 2\n-linha de exemplo 15 versao antiga\n+linha de exemplo 15 versao nova\n contexto 3\n"
+      },
+      "diff_chars": 188,
+      "model": "jev-1.13.0",
+      "answers": {
+        "summary_still_valid": {
+          "type": "noul",
+          "noul": 0.94
+        },
+        "verdict": {
+          "type": "choice",
+          "choice": "keep",
+          "confidence": 1,
+          "probabilities": {
+            "unknown": 0,
+            "rewrite": 0,
+            "keep": 1
+          }
+        },
+        "complexity_changed": {
+          "type": "noul",
+          "noul": 0.04
+        }
+      },
+      "usage": {
+        "input_tokens": 782,
+        "output_tokens": 78
+      }
+    },
+    {
+      "id": "sample-16",
+      "path": "src/modulo-04/arquivo-16.ts",
+      "state": {
+        "path": "src/modulo-04/arquivo-16.ts",
+        "old_summary": "Resumo sintetico 16: modulo de exemplo com responsabilidade generica.",
+        "old_tags": [
+          "tag-4",
+          "tag-6"
+        ],
+        "old_complexity": "simple",
+        "diff": "--- a/src/modulo-04/arquivo-16.ts\n+++ b/src/modulo-04/arquivo-16.ts\n@@ -1,4 +1,4 @@\n contexto 1\n contexto 2\n-linha de exemplo 16 versao antiga\n+linha de exemplo 16 versao nova\n contexto 3\n"
+      },
+      "diff_chars": 188,
+      "model": "jev-1.13.0",
+      "answers": {
+        "summary_still_valid": {
+          "type": "noul",
+          "noul": 0.85
+        },
+        "verdict": {
+          "type": "choice",
+          "choice": "keep",
+          "confidence": 1,
+          "probabilities": {
+            "unknown": 0,
+            "rewrite": 0,
+            "keep": 1
+          }
+        },
+        "complexity_changed": {
+          "type": "noul",
+          "noul": 0.06
+        }
+      },
+      "usage": {
+        "input_tokens": 914,
+        "output_tokens": 78
+      }
+    },
+    {
+      "id": "sample-17",
+      "path": "src/modulo-04/arquivo-17.ts",
+      "state": {
+        "path": "src/modulo-04/arquivo-17.ts",
+        "old_summary": "Resumo sintetico 17: modulo de exemplo com responsabilidade generica.",
+        "old_tags": [
+          "tag-1",
+          "tag-7"
+        ],
+        "old_complexity": "moderate",
+        "diff": "--- a/src/modulo-04/arquivo-17.ts\n+++ b/src/modulo-04/arquivo-17.ts\n@@ -1,4 +1,4 @@\n contexto 1\n contexto 2\n-linha de exemplo 17 versao antiga\n+linha de exemplo 17 versao nova\n contexto 3\n"
+      },
+      "diff_chars": 188,
+      "model": "jev-1.13.0",
+      "answers": {
+        "summary_still_valid": {
+          "type": "noul",
+          "noul": 0.78
+        },
+        "verdict": {
+          "type": "choice",
+          "choice": "keep",
+          "confidence": 0.63,
+          "probabilities": {
+            "keep": 0.75,
+            "rewrite": 0.25,
+            "unknown": 0
+          }
+        },
+        "complexity_changed": {
+          "type": "noul",
+          "noul": 0.3
+        }
+      },
+      "usage": {
+        "input_tokens": 3254,
+        "output_tokens": 78
+      }
+    },
+    {
+      "id": "sample-18",
+      "path": "src/modulo-04/arquivo-18.ts",
+      "state": {
+        "path": "src/modulo-04/arquivo-18.ts",
+        "old_summary": "Resumo sintetico 18: modulo de exemplo com responsabilidade generica.",
+        "old_tags": [
+          "tag-2",
+          "tag-8"
+        ],
+        "old_complexity": "complex",
+        "diff": "--- a/src/modulo-04/arquivo-18.ts\n+++ b/src/modulo-04/arquivo-18.ts\n@@ -1,4 +1,4 @@\n contexto 1\n contexto 2\n-linha de exemplo 18 versao antiga\n+linha de exemplo 18 versao nova\n contexto 3\n"
+      },
+      "diff_chars": 188,
+      "model": "jev-1.13.0",
+      "answers": {
+        "summary_still_valid": {
+          "type": "noul",
+          "noul": 0.71
+        },
+        "verdict": {
+          "type": "choice",
+          "choice": "keep",
+          "confidence": 0.77,
+          "probabilities": {
+            "keep": 0.85,
+            "rewrite": 0.14,
+            "unknown": 0.01
+          }
+        },
+        "complexity_changed": {
+          "type": "noul",
+          "noul": 0.38
+        }
+      },
+      "usage": {
+        "input_tokens": 3343,
+        "output_tokens": 78
+      }
+    },
+    {
+      "id": "sample-19",
+      "path": "src/modulo-04/arquivo-19.ts",
+      "state": {
+        "path": "src/modulo-04/arquivo-19.ts",
+        "old_summary": "Resumo sintetico 19: modulo de exemplo com responsabilidade generica.",
+        "old_tags": [
+          "tag-3",
+          "tag-9"
+        ],
+        "old_complexity": "simple",
+        "diff": "--- a/src/modulo-04/arquivo-19.ts\n+++ b/src/modulo-04/arquivo-19.ts\n@@ -1,4 +1,4 @@\n contexto 1\n contexto 2\n-linha de exemplo 19 versao antiga\n+linha de exemplo 19 versao nova\n contexto 3\n"
+      },
+      "diff_chars": 188,
+      "model": "jev-1.13.0",
+      "answers": {
+        "summary_still_valid": {
+          "type": "noul",
+          "noul": 0.44
+        },
+        "verdict": {
+          "type": "choice",
+          "choice": "keep",
+          "confidence": 0.49,
+          "probabilities": {
+            "keep": 0.66,
+            "rewrite": 0.34,
+            "unknown": 0
+          }
+        },
+        "complexity_changed": {
+          "type": "noul",
+          "noul": 0.34
+        }
+      },
+      "usage": {
+        "input_tokens": 1270,
+        "output_tokens": 78
+      }
+    },
+    {
+      "id": "sample-20",
+      "path": "src/modulo-04/arquivo-20.ts",
+      "state": {
+        "path": "src/modulo-04/arquivo-20.ts",
+        "old_summary": "Resumo sintetico 20: modulo de exemplo com responsabilidade generica.",
+        "old_tags": [
+          "tag-4",
+          "tag-10"
+        ],
+        "old_complexity": "moderate",
+        "diff": "--- a/src/modulo-04/arquivo-20.ts\n+++ b/src/modulo-04/arquivo-20.ts\n@@ -1,4 +1,4 @@\n contexto 1\n contexto 2\n-linha de exemplo 20 versao antiga\n+linha de exemplo 20 versao nova\n contexto 3\n"
+      },
+      "diff_chars": 188,
+      "model": "jev-1.13.0",
+      "answers": {
+        "summary_still_valid": {
+          "type": "noul",
+          "noul": 0.73
+        },
+        "verdict": {
+          "type": "choice",
+          "choice": "keep",
+          "confidence": 0.52,
+          "probabilities": {
+            "keep": 0.68,
+            "rewrite": 0.31,
+            "unknown": 0.01
+          }
+        },
+        "complexity_changed": {
+          "type": "noul",
+          "noul": 0.2
+        }
+      },
+      "usage": {
+        "input_tokens": 3079,
+        "output_tokens": 78
+      }
+    },
+    {
+      "id": "sample-21",
+      "path": "src/modulo-05/arquivo-21.ts",
+      "state": {
+        "path": "src/modulo-05/arquivo-21.ts",
+        "old_summary": "Resumo sintetico 21: modulo de exemplo com responsabilidade generica.",
+        "old_tags": [
+          "tag-1",
+          "tag-11"
+        ],
+        "old_complexity": "complex",
+        "diff": "--- a/src/modulo-05/arquivo-21.ts\n+++ b/src/modulo-05/arquivo-21.ts\n@@ -1,4 +1,4 @@\n contexto 1\n contexto 2\n-linha de exemplo 21 versao antiga\n+linha de exemplo 21 versao nova\n contexto 3\n"
+      },
+      "diff_chars": 188,
+      "model": "jev-1.13.0",
+      "answers": {
+        "summary_still_valid": {
+          "type": "noul",
+          "noul": 0.59
+        },
+        "verdict": {
+          "type": "choice",
+          "choice": "keep",
+          "confidence": 0.66,
+          "probabilities": {
+            "rewrite": 0.23,
+            "keep": 0.77,
+            "unknown": 0
+          }
+        },
+        "complexity_changed": {
+          "type": "noul",
+          "noul": 0.12
+        }
+      },
+      "usage": {
+        "input_tokens": 1048,
+        "output_tokens": 78
+      }
+    },
+    {
+      "id": "sample-22",
+      "path": "src/modulo-05/arquivo-22.ts",
+      "state": {
+        "path": "src/modulo-05/arquivo-22.ts",
+        "old_summary": "Resumo sintetico 22: modulo de exemplo com responsabilidade generica.",
+        "old_tags": [
+          "tag-2",
+          "tag-5"
+        ],
+        "old_complexity": "simple",
+        "diff": "--- a/src/modulo-05/arquivo-22.ts\n+++ b/src/modulo-05/arquivo-22.ts\n@@ -1,4 +1,4 @@\n contexto 1\n contexto 2\n-linha de exemplo 22 versao antiga\n+linha de exemplo 22 versao nova\n contexto 3\n"
+      },
+      "diff_chars": 188,
+      "model": "jev-1.13.0",
+      "answers": {
+        "summary_still_valid": {
+          "type": "noul",
+          "noul": 0.51
+        },
+        "verdict": {
+          "type": "choice",
+          "choice": "keep",
+          "confidence": 0.27,
+          "probabilities": {
+            "keep": 0.51,
+            "rewrite": 0.49,
+            "unknown": 0
+          }
+        },
+        "complexity_changed": {
+          "type": "noul",
+          "noul": 0.24
+        }
+      },
+      "usage": {
+        "input_tokens": 2385,
+        "output_tokens": 78
+      }
+    },
+    {
+      "id": "sample-23",
+      "path": "src/modulo-05/arquivo-23.yml",
+      "state": {
+        "path": "src/modulo-05/arquivo-23.yml",
+        "old_summary": "Resumo sintetico 23: modulo de exemplo com responsabilidade generica.",
+        "old_tags": [
+          "tag-3",
+          "tag-6"
+        ],
+        "old_complexity": "moderate",
+        "diff": "--- a/src/modulo-05/arquivo-23.yml\n+++ b/src/modulo-05/arquivo-23.yml\n@@ -1,4 +1,4 @@\n contexto 1\n contexto 2\n-linha de exemplo 23 versao antiga\n+linha de exemplo 23 versao nova\n contexto 3\n"
+      },
+      "diff_chars": 190,
+      "model": "jev-1.13.0",
+      "answers": {
+        "summary_still_valid": {
+          "type": "noul",
+          "noul": 0.65
+        },
+        "verdict": {
+          "type": "choice",
+          "choice": "keep",
+          "confidence": 0.51,
+          "probabilities": {
+            "unknown": 0,
+            "keep": 0.67,
+            "rewrite": 0.33
+          }
+        },
+        "complexity_changed": {
+          "type": "noul",
+          "noul": 0.15
+        }
+      },
+      "usage": {
+        "input_tokens": 1288,
+        "output_tokens": 78
+      }
+    },
+    {
+      "id": "sample-24",
+      "path": "src/modulo-05/arquivo-24.ts",
+      "state": {
+        "path": "src/modulo-05/arquivo-24.ts",
+        "old_summary": "Resumo sintetico 24: modulo de exemplo com responsabilidade generica.",
+        "old_tags": [
+          "tag-4",
+          "tag-7"
+        ],
+        "old_complexity": "complex",
+        "diff": "--- a/src/modulo-05/arquivo-24.ts\n+++ b/src/modulo-05/arquivo-24.ts\n@@ -1,4 +1,4 @@\n contexto 1\n contexto 2\n-linha de exemplo 24 versao antiga\n+linha de exemplo 24 versao nova\n contexto 3\n"
+      },
+      "diff_chars": 188,
+      "model": "jev-1.13.0",
+      "answers": {
+        "summary_still_valid": {
+          "type": "noul",
+          "noul": 0.61
+        },
+        "verdict": {
+          "type": "choice",
+          "choice": "keep",
+          "confidence": 0.49,
+          "probabilities": {
+            "keep": 0.66,
+            "rewrite": 0.34,
+            "unknown": 0
+          }
+        },
+        "complexity_changed": {
+          "type": "noul",
+          "noul": 0.1
+        }
+      },
+      "usage": {
+        "input_tokens": 1071,
+        "output_tokens": 78
+      }
+    },
+    {
+      "id": "sample-25",
+      "path": "src/modulo-05/arquivo-25.ts",
+      "state": {
+        "path": "src/modulo-05/arquivo-25.ts",
+        "old_summary": "Resumo sintetico 25: modulo de exemplo com responsabilidade generica.",
+        "old_tags": [
+          "tag-1",
+          "tag-8"
+        ],
+        "old_complexity": "simple",
+        "diff": "--- a/src/modulo-05/arquivo-25.ts\n+++ b/src/modulo-05/arquivo-25.ts\n@@ -1,4 +1,4 @@\n contexto 1\n contexto 2\n-linha de exemplo 25 versao antiga\n+linha de exemplo 25 versao nova\n contexto 3\n"
+      },
+      "diff_chars": 188,
+      "model": "jev-1.13.0",
+      "answers": {
+        "summary_still_valid": {
+          "type": "noul",
+          "noul": 0.13
+        },
+        "verdict": {
+          "type": "choice",
+          "choice": "rewrite",
+          "confidence": 1,
+          "probabilities": {
+            "keep": 0,
+            "rewrite": 1,
+            "unknown": 0
+          }
+        },
+        "complexity_changed": {
+          "type": "noul",
+          "noul": 0.82
+        }
+      },
+      "usage": {
+        "input_tokens": 3079,
+        "output_tokens": 78
+      }
+    },
+    {
+      "id": "sample-26",
+      "path": "src/modulo-06/arquivo-26.ts",
+      "state": {
+        "path": "src/modulo-06/arquivo-26.ts",
+        "old_summary": "Resumo sintetico 26: modulo de exemplo com responsabilidade generica.",
+        "old_tags": [
+          "tag-2",
+          "tag-9"
+        ],
+        "old_complexity": "moderate",
+        "diff": "--- a/src/modulo-06/arquivo-26.ts\n+++ b/src/modulo-06/arquivo-26.ts\n@@ -1,4 +1,4 @@\n contexto 1\n contexto 2\n-linha de exemplo 26 versao antiga\n+linha de exemplo 26 versao nova\n contexto 3\n"
+      },
+      "diff_chars": 188,
+      "model": "jev-1.13.0",
+      "answers": {
+        "summary_still_valid": {
+          "type": "noul",
+          "noul": 0.15
+        },
+        "verdict": {
+          "type": "choice",
+          "choice": "rewrite",
+          "confidence": 0.95,
+          "probabilities": {
+            "keep": 0.03,
+            "rewrite": 0.97,
+            "unknown": 0
+          }
+        },
+        "complexity_changed": {
+          "type": "noul",
+          "noul": 0.39
+        }
+      },
+      "usage": {
+        "input_tokens": 1880,
+        "output_tokens": 78
+      }
+    },
+    {
+      "id": "sample-27",
+      "path": "src/modulo-06/arquivo-27.ts",
+      "state": {
+        "path": "src/modulo-06/arquivo-27.ts",
+        "old_summary": "Resumo sintetico 27: modulo de exemplo com responsabilidade generica.",
+        "old_tags": [
+          "tag-3",
+          "tag-10"
+        ],
+        "old_complexity": "complex",
+        "diff": "--- a/src/modulo-06/arquivo-27.ts\n+++ b/src/modulo-06/arquivo-27.ts\n@@ -1,4 +1,4 @@\n contexto 1\n contexto 2\n-linha de exemplo 27 versao antiga\n+linha de exemplo 27 versao nova\n contexto 3\n"
+      },
+      "diff_chars": 188,
+      "model": "jev-1.13.0",
+      "answers": {
+        "summary_still_valid": {
+          "type": "noul",
+          "noul": 0.29
+        },
+        "verdict": {
+          "type": "choice",
+          "choice": "rewrite",
+          "confidence": 0.88,
+          "probabilities": {
+            "unknown": 0.01,
+            "rewrite": 0.92,
+            "keep": 0.07
+          }
+        },
+        "complexity_changed": {
+          "type": "noul",
+          "noul": 0.48
+        }
+      },
+      "usage": {
+        "input_tokens": 3124,
+        "output_tokens": 78
+      }
+    },
+    {
+      "id": "sample-28",
+      "path": "src/modulo-06/arquivo-28.ts",
+      "state": {
+        "path": "src/modulo-06/arquivo-28.ts",
+        "old_summary": "Resumo sintetico 28: modulo de exemplo com responsabilidade generica.",
+        "old_tags": [
+          "tag-4",
+          "tag-11"
+        ],
+        "old_complexity": "simple",
+        "diff": "--- a/src/modulo-06/arquivo-28.ts\n+++ b/src/modulo-06/arquivo-28.ts\n@@ -1,4 +1,4 @@\n contexto 1\n contexto 2\n-linha de exemplo 28 versao antiga\n+linha de exemplo 28 versao nova\n contexto 3\n"
+      },
+      "diff_chars": 188,
+      "model": "jev-1.13.0",
+      "answers": {
+        "summary_still_valid": {
+          "type": "noul",
+          "noul": 0.14
+        },
+        "verdict": {
+          "type": "choice",
+          "choice": "rewrite",
+          "confidence": 0.98,
+          "probabilities": {
+            "unknown": 0,
+            "rewrite": 0.99,
+            "keep": 0.01
+          }
+        },
+        "complexity_changed": {
+          "type": "noul",
+          "noul": 0.71
+        }
+      },
+      "usage": {
+        "input_tokens": 1837,
+        "output_tokens": 78
+      }
+    },
+    {
+      "id": "sample-29",
+      "path": "src/modulo-06/arquivo-29.tsx",
+      "state": {
+        "path": "src/modulo-06/arquivo-29.tsx",
+        "old_summary": "Resumo sintetico 29: modulo de exemplo com responsabilidade generica.",
+        "old_tags": [
+          "tag-1",
+          "tag-5"
+        ],
+        "old_complexity": "moderate",
+        "diff": "--- a/src/modulo-06/arquivo-29.tsx\n+++ b/src/modulo-06/arquivo-29.tsx\n@@ -1,4 +1,4 @@\n contexto 1\n contexto 2\n-linha de exemplo 29 versao antiga\n+linha de exemplo 29 versao nova\n contexto 3\n"
+      },
+      "diff_chars": 190,
+      "model": "jev-1.13.0",
+      "answers": {
+        "summary_still_valid": {
+          "type": "noul",
+          "noul": 0.14
+        },
+        "verdict": {
+          "type": "choice",
+          "choice": "rewrite",
+          "confidence": 1,
+          "probabilities": {
+            "keep": 0,
+            "rewrite": 1,
+            "unknown": 0
+          }
+        },
+        "complexity_changed": {
+          "type": "noul",
+          "noul": 0.85
+        }
+      },
+      "usage": {
+        "input_tokens": 3066,
+        "output_tokens": 78
+      }
+    },
+    {
+      "id": "sample-30",
+      "path": "src/modulo-06/arquivo-30.ts",
+      "state": {
+        "path": "src/modulo-06/arquivo-30.ts",
+        "old_summary": "Resumo sintetico 30: modulo de exemplo com responsabilidade generica.",
+        "old_tags": [
+          "tag-2",
+          "tag-6"
+        ],
+        "old_complexity": "complex",
+        "diff": "--- a/src/modulo-06/arquivo-30.ts\n+++ b/src/modulo-06/arquivo-30.ts\n@@ -1,4 +1,4 @@\n contexto 1\n contexto 2\n-linha de exemplo 30 versao antiga\n+linha de exemplo 30 versao nova\n contexto 3\n"
+      },
+      "diff_chars": 188,
+      "model": "jev-1.13.0",
+      "answers": {
+        "summary_still_valid": {
+          "type": "noul",
+          "noul": 0.07
+        },
+        "verdict": {
+          "type": "choice",
+          "choice": "rewrite",
+          "confidence": 1,
+          "probabilities": {
+            "unknown": 0,
+            "rewrite": 1,
+            "keep": 0
+          }
+        },
+        "complexity_changed": {
+          "type": "noul",
+          "noul": 0.5
+        }
+      },
+      "usage": {
+        "input_tokens": 1467,
+        "output_tokens": 78
+      }
+    },
+    {
+      "id": "sample-31",
+      "path": "src/modulo-07/arquivo-31.ts",
+      "state": {
+        "path": "src/modulo-07/arquivo-31.ts",
+        "old_summary": "Resumo sintetico 31: modulo de exemplo com responsabilidade generica.",
+        "old_tags": [
+          "tag-3",
+          "tag-7"
+        ],
+        "old_complexity": "simple",
+        "diff": "--- a/src/modulo-07/arquivo-31.ts\n+++ b/src/modulo-07/arquivo-31.ts\n@@ -1,4 +1,4 @@\n contexto 1\n contexto 2\n-linha de exemplo 31 versao antiga\n+linha de exemplo 31 versao nova\n contexto 3\n"
+      },
+      "diff_chars": 188,
+      "model": "jev-1.13.0",
+      "answers": {
+        "summary_still_valid": {
+          "type": "noul",
+          "noul": 0.16
+        },
+        "verdict": {
+          "type": "choice",
+          "choice": "rewrite",
+          "confidence": 0.99,
+          "probabilities": {
+            "keep": 0.01,
+            "rewrite": 0.99,
+            "unknown": 0
+          }
+        },
+        "complexity_changed": {
+          "type": "noul",
+          "noul": 0.64
+        }
+      },
+      "usage": {
+        "input_tokens": 2995,
+        "output_tokens": 78
+      }
+    },
+    {
+      "id": "sample-32",
+      "path": "src/modulo-07/arquivo-32.ts",
+      "state": {
+        "path": "src/modulo-07/arquivo-32.ts",
+        "old_summary": "Resumo sintetico 32: modulo de exemplo com responsabilidade generica.",
+        "old_tags": [
+          "tag-4",
+          "tag-8"
+        ],
+        "old_complexity": "moderate",
+        "diff": "--- a/src/modulo-07/arquivo-32.ts\n+++ b/src/modulo-07/arquivo-32.ts\n@@ -1,4 +1,4 @@\n contexto 1\n contexto 2\n-linha de exemplo 32 versao antiga\n+linha de exemplo 32 versao nova\n contexto 3\n"
+      },
+      "diff_chars": 188,
+      "model": "jev-1.13.0",
+      "answers": {
+        "summary_still_valid": {
+          "type": "noul",
+          "noul": 0.2
+        },
+        "verdict": {
+          "type": "choice",
+          "choice": "rewrite",
+          "confidence": 0.92,
+          "probabilities": {
+            "keep": 0.05,
+            "rewrite": 0.95,
+            "unknown": 0
+          }
+        },
+        "complexity_changed": {
+          "type": "noul",
+          "noul": 0.43
+        }
+      },
+      "usage": {
+        "input_tokens": 2002,
+        "output_tokens": 78
+      }
+    },
+    {
+      "id": "sample-33",
+      "path": "src/modulo-07/arquivo-33.tsx",
+      "state": {
+        "path": "src/modulo-07/arquivo-33.tsx",
+        "old_summary": "Resumo sintetico 33: modulo de exemplo com responsabilidade generica.",
+        "old_tags": [
+          "tag-1",
+          "tag-9"
+        ],
+        "old_complexity": "complex",
+        "diff": "--- a/src/modulo-07/arquivo-33.tsx\n+++ b/src/modulo-07/arquivo-33.tsx\n@@ -1,4 +1,4 @@\n contexto 1\n contexto 2\n-linha de exemplo 33 versao antiga\n+linha de exemplo 33 versao nova\n contexto 3\n"
+      },
+      "diff_chars": 190,
+      "model": "jev-1.13.0",
+      "answers": {
+        "summary_still_valid": {
+          "type": "noul",
+          "noul": 0.41
+        },
+        "verdict": {
+          "type": "choice",
+          "choice": "rewrite",
+          "confidence": 0.45,
+          "probabilities": {
+            "keep": 0.37,
+            "unknown": 0,
+            "rewrite": 0.63
+          }
+        },
+        "complexity_changed": {
+          "type": "noul",
+          "noul": 0.29
+        }
+      },
+      "usage": {
+        "input_tokens": 1613,
+        "output_tokens": 78
+      }
+    },
+    {
+      "id": "sample-34",
+      "path": "src/modulo-07/arquivo-34.ts",
+      "state": {
+        "path": "src/modulo-07/arquivo-34.ts",
+        "old_summary": "Resumo sintetico 34: modulo de exemplo com responsabilidade generica.",
+        "old_tags": [
+          "tag-2",
+          "tag-10"
+        ],
+        "old_complexity": "simple",
+        "diff": "--- a/src/modulo-07/arquivo-34.ts\n+++ b/src/modulo-07/arquivo-34.ts\n@@ -1,4 +1,4 @@\n contexto 1\n contexto 2\n-linha de exemplo 34 versao antiga\n+linha de exemplo 34 versao nova\n contexto 3\n"
+      },
+      "diff_chars": 188,
+      "model": "jev-1.13.0",
+      "answers": {
+        "summary_still_valid": {
+          "type": "noul",
+          "noul": 0.52
+        },
+        "verdict": {
+          "type": "choice",
+          "choice": "rewrite",
+          "confidence": 0.69,
+          "probabilities": {
+            "unknown": 0,
+            "keep": 0.21,
+            "rewrite": 0.79
+          }
+        },
+        "complexity_changed": {
+          "type": "noul",
+          "noul": 0.47
+        }
+      },
+      "usage": {
+        "input_tokens": 3119,
+        "output_tokens": 78
+      }
+    },
+    {
+      "id": "sample-35",
+      "path": "src/modulo-07/arquivo-35.tsx",
+      "state": {
+        "path": "src/modulo-07/arquivo-35.tsx",
+        "old_summary": "Resumo sintetico 35: modulo de exemplo com responsabilidade generica.",
+        "old_tags": [
+          "tag-3",
+          "tag-11"
+        ],
+        "old_complexity": "moderate",
+        "diff": "--- a/src/modulo-07/arquivo-35.tsx\n+++ b/src/modulo-07/arquivo-35.tsx\n@@ -1,4 +1,4 @@\n contexto 1\n contexto 2\n-linha de exemplo 35 versao antiga\n+linha de exemplo 35 versao nova\n contexto 3\n"
+      },
+      "diff_chars": 190,
+      "model": "jev-1.13.0",
+      "answers": {
+        "summary_still_valid": {
+          "type": "noul",
+          "noul": 0.32
+        },
+        "verdict": {
+          "type": "choice",
+          "choice": "rewrite",
+          "confidence": 0.76,
+          "probabilities": {
+            "rewrite": 0.84,
+            "keep": 0.16,
+            "unknown": 0
+          }
+        },
+        "complexity_changed": {
+          "type": "noul",
+          "noul": 0.38
+        }
+      },
+      "usage": {
+        "input_tokens": 2274,
+        "output_tokens": 78
+      }
+    },
+    {
+      "id": "sample-36",
+      "path": "src/modulo-08/arquivo-36.ts",
+      "state": {
+        "path": "src/modulo-08/arquivo-36.ts",
+        "old_summary": "Resumo sintetico 36: modulo de exemplo com responsabilidade generica.",
+        "old_tags": [
+          "tag-4",
+          "tag-5"
+        ],
+        "old_complexity": "complex",
+        "diff": "--- a/src/modulo-08/arquivo-36.ts\n+++ b/src/modulo-08/arquivo-36.ts\n@@ -1,4 +1,4 @@\n contexto 1\n contexto 2\n-linha de exemplo 36 versao antiga\n+linha de exemplo 36 versao nova\n contexto 3\n"
+      },
+      "diff_chars": 188,
+      "model": "jev-1.13.0",
+      "answers": {
+        "summary_still_valid": {
+          "type": "noul",
+          "noul": 0.53
+        },
+        "verdict": {
+          "type": "choice",
+          "choice": "rewrite",
+          "confidence": 0.63,
+          "probabilities": {
+            "keep": 0.24,
+            "rewrite": 0.75,
+            "unknown": 0.01
+          }
+        },
+        "complexity_changed": {
+          "type": "noul",
+          "noul": 0.48
+        }
+      },
+      "usage": {
+        "input_tokens": 3222,
+        "output_tokens": 78
+      }
+    },
+    {
+      "id": "sample-37",
+      "path": "src/modulo-08/arquivo-37.ts",
+      "state": {
+        "path": "src/modulo-08/arquivo-37.ts",
+        "old_summary": "Resumo sintetico 37: modulo de exemplo com responsabilidade generica.",
+        "old_tags": [
+          "tag-1",
+          "tag-6"
+        ],
+        "old_complexity": "simple",
+        "diff": "--- a/src/modulo-08/arquivo-37.ts\n+++ b/src/modulo-08/arquivo-37.ts\n@@ -1,4 +1,4 @@\n contexto 1\n contexto 2\n-linha de exemplo 37 versao antiga\n+linha de exemplo 37 versao nova\n contexto 3\n"
+      },
+      "diff_chars": 188,
+      "model": "jev-1.13.0",
+      "answers": {
+        "summary_still_valid": {
+          "type": "noul",
+          "noul": 0.59
+        },
+        "verdict": {
+          "type": "choice",
+          "choice": "rewrite",
+          "confidence": 0.29,
+          "probabilities": {
+            "keep": 0.46,
+            "rewrite": 0.53,
+            "unknown": 0.01
+          }
+        },
+        "complexity_changed": {
+          "type": "noul",
+          "noul": 0.3
+        }
+      },
+      "usage": {
+        "input_tokens": 3251,
+        "output_tokens": 78
+      }
+    },
+    {
+      "id": "sample-38",
+      "path": "src/modulo-08/arquivo-38.ts",
+      "state": {
+        "path": "src/modulo-08/arquivo-38.ts",
+        "old_summary": "Resumo sintetico 38: modulo de exemplo com responsabilidade generica.",
+        "old_tags": [
+          "tag-2",
+          "tag-7"
+        ],
+        "old_complexity": "moderate",
+        "diff": "--- a/src/modulo-08/arquivo-38.ts\n+++ b/src/modulo-08/arquivo-38.ts\n@@ -1,4 +1,4 @@\n contexto 1\n contexto 2\n-linha de exemplo 38 versao antiga\n+linha de exemplo 38 versao nova\n contexto 3\n"
+      },
+      "diff_chars": 188,
+      "model": "jev-1.13.0",
+      "answers": {
+        "summary_still_valid": {
+          "type": "noul",
+          "noul": 0.51
+        },
+        "verdict": {
+          "type": "choice",
+          "choice": "unknown",
+          "confidence": 0.94,
+          "probabilities": {
+            "keep": 0.02,
+            "rewrite": 0.01,
+            "unknown": 0.97
+          }
+        },
+        "complexity_changed": {
+          "type": "noul",
+          "noul": 0.3
+        }
+      },
+      "usage": {
+        "input_tokens": 662,
+        "output_tokens": 78
+      }
+    },
+    {
+      "id": "sample-39",
+      "path": "src/modulo-08/arquivo-39.ts",
+      "state": {
+        "path": "src/modulo-08/arquivo-39.ts",
+        "old_summary": "Resumo sintetico 39: modulo de exemplo com responsabilidade generica.",
+        "old_tags": [
+          "tag-3",
+          "tag-8"
+        ],
+        "old_complexity": "complex",
+        "diff": "--- a/src/modulo-08/arquivo-39.ts\n+++ b/src/modulo-08/arquivo-39.ts\n@@ -1,4 +1,4 @@\n contexto 1\n contexto 2\n-linha de exemplo 39 versao antiga\n+linha de exemplo 39 versao nova\n contexto 3\n"
+      },
+      "diff_chars": 188,
+      "model": "jev-1.13.0",
+      "answers": {
+        "summary_still_valid": {
+          "type": "noul",
+          "noul": 0.63
+        },
+        "verdict": {
+          "type": "choice",
+          "choice": "unknown",
+          "confidence": 0.9,
+          "probabilities": {
+            "keep": 0.06,
+            "rewrite": 0.01,
+            "unknown": 0.9299999999999999
+          }
+        },
+        "complexity_changed": {
+          "type": "noul",
+          "noul": 0.28
+        }
+      },
+      "usage": {
+        "input_tokens": 696,
+        "output_tokens": 78
+      }
+    },
+    {
+      "id": "sample-40",
+      "path": "src/modulo-08/arquivo-40.ts",
+      "state": {
+        "path": "src/modulo-08/arquivo-40.ts",
+        "old_summary": "Resumo sintetico 40: modulo de exemplo com responsabilidade generica.",
+        "old_tags": [
+          "tag-4",
+          "tag-9"
+        ],
+        "old_complexity": "simple",
+        "diff": "--- a/src/modulo-08/arquivo-40.ts\n+++ b/src/modulo-08/arquivo-40.ts\n@@ -1,4 +1,4 @@\n contexto 1\n contexto 2\n-linha de exemplo 40 versao antiga\n+linha de exemplo 40 versao nova\n contexto 3\n"
+      },
+      "diff_chars": 188,
+      "model": "jev-1.13.0",
+      "answers": {
+        "summary_still_valid": {
+          "type": "noul",
+          "noul": 0.53
+        },
+        "verdict": {
+          "type": "choice",
+          "choice": "unknown",
+          "confidence": 0.87,
+          "probabilities": {
+            "keep": 0.05,
+            "rewrite": 0.04,
+            "unknown": 0.91
+          }
+        },
+        "complexity_changed": {
+          "type": "noul",
+          "noul": 0.31
+        }
+      },
+      "usage": {
+        "input_tokens": 691,
+        "output_tokens": 78
+      }
+    }
+  ]
+}

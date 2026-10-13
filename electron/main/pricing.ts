@@ -28,6 +28,18 @@ const GROK_45_LONG_CONTEXT: LongContextPricing = {
   outputMultiplier: 2,
 };
 
+const HAIKU_5_5_LONG_CONTEXT: LongContextPricing = {
+  thresholdTokens: 100_000,
+  inputMultiplier: 5,
+  outputMultiplier: 5,
+};
+
+const MINIMAX_M3_LONG_CONTEXT: LongContextPricing = {
+  thresholdTokens: 512_000,
+  inputMultiplier: 2,
+  outputMultiplier: 2,
+};
+
 export const MODEL_PRICING: Record<string, ModelPricingEntry> = {
   'sonnet': { input: 3.0, output: 15.0, cacheRead: 0.3, cacheCreation: 3.75 },
   'opus': { input: 5.0, output: 25.0, cacheRead: 0.5, cacheCreation: 6.25 },
@@ -39,8 +51,16 @@ export const MODEL_PRICING: Record<string, ModelPricingEntry> = {
   'claude-opus-4-8': { input: 5.0, output: 25.0, cacheRead: 0.5, cacheCreation: 6.25 },
   'claude-opus-4-7': { input: 5.0, output: 25.0, cacheRead: 0.5, cacheCreation: 6.25 },
   'claude-opus-4-6': { input: 5.0, output: 25.0, cacheRead: 0.5, cacheCreation: 6.25 },
+  'claude-sonnet-5-5': { input: 2.0, output: 10.0, cacheRead: 0.1, cacheCreation: 2.5 },
   'claude-sonnet-5': { input: 3.0, output: 15.0, cacheRead: 0.3, cacheCreation: 3.75 },
   'claude-sonnet-4-6': { input: 3.0, output: 15.0, cacheRead: 0.3, cacheCreation: 3.75 },
+  'claude-haiku-5-5': {
+    input: 0.1,
+    output: 0.5,
+    cacheRead: 0.01,
+    cacheCreation: 0.125,
+    longContext: HAIKU_5_5_LONG_CONTEXT,
+  },
   'claude-haiku-4-5-20251001': { input: 1.0, output: 5.0, cacheRead: 0.1, cacheCreation: 1.25 },
   'claude-sonnet-4-5-20250514': { input: 3.0, output: 15.0, cacheRead: 0.3, cacheCreation: 3.75 },
   'claude-sonnet-4-0-20250514': { input: 3.0, output: 15.0, cacheRead: 0.3, cacheCreation: 3.75 },
@@ -51,11 +71,12 @@ export const MODEL_PRICING: Record<string, ModelPricingEntry> = {
   'gpt-5.6-terra': { input: 2.0, output: 12.0, cacheRead: 0.2, cacheCreation: 2.5, longContext: GPT_LONG_CONTEXT_272K },
   'gpt-5.6-luna': { input: 0.2, output: 1.2, cacheRead: 0.02, cacheCreation: 0.25, longContext: GPT_LONG_CONTEXT_272K },
 
+  'gpt-6.1-sol': { input: 2.0, output: 10.0, cacheRead: 0.1, cacheCreation: 2.5, longContext: GPT_LONG_CONTEXT_272K },
   'gpt-6-astra': { input: 10.0, output: 50.0, cacheRead: 1.0, cacheCreation: 12.5, longContext: GPT_LONG_CONTEXT_272K },
   'gpt-6-sol': { input: 2.0, output: 10.0, cacheRead: 0.2, cacheCreation: 2.5, longContext: GPT_LONG_CONTEXT_272K },
   'gpt-6-luna': { input: 0.1, output: 0.5, cacheRead: 0.01, cacheCreation: 0.125, longContext: GPT_LONG_CONTEXT_272K },
 
-  'gpt-5.5': { input: 5.0, output: 30.0, cacheRead: 0.5, cacheCreation: 0 },
+  'gpt-5.5': { input: 5.0, output: 30.0, cacheRead: 0.5, cacheCreation: 0, longContext: GPT_LONG_CONTEXT_272K },
   'gpt-5.5-pro': { input: 30.0, output: 180.0, cacheRead: 3.0, cacheCreation: 0 },
   'gpt-5.4': { input: 2.5, output: 15.0, cacheRead: 0.25, cacheCreation: 0 },
   'gpt-5.4-mini': { input: 0.75, output: 4.5, cacheRead: 0.075, cacheCreation: 0 },
@@ -78,6 +99,14 @@ export const MODEL_PRICING: Record<string, ModelPricingEntry> = {
     cacheCreationBilling: 'not-separately-reported',
     longContext: GROK_45_LONG_CONTEXT,
   },
+  'grok-4.7': {
+    input: 2.0,
+    output: 6.0,
+    cacheRead: 0.5,
+    cacheCreation: 0,
+    cacheCreationBilling: 'not-separately-reported',
+    longContext: GROK_45_LONG_CONTEXT,
+  },
 
   'or:deepseek/deepseek-v4-pro': { input: 0.435, output: 0.87, cacheRead: 0.1, cacheCreation: 0 },
   'or:deepseek/deepseek-v4-flash': { input: 0.14, output: 0.28, cacheRead: 0.04, cacheCreation: 0 },
@@ -92,9 +121,18 @@ export const MODEL_PRICING: Record<string, ModelPricingEntry> = {
   'or:z-ai/glm-4.7': { input: 0.38, output: 1.74, cacheRead: 0, cacheCreation: 0 },
   'or:z-ai/glm-4.7-flash': { input: 0.06, output: 0.4, cacheRead: 0, cacheCreation: 0 },
 
+  'or:openai/gpt-6.1-sol': { input: 2.0, output: 10.0, cacheRead: 0.1, cacheCreation: 0 },
   'or:openai/gpt-6-sol': { input: 2.0, output: 10.0, cacheRead: 0.2, cacheCreation: 0 },
   'or:openai/gpt-6-luna': { input: 0.1, output: 0.5, cacheRead: 0.01, cacheCreation: 0 },
   'or:anthropic/claude-opus-5-5': { input: 4.0, output: 20.0, cacheRead: 0.2, cacheCreation: 5.0 },
+  'or:anthropic/claude-sonnet-5.5': { input: 2.0, output: 10.0, cacheRead: 0.1, cacheCreation: 2.5 },
+  'or:anthropic/claude-haiku-5.5': {
+    input: 0.1,
+    output: 0.5,
+    cacheRead: 0.01,
+    cacheCreation: 0.125,
+    longContext: HAIKU_5_5_LONG_CONTEXT,
+  },
   'or:anthropic/claude-sonnet-4-5': { input: 3.0, output: 15.0, cacheRead: 0.3, cacheCreation: 3.75 },
   'or:anthropic/claude-opus-4': { input: 15.0, output: 75.0, cacheRead: 1.5, cacheCreation: 18.75 },
   'or:anthropic/claude-haiku-4-5': { input: 1.0, output: 5.0, cacheRead: 0.1, cacheCreation: 1.25 },
@@ -104,19 +142,28 @@ export const MODEL_PRICING: Record<string, ModelPricingEntry> = {
   'glm-5.1': { input: 1.4, output: 4.4, cacheRead: 0.26, cacheCreation: 1.4 },
   'glm-5.2': { input: 1.4, output: 4.4, cacheRead: 0.26, cacheCreation: 1.4 },
   'glm-5.3': { input: 1.4, output: 4.4, cacheRead: 0.26, cacheCreation: 1.4 },
+  'glm-5.3-flash': { input: 0.15, output: 0.5, cacheRead: 0.03, cacheCreation: 0.15 },
+  'glm-5.3-flashx': { input: 0.37, output: 1.25, cacheRead: 0.075, cacheCreation: 0.37 },
   'glm-5-turbo': { input: 1.2, output: 4.0, cacheRead: 0.24, cacheCreation: 1.2 },
 
   'minimax-m2.7': { input: 0.3, output: 1.2, cacheRead: 0.06, cacheCreation: 0.375 },
   'minimax-m2.7-highspeed': { input: 0.6, output: 2.4, cacheRead: 0.06, cacheCreation: 0.375 },
   'minimax-m2.5': { input: 0.3, output: 1.2, cacheRead: 0.03, cacheCreation: 0.375 },
   'minimax-m2.5-highspeed': { input: 0.6, output: 2.4, cacheRead: 0.03, cacheCreation: 0.375 },
-  'minimax-m3': { input: 0.6, output: 2.4, cacheRead: 0.12, cacheCreation: 0.375 },
+  'minimax-m3': {
+    input: 0.3,
+    output: 1.2,
+    cacheRead: 0.06,
+    cacheCreation: 0.375,
+    longContext: MINIMAX_M3_LONG_CONTEXT,
+  },
   'm2-her': { input: 0.3, output: 1.2, cacheRead: 0, cacheCreation: 0 },
 
   'deepseek-chat': { input: 0.27, output: 1.1, cacheRead: 0.07, cacheCreation: 0 },
   'deepseek-reasoner': { input: 0.55, output: 2.19, cacheRead: 0.14, cacheCreation: 0 },
-  'deepseek-v4-flash': { input: 0.14, output: 0.28, cacheRead: 0.0028, cacheCreation: 0 },
-  'deepseek-v4-pro': { input: 0.435, output: 0.87, cacheRead: 0.003625, cacheCreation: 0 },
+  'deepseek-flash': { input: 0.15, output: 0.6, cacheRead: 0.003, cacheCreation: 0 },
+  'deepseek-v4-flash': { input: 0.15, output: 0.6, cacheRead: 0.003, cacheCreation: 0 },
+  'deepseek-v4-pro': { input: 0.66, output: 1.98, cacheRead: 0.022, cacheCreation: 0 },
 
   'qwen3-max': { input: 0.4, output: 1.2, cacheRead: 0, cacheCreation: 0 },
   'qwen3-coder-plus': { input: 1.0, output: 5.0, cacheRead: 0, cacheCreation: 0 },
@@ -124,7 +171,7 @@ export const MODEL_PRICING: Record<string, ModelPricingEntry> = {
   'minimax-m2': { input: 0.3, output: 1.2, cacheRead: 0.06, cacheCreation: 0.375 },
 
   'kimi-k2.6': { input: 0.95, output: 4.0, cacheRead: 0.16, cacheCreation: 0 },
-  'kimi-k3': { input: 3.0, output: 15.0, cacheRead: 0.3, cacheCreation: 0 },
+  'kimi-k3': { input: 3.0, output: 15.0, cacheRead: 0.3, cacheCreation: 3.0 },
 
   'gemini-2.5-flash-lite-preview-09-2025': { input: 0.1, output: 0.4, cacheRead: 0.01, cacheCreation: 0 },
 
@@ -136,22 +183,32 @@ export const MODEL_PRICING: Record<string, ModelPricingEntry> = {
     cacheCreationBilling: 'not-separately-reported',
   },
   'gemini-3.7-flash': { input: 0.3, output: 2.5, cacheRead: 0.03, cacheCreation: 0 },
+  'gemini-3.8-flash': { input: 0.75, output: 3.75, cacheRead: 0.075, cacheCreation: 0 },
+  'gemini-3.6-flash': { input: 0.75, output: 3.75, cacheRead: 0.075, cacheCreation: 0 },
+  'gemini-3.5-flash-lite': { input: 0.3, output: 2.5, cacheRead: 0.03, cacheCreation: 0 },
 
   'kimi-for-coding': { input: 0.95, output: 4.0, cacheRead: 0.19, cacheCreation: 0 },
   'kimi-k2.7-code': { input: 0.95, output: 4.0, cacheRead: 0.19, cacheCreation: 0 },
+  'kimi-k2.7-code-highspeed': { input: 1.9, output: 8.0, cacheRead: 0.38, cacheCreation: 0 },
 };
 
 export const CURSOR_MODEL_PRICING: Record<string, ModelPricingEntry> = {
   'composer-2.5': MODEL_PRICING['composer-2.5'],
+  'claude-fable-5-1': MODEL_PRICING['claude-fable-5-1'],
   'claude-fable-5': MODEL_PRICING['claude-fable-5'],
+  'claude-opus-5-5': MODEL_PRICING['claude-opus-5-5'],
   'claude-opus-5': MODEL_PRICING['claude-opus-5'],
   'claude-opus-4-8': MODEL_PRICING['claude-opus-4-8'],
+  'claude-sonnet-5-5': MODEL_PRICING['claude-sonnet-5-5'],
   'claude-sonnet-5': MODEL_PRICING['claude-sonnet-5'],
+  'claude-haiku-5-5': MODEL_PRICING['claude-haiku-5-5'],
   'gpt-5.6-sol': MODEL_PRICING['gpt-5.6-sol'],
   'gpt-5.6-terra': MODEL_PRICING['gpt-5.6-terra'],
   'gpt-5.5': MODEL_PRICING['gpt-5.5'],
+  'grok-4.7': MODEL_PRICING['grok-4.7'],
   'grok-4.6': MODEL_PRICING['grok-4.6'],
   'grok-4.5': MODEL_PRICING['grok-4.5'],
+  'gemini-3.8-flash': MODEL_PRICING['gemini-3.8-flash'],
   'gemini-3.7-flash': MODEL_PRICING['gemini-3.7-flash'],
 };
 
@@ -161,7 +218,7 @@ const KIMI_MODEL_PRICING: Record<string, { input: number; output: number; cacheR
     'moonshot-v1-32k': { input: 0.24, output: 0.24, cacheRead: 0, cacheCreation: 0 },
     'moonshot-v1-128k': { input: 0.81, output: 0.81, cacheRead: 0, cacheCreation: 0 },
     'kimi-k2-instruct': { input: 0.7448, output: 4.655, cacheRead: 0, cacheCreation: 0 },
-    'kimi-k3': { input: 3.0, output: 15.0, cacheRead: 0.3, cacheCreation: 0 },
+    'kimi-k3': { input: 3.0, output: 15.0, cacheRead: 0.3, cacheCreation: 3.0 },
   };
 
 export const PRESET_MODEL_PRICING: Record<
@@ -188,7 +245,7 @@ export const PRESET_MODEL_PRICING: Record<
     'abab6.5s-chat': { input: 0.1, output: 0.1, cacheRead: 0, cacheCreation: 0 },
     'abab6.5g-chat': { input: 0.15, output: 0.15, cacheRead: 0, cacheCreation: 0 },
     'minimax-m2': { input: 0.3, output: 1.2, cacheRead: 0.059, cacheCreation: 0 },
-    'MiniMax-M3': { input: 0.6, output: 2.4, cacheRead: 0.12, cacheCreation: 0 },
+    'MiniMax-M3': { input: 0.3, output: 1.2, cacheRead: 0.06, cacheCreation: 0 },
   },
 };
 
@@ -198,7 +255,7 @@ export function getModelContextWindow(model: string): number | undefined {
 
 const WEB_SEARCH_COST_PER_REQUEST = 0.01;
 
-export const PRICING_VERSION = '2026-07-24';
+export const PRICING_VERSION = '2026-10-12';
 
 export interface PricingSnapshot {
   pricingVersion: string;

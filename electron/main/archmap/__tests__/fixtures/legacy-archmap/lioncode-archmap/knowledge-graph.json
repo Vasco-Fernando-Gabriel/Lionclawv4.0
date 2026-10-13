@@ -1,0 +1,283 @@
+{
+  "version": "1.0.0",
+  "kind": "codebase",
+  "project": {
+    "name": "legado",
+    "languages": [
+      "typescript",
+      "markdown",
+      "json",
+      "yaml"
+    ],
+    "frameworks": [],
+    "description": "Mapa legado gerado pelo LionCode.",
+    "analyzedAt": "2026-09-12T14:53:44.224Z",
+    "gitCommitHash": "0000000000000000000000000000000000000000"
+  },
+  "nodes": [
+    {
+      "id": "document:README.md",
+      "type": "document",
+      "name": "README.md",
+      "filePath": "README.md",
+      "summary": "Resumo legado de README.md",
+      "tags": [
+        "legado",
+        "semantic"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:config/app.yaml",
+      "type": "config",
+      "name": "app.yaml",
+      "filePath": "config/app.yaml",
+      "summary": "Resumo legado de config/app.yaml",
+      "tags": [
+        "legado",
+        "semantic"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "document:docs/guide.md",
+      "type": "document",
+      "name": "guide.md",
+      "filePath": "docs/guide.md",
+      "summary": "Resumo legado de docs/guide.md",
+      "tags": [
+        "legado",
+        "semantic"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "config:package.json",
+      "type": "config",
+      "name": "package.json",
+      "filePath": "package.json",
+      "summary": "Resumo legado de package.json",
+      "tags": [
+        "legado",
+        "semantic"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/greet.ts",
+      "type": "file",
+      "name": "greet.ts",
+      "filePath": "src/greet.ts",
+      "summary": "Resumo legado de src/greet.ts",
+      "tags": [
+        "legado",
+        "semantic"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/greet.ts:greet",
+      "type": "function",
+      "name": "greet",
+      "filePath": "src/greet.ts",
+      "lineRange": [
+        1,
+        1
+      ],
+      "summary": "Funcao legada greet em src/greet.ts",
+      "tags": [
+        "legado"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/index.ts",
+      "type": "file",
+      "name": "index.ts",
+      "filePath": "src/index.ts",
+      "summary": "Resumo legado de src/index.ts",
+      "tags": [
+        "legado",
+        "semantic"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/index.ts:main",
+      "type": "function",
+      "name": "main",
+      "filePath": "src/index.ts",
+      "lineRange": [
+        1,
+        1
+      ],
+      "summary": "Funcao legada main em src/index.ts",
+      "tags": [
+        "legado"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/math.ts",
+      "type": "file",
+      "name": "math.ts",
+      "filePath": "src/math.ts",
+      "summary": "Resumo legado de src/math.ts",
+      "tags": [
+        "legado",
+        "semantic"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/math.ts:add",
+      "type": "function",
+      "name": "add",
+      "filePath": "src/math.ts",
+      "lineRange": [
+        1,
+        1
+      ],
+      "summary": "Funcao legada add em src/math.ts",
+      "tags": [
+        "legado"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/math.ts:sub",
+      "type": "function",
+      "name": "sub",
+      "filePath": "src/math.ts",
+      "lineRange": [
+        1,
+        1
+      ],
+      "summary": "Funcao legada sub em src/math.ts",
+      "tags": [
+        "legado"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "file:src/util/strings.ts",
+      "type": "file",
+      "name": "strings.ts",
+      "filePath": "src/util/strings.ts",
+      "summary": "Resumo legado de src/util/strings.ts",
+      "tags": [
+        "legado",
+        "semantic"
+      ],
+      "complexity": "simple"
+    },
+    {
+      "id": "function:src/util/strings.ts:upper",
+      "type": "function",
+      "name": "upper",
+      "filePath": "src/util/strings.ts",
+      "lineRange": [
+        1,
+        1
+      ],
+      "summary": "Funcao legada upper em src/util/strings.ts",
+      "tags": [
+        "legado"
+      ],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:src/greet.ts",
+      "target": "function:src/greet.ts:greet",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/greet.ts",
+      "target": "file:src/util/strings.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/index.ts",
+      "target": "function:src/index.ts:main",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/index.ts",
+      "target": "file:src/greet.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/index.ts",
+      "target": "file:src/math.ts",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 0.8
+    },
+    {
+      "source": "file:src/math.ts",
+      "target": "function:src/math.ts:add",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/math.ts",
+      "target": "function:src/math.ts:sub",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/util/strings.ts",
+      "target": "function:src/util/strings.ts:upper",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1
+    },
+    {
+      "source": "file:src/index.ts",
+      "target": "file:src/greet.ts",
+      "type": "calls",
+      "direction": "forward",
+      "weight": 0.6,
+      "description": "relacao semantica legada"
+    }
+  ],
+  "layers": [
+    {
+      "id": "layer:tudo",
+      "name": "Tudo",
+      "description": "Camada unica.",
+      "nodeIds": [
+        "document:README.md",
+        "config:config/app.yaml",
+        "document:docs/guide.md",
+        "config:package.json",
+        "file:src/greet.ts",
+        "file:src/index.ts",
+        "file:src/math.ts",
+        "file:src/util/strings.ts"
+      ]
+    }
+  ],
+  "tour": [
+    {
+      "order": 1,
+      "title": "Inicio",
+      "description": "Comece pelo index.",
+      "nodeIds": [
+        "file:src/index.ts"
+      ]
+    }
+  ]
+}

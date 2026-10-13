@@ -7,7 +7,7 @@ export const specBuilder: Omit<AgentConfig, 'sortOrder'> = {
   name: 'Spec Builder',
   description:
     'Gera SPEC.md unificada a partir do PRD.md + stories-requisitos.md. Produz documento completo com database, backend, frontend e security. Corrige problemas apontados pelo Spec Validator.',
-  model: 'claude-sonnet-4-6',
+  model: 'claude-sonnet-5-5',
   effort: 'high' as const,
   thinking: 'enabled' as const,
   thinkingBudget: 10000,

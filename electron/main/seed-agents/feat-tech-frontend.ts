@@ -7,7 +7,7 @@ export const featTechFrontend: Omit<AgentConfig, 'sortOrder'> = {
   name: 'Feature Tech Frontend',
   description:
     'Analisa componentes, pages, hooks e stores existentes no repo, propoe novos componentes coerentes com os patterns atuais. Salva decisoes na secao Frontend do PRD.md.',
-  model: 'claude-sonnet-4-6',
+  model: 'claude-sonnet-5-5',
   effort: 'high' as const,
   thinking: 'adaptive' as const,
   maxTurns: 80,

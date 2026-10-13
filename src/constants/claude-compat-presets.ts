@@ -28,6 +28,16 @@ export const CLAUDE_COMPAT_PRESETS: ClaudeCompatPreset[] = [
         displayName: 'GLM-5.3',
         notes: 'Rollout em andamento na Z.ai: tool-calling pode falhar. Prefira o 5.2 para agentes ate estabilizar.',
       },
+      {
+        id: 'glm-5.3-flash',
+        displayName: 'GLM-5.3 Flash',
+        notes: 'Contexto 1M, thinking sempre ligado. No GLM Coding Plan com 3x a quota do 5.3.',
+      },
+      {
+        id: 'glm-5.3-flashx',
+        displayName: 'GLM-5.3 FlashX',
+        notes: 'Contexto 1M. Ainda fora do GLM Coding Plan (so pay-as-you-go).',
+      },
       { id: 'glm-5.1', displayName: 'GLM-5.1' },
       { id: 'glm-5-turbo', displayName: 'GLM-5-Turbo' },
       { id: 'glm-4.7', displayName: 'GLM-4.7' },
@@ -40,8 +50,18 @@ export const CLAUDE_COMPAT_PRESETS: ClaudeCompatPreset[] = [
     baseUrl: 'https://api.minimax.io/anthropic',
     apiKeyVaultRef: 'orchestratorMinimaxApiKeyRef',
     models: [
-      { id: 'MiniMax-M2.7', displayName: 'MiniMax M2.7', supportTier: 'official' },
-      { id: 'MiniMax-M2.7-highspeed', displayName: 'MiniMax M2.7 (High-Speed)', supportTier: 'official' },
+      {
+        id: 'MiniMax-M2.7',
+        displayName: 'MiniMax M2.7',
+        supportTier: 'official',
+        notes: 'A partir de 19/10/2026 o M2.7 no M Plan / Token Plan e roteado para o M3.1 Flash Preview.',
+      },
+      {
+        id: 'MiniMax-M2.7-highspeed',
+        displayName: 'MiniMax M2.7 (High-Speed)',
+        supportTier: 'official',
+        notes: 'A partir de 19/10/2026 o M2.7 no M Plan / Token Plan e roteado para o M3.1 Flash Preview.',
+      },
       {
         id: 'MiniMax-M2.5',
         displayName: 'MiniMax M2.5',
@@ -55,6 +75,12 @@ export const CLAUDE_COMPAT_PRESETS: ClaudeCompatPreset[] = [
         notes: 'Disponivel apenas via endpoint High-Speed.',
       },
       { id: 'MiniMax-M3', displayName: 'MiniMax M3', supportTier: 'official' },
+      {
+        id: 'MiniMax-M3.1-Flash-Preview',
+        displayName: 'MiniMax M3.1 Flash Preview',
+        supportTier: 'official',
+        notes: 'Disponivel so no M Plan / MiniMax Code. Contexto 1M, thinking ajustavel. Sem preco publicado.',
+      },
     ],
   },
 ];

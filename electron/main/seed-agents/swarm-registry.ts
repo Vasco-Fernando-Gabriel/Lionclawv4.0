@@ -1,3 +1,11 @@
+import { swarmExplorer } from './swarm-explorer';
+export { swarmExplorer } from './swarm-explorer';
+import { swarmAuditor } from './swarm-auditor';
+export { swarmAuditor } from './swarm-auditor';
+import { swarmDocValidator } from './swarm-doc-validator';
+export { swarmDocValidator } from './swarm-doc-validator';
+import { swarmResearcher } from './swarm-researcher';
+export { swarmResearcher } from './swarm-researcher';
 import { swarmSecretsScanner } from './swarm-secrets-scanner';
 export { swarmSecretsScanner } from './swarm-secrets-scanner';
 import { swarmAuthAuditor } from './swarm-auth-auditor';
@@ -21,7 +29,8 @@ export { swarmCodeExplorer } from './swarm-code-explorer';
 import { swarmBugHypothesisHunter } from './swarm-bug-hypothesis-hunter';
 export { swarmBugHypothesisHunter } from './swarm-bug-hypothesis-hunter';
 
-export const SWARM_SEED_AGENTS = [
+export const SWARM_GENERIC_SEED_AGENTS = [swarmExplorer, swarmAuditor, swarmDocValidator, swarmResearcher] as const;
+export const SWARM_SPECIALIZED_SEED_AGENTS = [
   swarmSecretsScanner,
   swarmAuthAuditor,
   swarmOwaspScanner,
@@ -34,4 +43,7 @@ export const SWARM_SEED_AGENTS = [
   swarmCodeExplorer,
   swarmBugHypothesisHunter,
 ] as const;
+export const SWARM_SEED_AGENTS = [...SWARM_GENERIC_SEED_AGENTS, ...SWARM_SPECIALIZED_SEED_AGENTS] as const;
 export const SWARM_AGENT_IDS = SWARM_SEED_AGENTS.map((seed) => seed.id);
+export const SWARM_GENERIC_AGENT_IDS = SWARM_GENERIC_SEED_AGENTS.map((seed) => seed.id);
+export const SWARM_SPECIALIZED_AGENT_IDS = SWARM_SPECIALIZED_SEED_AGENTS.map((seed) => seed.id);

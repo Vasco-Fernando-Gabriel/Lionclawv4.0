@@ -3,7 +3,7 @@ import { createSwarmProcessOwner } from '../agent-runtime/swarm-process';
 import { spawn } from 'child_process';
 import type { ChildProcessWithoutNullStreams } from 'child_process';
 import { DETACH_FOR_TREE_KILL, killProcessTree } from '../kill-process-tree';
-import { getCodexBinaryStatus, isCodexAvailable } from './binary';
+import { getCodexBinaryStatus, isCodexAvailable, resolveCodexSpawnTarget } from './binary';
 import { CodexUnavailableError, CodexAuthError } from './errors';
 import { getAppVersion } from '../app-version';
 import { createLogger } from '../logger';
@@ -273,17 +273,24 @@ class StdioJsonRpcTransport implements AppServerTransport {
 }
 
 export const defaultTransportFactory: AppServerTransportFactory = async (config) => {
-  const useShell = process.platform === 'win32' && config.binary.toLowerCase().endsWith('.cmd');
+  const target = resolveCodexSpawnTarget(config.binary);
+  if (target.resolvedFromShim) {
+    logger.debug(
+      { shim: config.binary, command: target.command },
+      'codex app-server: shim .cmd resolvido para o executavel',
+    );
+  }
+  const useShell = target.useShell;
   const child = config.swarmSupervised
     ? createSwarmProcessOwner(config.swarmOwnerDirectory).spawnProcess({
-        command: config.binary,
+        command: target.command,
         args: ['app-server', '-c', 'sandbox_workspace_write.network_access=true', ...(config.extraArgs ?? [])],
         cwd: config.cwd,
         env: { ...process.env, ...(config.env ?? {}) },
         signal: new AbortController().signal,
       })
     : (spawn(
-        config.binary,
+        target.command,
         ['app-server', '-c', 'sandbox_workspace_write.network_access=true', ...(config.extraArgs ?? [])],
         {
           cwd: config.cwd,
@@ -946,7 +953,7 @@ export class OfficialAppServerDriver implements CodexDriver {
       throw new CodexUnavailableError('codex app-server handshake failed', { cause: error });
     }
     this.reapHandles(this.registry.reapSameScope(opts.key), 'reap-on-register-same-scope');
-    this.reapHandles(this.registry.reapForCap(), 'cap');
+    this.reapHandles(this.registry.reapForCap(undefined, undefined, undefined, opts.key), 'cap');
     this.registry.register(opts.key, handle);
     this.ensureIdleReaper();
     return handle;

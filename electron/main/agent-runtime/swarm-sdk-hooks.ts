@@ -21,6 +21,7 @@ export function swarmSdkHooks(req: AgentExecutionRequest): { PreToolUse: HookCal
                 hookEventName: 'PreToolUse',
                 permissionDecision: result?.behavior === 'allow' ? 'allow' : 'deny',
                 ...(result?.behavior === 'deny' ? { permissionDecisionReason: result.message } : {}),
+                ...(result?.behavior === 'allow' && result.updatedInput ? { updatedInput: result.updatedInput } : {}),
               },
             };
           },

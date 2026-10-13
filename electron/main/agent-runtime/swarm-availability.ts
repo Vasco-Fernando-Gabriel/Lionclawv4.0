@@ -21,6 +21,12 @@ export async function assertSwarmBackendAvailable(agent: AgentConfig): Promise<v
     if (agent.runtime === 'cloud') await sdk.ensureAuthForSDK();
     else if (agent.runtime === 'zai') await (await import('./zai-executor')).resolveZaiApiKey();
     else await (await import('./minimax-tokenplan-executor')).resolveMinimaxTpApiKey();
+  } else if (agent.runtime === 'grok') {
+    const status = await (await import('./grok-availability')).isGrokAvailable();
+    if (!status.usable) throw new Error(status.reason ?? 'Grok Build não está instalado/autenticado');
+  } else if (agent.runtime === 'cursor') {
+    const secret = await (await import('../secrets-vault')).getSecret('CURSOR_API_KEY');
+    if (!secret) throw new Error('Cursor API key ausente do Vault (CURSOR_API_KEY)');
   } else if (agent.runtime === 'external') {
     if (!agent.externalConfig) throw new Error('Perfil external ausente');
     const secret = await (await import('../vault-registry')).getSecret(agent.externalConfig.apiKeyRef);

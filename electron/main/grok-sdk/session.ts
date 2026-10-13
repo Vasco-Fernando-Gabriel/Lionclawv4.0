@@ -23,6 +23,9 @@ import {
 } from '../agent-runtime/grok-availability';
 import { createPermissionGuard } from '../permission-guard';
 import { PERM_DEFAULT_WITH_GUARD } from '../agent-runtime/permission-profiles';
+import { isSwarmConductionToolName } from '../swarm/aggregation-policy';
+import { assertSwarmConductionMounted, isSwarmConductionMounted } from '../swarm/conduction-mcp';
+import type { SwarmDeliveryKind } from '../../../src/types/swarm';
 import type { AgentQueryConfig } from '../agent-config-resolver';
 import type { CliRunHandle, CliStreamCallbacks } from '../agent-runtime/cli-agentic/contract';
 import type { GrokAcpResponse } from '../grok-acp/acp-translator';
@@ -53,6 +56,7 @@ export interface CreateChatGrokSessionOptions {
   capabilities?: ChatFeatureToggles;
   workspaceGrant: GrokWorkspaceGrant;
   turnBinding?: { sessionId: string; turnId: string };
+  swarmDelivery?: { kind: SwarmDeliveryKind };
 }
 
 export interface GrokSessionContextMeta {
@@ -64,6 +68,7 @@ export interface ChatGrokSession {
   send(prompt: string, callbacks: CliStreamCallbacks, abortSignal: AbortSignal): Promise<GrokAcpResponse>;
   close(): Promise<void>;
   contextMeta: GrokSessionContextMeta;
+  swarmConductionMounted?: boolean;
 }
 
 export async function createChatGrokSession(opts: CreateChatGrokSessionOptions): Promise<ChatGrokSession> {
@@ -155,6 +160,13 @@ export async function createChatGrokSession(opts: CreateChatGrokSessionOptions):
     sessionId: opts.sessionId,
     ...(opts.turnBinding ? { turnBinding: { ...opts.turnBinding, lane: opts.lane } } : {}),
   });
+  const swarmMount = () => ({
+    runtime: 'grok-sdk',
+    serverIds: sessionTools.catalogServerIds,
+    toolCount: sessionTools.catalogToolNames.filter((name) => isSwarmConductionToolName(name)).length,
+  });
+  const swarmConductionMounted = opts.swarmDelivery ? isSwarmConductionMounted(swarmMount()) : false;
+  if (opts.swarmDelivery?.kind === 'question') assertSwarmConductionMounted(swarmMount());
   const externalTools = sessionTools.externalTools.map((tool) => ({
     ...tool,
     async handler(input: Record<string, unknown>, callContext?: { toolUseId: string }) {
@@ -265,6 +277,7 @@ export async function createChatGrokSession(opts: CreateChatGrokSessionOptions):
 
   return {
     contextMeta,
+    swarmConductionMounted,
     async send(prompt, callbacks, abortSignal) {
       const fullPrompt =
         firstSend && reconciledPrompt.trim()

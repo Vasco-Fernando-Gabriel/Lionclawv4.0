@@ -8,7 +8,7 @@ export const dynamicWorkflowCoder: Omit<AgentConfig, 'sortOrder'> = {
   name: 'Dynamic Workflow Coder',
   description:
     'Writer unico do workflow dinamico: implementa a SPEC dentro do writeSet do node, no workspace isolado do run. Continuation-aware; git de escrita e do host.',
-  model: 'claude-sonnet-4-6',
+  model: 'claude-sonnet-5-5',
   effort: 'high' as const,
   thinking: 'adaptive' as const,
   maxTurns: 150,

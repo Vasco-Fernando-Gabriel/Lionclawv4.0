@@ -7,7 +7,8 @@ import { WATCHDOG_TIMEOUT_MS, createWatchdog } from './watchdog';
 import { TypedProviderError, emptyResponseExecutionError } from './llm-error';
 import { CursorSidecarError, runCursorSidecarExecution } from './cursor-sidecar/sidecar-manager';
 import type { CursorSidecarStreamEvent } from './cursor-sidecar/sidecar-manager';
-import { composeCursorToolDispatchers } from './cursor-sidecar/tool-dispatch';
+import { composeCursorToolDispatchers, type CursorToolHandler } from './cursor-sidecar/tool-dispatch';
+import { swarmRepoGraphToolSchemas } from '../swarm/repo-graph';
 import { CURSOR_GUARDED_NATIVE_ALLOWLIST, buildCursorGuardedToolset } from './cursor-sidecar/guarded-tools';
 import { isCursorCatalogModel } from './cursor-sidecar/model-catalog';
 import {
@@ -116,6 +117,21 @@ async function run(req: AgentExecutionRequest, config: AgentQueryConfig): Promis
   }
   const guardedToolset =
     guarded && composedGuard ? buildCursorGuardedToolset({ cwd: req.cwd, canUseTool: composedGuard }) : null;
+  const swarmDispatch = req.swarmToolDispatch;
+  const swarmRepoGraphTools = swarmDispatch
+    ? swarmRepoGraphToolSchemas(config.allowedTools).map((schema) => ({
+        declaration: {
+          name: schema.function.name,
+          description: schema.function.description,
+          inputSchema: schema.function.parameters as Record<string, unknown>,
+        },
+        handler: (async (invocation) => {
+          const result = await swarmDispatch(schema.function.name, invocation.args ?? {});
+          if (result.isError) throw new Error(result.result);
+          return result.result;
+        }) as CursorToolHandler,
+      }))
+    : [];
 
   if (!getCursorModel(config.model) && !isCursorCatalogModel(config.model)) {
     throw new TypedProviderError('LLM-MODEL-404', {
@@ -139,6 +155,7 @@ async function run(req: AgentExecutionRequest, config: AgentQueryConfig): Promis
     agentId: req.agentId,
     cwd: req.cwd,
     ...(req.projectId ? { projectId: req.projectId } : {}),
+    ...(req.sessionScope ? { scope: req.sessionScope } : {}),
   });
   const storeDir = cursorSessionStoreDir(sessionKey);
   const priorSession = req.continueSession ? loadCursorSession(sessionKey) : null;
@@ -223,11 +240,14 @@ async function run(req: AgentExecutionRequest, config: AgentQueryConfig): Promis
         guarded,
         ...(guardedToolset !== null ? { allowedTools: [...CURSOR_GUARDED_NATIVE_ALLOWLIST] } : {}),
         ...(!guarded && process.platform !== 'win32' ? { sandbox: true } : {}),
-        customTools: guardedToolset?.declarations ?? [],
+        customTools: [...(guardedToolset?.declarations ?? []), ...swarmRepoGraphTools.map((tool) => tool.declaration)],
         ...(resumeAgentId !== undefined ? { resumeAgentId } : {}),
       },
       abortController: childAbort,
-      dispatchTool: composeCursorToolDispatchers(guardedToolset?.handlers ?? {}),
+      dispatchTool: composeCursorToolDispatchers({
+        ...(guardedToolset?.handlers ?? {}),
+        ...Object.fromEntries(swarmRepoGraphTools.map((tool) => [tool.declaration.name, tool.handler])),
+      }),
       onEvent,
     });
 

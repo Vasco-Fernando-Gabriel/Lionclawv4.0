@@ -20,6 +20,7 @@ const bridge = vi.hoisted(() => ({
 vi.mock('../codex-runtime/binary', () => ({
   getCodexBinaryStatus: bridge.getCodexBinaryStatus,
   isCodexAvailable: bridge.isCodexAvailable,
+  resolveCodexSpawnTarget: (binary: string) => ({ command: binary, useShell: false, resolvedFromShim: false }),
 }));
 vi.mock('../codex-runtime/errors', () => ({
   CodexUnavailableError: bridge.CodexUnavailableError,

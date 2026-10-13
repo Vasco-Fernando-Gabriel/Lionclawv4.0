@@ -2,6 +2,7 @@ import { createLogger } from '../logger';
 import { releaseSwarmDelivery, getSwarmDelivery, getSession, completeSwarmDelivery } from '../db';
 import { persistSwarmChatMessage } from '../pipeline-shared/chat-persist';
 import type { QueryOptions } from '../orchestrator';
+import type { SwarmDeliveryRef } from '../../../src/types/swarm';
 
 export function persistSwarmResponse(
   options: Pick<QueryOptions, 'swarmDelivery'>,
@@ -25,14 +26,14 @@ export function persistSwarmResponse(
 }
 
 const logger = createLogger('swarm-chat-persistence');
-const pendingReleases = new Map<string, { delivery: NonNullable<QueryOptions['swarmDelivery']>; reason: string }>();
+const pendingReleases = new Map<string, { delivery: SwarmDeliveryRef; reason: string }>();
 
 export function releaseSwarmTurn(options: Pick<QueryOptions, 'swarmDelivery'>, reason: string): void {
   if (!options.swarmDelivery) return;
-  const { runId, terminalRevision, claimId } = options.swarmDelivery;
-  const key = `${runId}/${terminalRevision}/${claimId}`;
+  const { runId, kind, revision, claimId } = options.swarmDelivery;
+  const key = `${runId}/${kind}/${revision}/${claimId}`;
   try {
-    releaseSwarmDelivery(runId, terminalRevision, claimId, reason);
+    releaseSwarmDelivery(runId, kind, revision, claimId, reason);
     pendingReleases.delete(key);
   } catch (error) {
     pendingReleases.set(key, { delivery: options.swarmDelivery, reason });
@@ -42,9 +43,9 @@ export function releaseSwarmTurn(options: Pick<QueryOptions, 'swarmDelivery'>, r
 
 export function canBeginSwarmTurn(options: Pick<QueryOptions, 'swarmDelivery' | 'sessionId'>): boolean {
   if (!options.swarmDelivery) return true;
-  const { runId, terminalRevision, claimId } = options.swarmDelivery;
+  const { runId, kind, revision, claimId } = options.swarmDelivery;
   try {
-    const delivery = getSwarmDelivery(runId, terminalRevision);
+    const delivery = getSwarmDelivery(runId, kind, revision);
     if (
       !delivery ||
       delivery.state !== 'claimed' ||
@@ -54,7 +55,7 @@ export function canBeginSwarmTurn(options: Pick<QueryOptions, 'swarmDelivery' | 
       return false;
     const session = getSession(delivery.sessionId);
     if (!session || session.status === 'trashed') {
-      completeSwarmDelivery(runId, terminalRevision, claimId, 'undeliverable', 'Sessão removida antes da agregação');
+      completeSwarmDelivery(runId, kind, revision, claimId, 'undeliverable', 'Sessão removida antes da agregação');
       return false;
     }
     return true;

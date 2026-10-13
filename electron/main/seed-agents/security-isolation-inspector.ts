@@ -7,7 +7,7 @@ export const securityIsolationInspector: Omit<AgentConfig, 'sortOrder'> = {
   id: ISOLATION_INSPECTOR_ID,
   name: 'Isolation Inspector',
   description: 'Verifica RLS, vazamento entre tenants, queries sem filtro de ownership.',
-  model: 'claude-sonnet-4-6',
+  model: 'claude-sonnet-5-5',
   effort: 'high' as const,
   thinking: 'enabled' as const,
   thinkingBudget: 8000,

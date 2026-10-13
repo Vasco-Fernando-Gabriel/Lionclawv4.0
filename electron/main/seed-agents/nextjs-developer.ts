@@ -8,7 +8,7 @@ export const nextjsDeveloper: Omit<AgentConfig, 'sortOrder'> = {
   name: 'Desenvolvedor Next.js',
   description:
     'Use quando precisar construir aplicações Next.js de produção com App Router, exigindo domínio de Server Components, estratégias de renderização e otimização de performance e SEO',
-  model: 'claude-sonnet-4-6',
+  model: 'claude-sonnet-5-5',
   effort: 'medium' as const,
   thinking: 'adaptive' as const,
   maxTurns: 80,

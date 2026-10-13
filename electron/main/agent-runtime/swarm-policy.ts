@@ -3,16 +3,48 @@ import path from 'node:path';
 import glob from 'glob';
 import { Worker } from 'node:worker_threads';
 import type { AgentPermissionProfile } from './types';
+import { isSwarmRepoGraphReaderTool, type SwarmRepoGraphInvoke } from '../swarm/repo-graph';
 
 export const SWARM_READ_TOOLS = ['Read', 'Glob', 'Grep', 'WebSearch', 'WebFetch'] as const;
+export const SWARM_NATIVE_WEB_TOOLS = new Set<string>(['WebSearch', 'WebFetch']);
+export const SWARM_READ_DEFAULT_LIMIT = 400;
+export const SWARM_READ_MAX_LIMIT = 2000;
+export function swarmCatalogTools(requested: readonly string[], enabled: ReadonlySet<string>): string[] {
+  return requested.filter((tool) => enabled.has(tool) || SWARM_NATIVE_WEB_TOOLS.has(tool));
+}
 export function swarmEffectiveTools(requested: readonly string[]): string[] {
   return [...new Set(requested.filter((t) => (SWARM_READ_TOOLS as readonly string[]).includes(t)).concat('Write'))];
 }
+export function swarmReadRange(input: Record<string, unknown>): { offset: number; limit: number; explicit: boolean } {
+  const offset = typeof input.offset === 'number' && Number.isSafeInteger(input.offset) ? Math.max(0, input.offset) : 0;
+  const explicit = typeof input.limit === 'number' && Number.isSafeInteger(input.limit);
+  const limit = explicit
+    ? Math.min(SWARM_READ_MAX_LIMIT, Math.max(1, input.limit as number))
+    : SWARM_READ_DEFAULT_LIMIT;
+  return { offset, limit, explicit };
+}
+export function swarmReadSlice(text: string, input: Record<string, unknown>): string {
+  const lines = text.split('\n');
+  const { offset, limit, explicit } = swarmReadRange(input);
+  if (!explicit && offset === 0 && lines.length <= SWARM_READ_DEFAULT_LIMIT) return text;
+  const slice = lines.slice(offset, offset + limit).join('\n');
+  const end = offset + limit;
+  if (end >= lines.length) return slice;
+  const note = explicit
+    ? `[faixa ${offset}-${end} de ${lines.length} linhas; restam ${lines.length - end} apos esta faixa]`
+    : `[arquivo tem ${lines.length} linhas; peca uma faixa (offset/limit) para ler o restante a partir da linha ${end}]`;
+  return `${slice}\n${note}`;
+}
+export function swarmReadInput(input: Record<string, unknown>): Record<string, unknown> {
+  return { ...input, limit: swarmReadRange(input).limit };
+}
 
-async function canonicalReadPath(cwd: string, value: unknown): Promise<string> {
+async function canonicalReadPath(cwd: string, value: unknown, findingsPath?: string): Promise<string> {
   if (value !== undefined && typeof value !== 'string') throw new Error('Path invalido');
   const root = await fs.realpath(cwd);
-  const target = await fs.realpath(path.resolve(root, typeof value === 'string' ? value : '.'));
+  const requested = path.resolve(root, typeof value === 'string' ? value : '.');
+  if (findingsPath && requested === path.resolve(findingsPath)) return requested;
+  const target = await fs.realpath(requested);
   if (target !== root && !target.startsWith(root + path.sep)) throw new Error('Leitura fora do alvo autorizado');
   return target;
 }
@@ -23,11 +55,18 @@ export function createSwarmToolDispatch(options: {
   allowedTools: readonly string[];
   signal: AbortSignal;
   writeFindings: (content: string) => Promise<void>;
+  repoGraph?: SwarmRepoGraphInvoke | null;
 }) {
   return async (name: string, input: Record<string, unknown>): Promise<{ result: string; isError: boolean }> => {
     options.signal.throwIfAborted();
     try {
       if (!options.allowedTools.includes(name)) throw new Error(`Tool negada: ${name}`);
+      if (isSwarmRepoGraphReaderTool(name)) {
+        if (!options.repoGraph) throw new Error('repo-graph indisponivel nesta run (sem repositorio registrado)');
+        const value = await options.repoGraph(name, input ?? {});
+        options.signal.throwIfAborted();
+        return { result: typeof value === 'string' ? value : JSON.stringify(value), isError: false };
+      }
       if (name === 'Write') {
         if (
           typeof input.file_path !== 'string' ||
@@ -40,23 +79,11 @@ export function createSwarmToolDispatch(options: {
         return { result: `Findings salvo em ${options.findingsPath}`, isError: false };
       }
       if (name === 'Read') {
-        const target = await canonicalReadPath(options.cwd, input.file_path);
+        const target = await canonicalReadPath(options.cwd, input.file_path, options.findingsPath);
         if ((await fs.stat(target)).size > 16_000_000)
           throw new Error('Read: arquivo acima de 16 MB; selecione um alvo menor');
         const text = await fs.readFile(target, { encoding: 'utf8', signal: options.signal });
-        const offset =
-          typeof input.offset === 'number' && Number.isSafeInteger(input.offset) ? Math.max(0, input.offset) : 0;
-        const limit =
-          typeof input.limit === 'number' && Number.isSafeInteger(input.limit)
-            ? Math.min(2000, Math.max(1, input.limit))
-            : 2000;
-        return {
-          result: text
-            .split('\n')
-            .slice(offset, offset + limit)
-            .join('\n'),
-          isError: false,
-        };
+        return { result: swarmReadSlice(text, input), isError: false };
       }
       if (name === 'Glob' || name === 'Grep') {
         const root = await canonicalReadPath(options.cwd, input.path);
@@ -125,6 +152,7 @@ export function createSwarmToolDispatch(options: {
 
 export function createSwarmPermission(options: {
   cwd: string;
+  findingsPath?: string;
   allowedTools: readonly string[];
   signal: AbortSignal;
   dispatch: ReturnType<typeof createSwarmToolDispatch>;
@@ -135,6 +163,7 @@ export function createSwarmPermission(options: {
     canUseTool: async (name, input) => {
       if (options.signal.aborted) return { behavior: 'deny', message: 'Tentativa encerrada' };
       if (!options.allowedTools.includes(name)) return { behavior: 'deny', message: `Swarm: tool negada ${name}` };
+      if (isSwarmRepoGraphReaderTool(name)) return { behavior: 'allow', updatedInput: input };
       if (name === 'Write') {
         const result = await options.dispatch(name, input);
         return {
@@ -146,11 +175,15 @@ export function createSwarmPermission(options: {
       }
       if (name === 'Read' || name === 'Glob' || name === 'Grep') {
         try {
-          await canonicalReadPath(options.cwd, name === 'Read' ? input.file_path : input.path);
+          await canonicalReadPath(
+            options.cwd,
+            name === 'Read' ? input.file_path : input.path,
+            name === 'Read' ? options.findingsPath : undefined,
+          );
         } catch (error) {
           return { behavior: 'deny', message: String(error) };
         }
-        return { behavior: 'allow', updatedInput: input };
+        return { behavior: 'allow', updatedInput: name === 'Read' ? swarmReadInput(input) : input };
       }
       if (name === 'WebSearch' || name === 'WebFetch') return { behavior: 'allow', updatedInput: input };
       return { behavior: 'deny', message: 'Swarm: tool nao autorizada' };

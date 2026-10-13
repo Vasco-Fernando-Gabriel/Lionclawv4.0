@@ -7,7 +7,7 @@ export const securityAuthAuditor: Omit<AgentConfig, 'sortOrder'> = {
   id: AUTH_AUDITOR_ID,
   name: 'Auth Auditor',
   description: 'Audita rotas sem autenticacao, privilege escalation, CORS mal configurado.',
-  model: 'claude-sonnet-4-6',
+  model: 'claude-sonnet-5-5',
   effort: 'high' as const,
   thinking: 'enabled' as const,
   thinkingBudget: 8000,

@@ -7,7 +7,7 @@ export const securityOwaspScanner: Omit<AgentConfig, 'sortOrder'> = {
   id: OWASP_SCANNER_ID,
   name: 'OWASP Scanner',
   description: 'Verifica SQL injection, XSS, CSRF, prompt injection e outros OWASP Top 10.',
-  model: 'claude-sonnet-4-6',
+  model: 'claude-sonnet-5-5',
   effort: 'high' as const,
   thinking: 'enabled' as const,
   thinkingBudget: 10000,

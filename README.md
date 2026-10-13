@@ -6,7 +6,7 @@
 
 Assistente pessoal de IA em app desktop Electron. Single-user, single-machine, com acesso ao terminal, filesystem, internet, MCPs locais e agentes especializados.
 
-Versao atual do pacote: `v3.9.0` (`package.json`).
+Versao atual do pacote: `v4.0.0` (`package.json`).
 
 ---
 
@@ -32,7 +32,7 @@ Versao atual do pacote: `v3.9.0` (`package.json`).
 18. [Empacotamento e Release](#empacotamento-e-release)
 19. [Troubleshooting](#troubleshooting)
 20. [Licenca](#licenca)
-21. [v3.9](#v39)
+21. [v4.0](#v40)
 22. [v3.7.1](#v371)
 
 ---
@@ -43,7 +43,7 @@ LionClaw roda localmente como aplicativo desktop. Ele nao e um chatbot web: o ma
 
 Em producao nao existe servidor web separado nem API HTTP exposta. Dados ficam na maquina do usuario: `~/.lionclaw/`, SQLite local, keychain do sistema operacional para segredos e sqlite-vec para busca vetorial.
 
-O orquestrador (o SDK que conduz o chat principal) suporta **6 runtimes**: Claude Agent SDK, Claude-compat SDK, Codex SDK, Lion-SDK, Kimi-SDK (Kimi K3 via CLI de assinatura) e Grok-SDK (Grok 4.5 via CLI da xAI). O wizard do primeiro setup apresenta os 4 primeiros; Kimi-SDK e Grok-SDK sao escolhidos depois em **Settings > Orquestrador**:
+O orquestrador (o SDK que conduz o chat principal) suporta **7 runtimes**: Claude Agent SDK, Claude-compat SDK, Codex SDK, Lion-SDK, Kimi-SDK (Kimi K3 via CLI de assinatura), Grok-SDK (Grok 4.7 via CLI da xAI; 4.6 e 4.5 continuam disponiveis) e Cursor-SDK (Cursor por assinatura, via sidecar Node). O wizard do primeiro setup apresenta os 4 primeiros; Kimi-SDK, Grok-SDK e Cursor-SDK sao escolhidos depois em **Settings > Orquestrador**:
 
 | SDK | Backend | Provedores |
 |-----|---------|------------|
@@ -53,13 +53,14 @@ O orquestrador (o SDK que conduz o chat principal) suporta **6 runtimes**: Claud
 | **Lion-SDK** | Adapters proprios (`lion-sdk/`) | Ollama, LM Studio, OpenAI-compat (Kimi global/China, Qwen, DeepSeek, MiniMax PAYG, Custom), Vertex AI via `@google/genai` |
 
 > [!NOTE]
-> "Claude-compat" nao e um SDK separado: e o mesmo executor do Claude oficial, numa funcao copiada de proposito, que so troca o endpoint via variavel de ambiente por chamada (`claude-compat-sdk/index.ts:1-25`).
+> "Claude-compat" nao e um SDK separado: e o mesmo executor do Claude oficial, numa funcao copiada de proposito, que so troca o endpoint via variavel de ambiente por chamada (`claude-compat-sdk/index.ts:146-149`).
 
 Agentes individuais (sub-agentes, pipelines, harness) tambem podem usar runtimes proprios independentes do orquestrador:
 
 - runtime `cloud` via Claude Agent SDK;
 - runtime `codex` via driver oficial do OpenAI Codex CLI autenticado por OAuth;
 - runtime `grok` para Grok Build (assinatura via CLI da xAI);
+- runtime `cursor` para o Cursor (assinatura, via sidecar Node);
 - runtime `zai` (GLM por assinatura Z.ai) e `minimax-tp` (MiniMax TokenPlan);
 - runtime `kimi` (assinatura via CLI);
 - runtime `external` para OpenRouter, OpenAI direto, Kimi, DeepSeek, Qwen, MiniMax PAYG, Gemini Agent Platform e endpoints OpenAI-compatible;
@@ -67,8 +68,8 @@ Agentes individuais (sub-agentes, pipelines, harness) tambem podem usar runtimes
 
 Dois caminhos fazem o orquestrador propagar para os agentes:
 
-- **Heranca implicita**: um sub-agente `cloud` com `model` igual a `default` herda o modelo do orquestrador em tempo de execucao (`orchestrator.ts:555`);
-- **Sincronizacao em massa**: o botao "Sincronizar com orquestrador" em Sub-Agentes reescreve runtime, modelo e configs de todos os agentes (ou de um subconjunto filtrado) para alinhar com o SDK escolhido (`agent-sync.ts:409`). Ver [Funcionalidades > Sub-Agentes](#sub-agentes).
+- **Heranca implicita**: um sub-agente `cloud` com `model` igual a `default` herda o modelo do orquestrador em tempo de execucao (`orchestrator.ts:572`);
+- **Sincronizacao em massa**: o botao "Sincronizar com orquestrador" em Sub-Agentes reescreve runtime, modelo e configs de todos os agentes (ou de um subconjunto filtrado) para alinhar com o SDK escolhido (`agent-sync.ts:321`). Ver [Funcionalidades > Sub-Agentes](#sub-agentes).
 
 Trocar o SDK orquestrador depois do onboarding e feito em **Settings > Orquestrador**. Selecionar um modelo incompativel com o runtime escolhido retorna erro de validacao (`InvalidOrchestratorSelectionError`, `orchestrator-selection.ts`).
 
@@ -76,17 +77,28 @@ Trocar o SDK orquestrador depois do onboarding e feito em **Settings > Orquestra
 
 ## Novidades desta versao
 
+### Modelos de outubro/2026: Haiku 5.5, Sonnet 5.5, GPT-6.1 Sol, Grok 4.7, GLM-5.3 Flash
+
+Rollout dos modelos lancados entre o fim de setembro e o comeco de outubro de 2026, com os dados oficiais de preco e janela de cada provedor (`PRICING_VERSION = 2026-10-12`):
+
+- **Claude**: `claude-sonnet-5-5` ($2 / $10, cache read $0.10) e `claude-haiku-5-5` ($0.10 / $0.50, cache read $0.01; acima de 100K tokens de prompt o preco e 5x) entram no catalogo com janela de 1M. Os seeds que nasciam em Sonnet 4.6 (48 agentes + o Maestro do workflow dinamico) passam a nascer em Sonnet 5.5 e os 8 validadores que nasciam em Haiku 4.5 passam a Haiku 5.5; a migration **V168** promove quem ainda estava no modelo de fabrica (agente alterado por voce fica como esta). O orquestrador continua no Opus 5.5.
+- **Codex**: `gpt-6.1-sol` (mesmo preco do GPT-6 Sol, cache 2x mais barato, efforts ate `ultra`) vira o default do runtime Codex e do coder Codex dos workflows. `gpt-5.5` sai do Codex em 14/10/2026 (`gpt-5.4`, `gpt-5.4-mini` e `gpt-5.3-codex-spark` ja sairam): a migration **V169** move automaticamente para `gpt-6.1-sol` os agentes Codex e o orquestrador Codex que estavam nesses modelos. **Exige Codex CLI 0.162 ou superior** (o projeto embarca `^0.162.1`; `npm i -g @openai/codex@latest` para o global).
+- **Grok**: `grok-4.7` vira o default do runtime Grok Build; 4.6 e 4.5 continuam.
+- **Z.ai**: `glm-5.3-flash` e `glm-5.3-flashx` entram no preset Claude-compat (default continua `glm-5.2`).
+- **OpenAI direto / OpenRouter**: `gpt-6.1-sol` (default do OpenAI direto), `gpt-6-astra`, `anthropic/claude-sonnet-5.5`, `anthropic/claude-haiku-5.5` e `openai/gpt-6.1-sol`.
+- **Outros**: DeepSeek V4 Pro sem a promo (`$0.66 / $1.98`) e `deepseek-flash` (V4.1-Flash), MiniMax M3 com o desconto permanente (`$0.30 / $1.20`) e M3.1 Flash Preview no M Plan, Kimi K2.7 Code na API Moonshot, Gemini 3.8/3.6 Flash e 3.5 Flash-Lite no Vertex, Cursor com Fable 5.1, Opus 5.5, Sonnet 5.5, Haiku 5.5, Grok 4.7 e Gemini 3.8 Flash. Detalhe em [v4.0 > Modelos de outubro/2026](#modelos-de-outubro2026).
+
 ### Conversas paralelas
 
-Duas conversas rodando ao mesmo tempo, cada uma com fila, thread, orquestrador (provedor, modelo e esforco no composer), Clear e pipeline proprios. Novo Chat pergunta qual conversa recebe o Clear. Detalhe em [v3.9](#v39).
+Duas conversas rodando ao mesmo tempo, cada uma com fila, thread, orquestrador (provedor, modelo e esforco no composer), Clear e pipeline proprios. Novo Chat pergunta qual conversa recebe o Clear. Detalhe em [v4.0](#v40).
 
-### Artefatos HTML e Swarm (previa)
+### Artefatos HTML e Swarm
 
-Pagina HTML gerada pelo agente abre num painel ao lado do chat, com a skill padrao revisao-de-decisoes. O chip Swarm no composer dispara analise paralela em comite ou fanout. Detalhe em [v3.9](#v39).
+Pagina HTML gerada pelo agente abre num painel ao lado do chat, com a skill padrao revisao-de-decisoes. O chip Swarm no composer dispara swarm agents em paralelo, em etapas, conduzidos pelo orquestrador como os sub-agentes do Claude Code. Detalhe em [v4.0](#v40).
 
 ### Workflows Dinamicos reescritos
 
-O workflow nasce de conversa, nao de formulario: voce descreve o processo no chat e o orquestrador escreve o `.js`, cria e inicia num passo so. O modal de criacao manual saiu. Sem teto de custo: o freio e pausar ou abortar pelo chat. Cockpit proprio do run com Execucao, Custo, Saidas e Linha do tempo. Detalhe em [v3.9](#v39).
+O workflow nasce de conversa, nao de formulario: voce descreve o processo no chat e o orquestrador escreve o `.js`, cria e inicia num passo so. O modal de criacao manual saiu. Sem teto de custo: o freio e pausar ou abortar pelo chat. Cockpit proprio do run com Stream, Execucao, Custo, Saidas e Linha do tempo. Detalhe em [v4.0](#v40).
 
 ### Kanban nativo
 
@@ -102,11 +114,11 @@ Sai o `cli.js` interpretado, entra o binario nativo do Claude Code por plataform
 
 ### Claude Opus 5.5 e GPT-6 Sol/Luna (22/09)
 
-`claude-opus-5-5` e o novo default do orquestrador e dos sub-agentes Opus (migration V157 promove quem estava no Opus 5 e os seeds que estavam em Opus 4.8/4.7). `gpt-6-sol` e o novo default do runtime Codex e `gpt-6-luna` entra como opcao barata (migration V158 atualiza o coder Codex dos workflows). Nao existe GPT-6 Terra. **Os dois exigem Codex CLI 0.155 ou superior** (`npm i -g @openai/codex@latest`); com CLI mais antigo o app recusa o modelo na hora e diz como atualizar. Detalhe em [v3.9](#v39).
+`claude-opus-5-5` e o novo default do orquestrador e dos sub-agentes Opus (migration V157 promove quem estava no Opus 5 e os seeds que estavam em Opus 4.8/4.7). `gpt-6-sol` virou o default do runtime Codex nessa data e `gpt-6-luna` entrou como opcao barata (migration V158 atualizou o coder Codex dos workflows); desde 12/10 o default e `gpt-6.1-sol` (V169). Nao existe GPT-6 Terra. **Os dois exigem Codex CLI 0.155 ou superior** (`npm i -g @openai/codex@latest`); com CLI mais antigo o app recusa o modelo na hora e diz como atualizar. Detalhe em [v4.0](#v40).
 
 ### GPT-6 Astra e Claude Fable 5.1
 
-`gpt-6-astra` e o novo default do runtime Codex (janela de 1.05M, esforco ate `ultra`; exige Codex CLI 0.153+). `claude-fable-5-1` substitui o Fable 5 no catalogo Claude, com migracao automatica de quem estava no modelo antigo.
+`gpt-6-astra` entrou no catalogo Codex (janela de 1.05M, esforco ate `ultra`) e foi o default entre a 3.8 e a V158; hoje o default e `gpt-6.1-sol`. `claude-fable-5-1` substitui o Fable 5 no catalogo Claude, com migracao automatica de quem estava no modelo antigo.
 
 ### Runtimes Grok 4.5 e Kimi K3
 
@@ -148,7 +160,7 @@ O wizard valida CLI/conexao antes de prosseguir, persiste o flag `orchestratorSe
 > [!NOTE]
 > Instalacoes existentes com Anthropic ja configurada nao sao redirecionadas ao wizard, passam direto ao chat. So fresh installs e wizards interrompidos veem a tela.
 
-Ao concluir o onboarding, o app dispara um sync best-effort one-shot que alinha os seed agents default ao SDK escolhido (`agent-sync.ts:409`, via `electron/main/ipc/agents.ts`). Esse mesmo sync pode ser reexecutado a qualquer momento pelo botao "Sincronizar com orquestrador" (ver [Sub-Agentes](#sub-agentes)).
+Ao concluir o onboarding, o app dispara um sync best-effort one-shot que alinha os seed agents default ao SDK escolhido (`agent-sync.ts:321`, via `electron/main/ipc/agents.ts`). Esse mesmo sync pode ser reexecutado a qualquer momento pelo botao "Sincronizar com orquestrador" (ver [Sub-Agentes](#sub-agentes)).
 
 ### Voz e chat ao vivo
 
@@ -169,7 +181,7 @@ O **Dreaming** mantem a memoria do agente sem intervencao manual, em duas camada
 
 ### Sincronizacao do orquestrador para os sub-agentes
 
-Novo botao "Sincronizar com orquestrador" em Sub-Agentes: reescreve runtime, modelo e configs de todos os agentes (ou de um subconjunto filtrado) para o que o orquestrador usa, preservando tools, MCP servers e skills de cada agente (`agent-sync.ts:409`). Tem preview (dryRun) antes de aplicar. Ver [Sub-Agentes](#sub-agentes).
+Novo botao "Sincronizar com orquestrador" em Sub-Agentes: reescreve runtime, modelo e configs de todos os agentes (ou de um subconjunto filtrado) para o que o orquestrador usa, preservando tools, MCP servers e skills de cada agente (`agent-sync.ts:321`). Tem preview (dryRun) antes de aplicar. Ver [Sub-Agentes](#sub-agentes).
 
 ### Memory Graph (mgraph)
 
@@ -190,7 +202,7 @@ A tela **Pipeline** concentra seis tipos de fluxo:
 
 ### Development V2 + LionDesign Studio
 
-Novo pipeline `development-v2` com 17 fases que adiciona um **LionDesign Studio** conversacional entre o PRD e a parte tecnica (`src/types/pipeline.ts:129-145`):
+Novo pipeline `development-v2` com 17 fases que adiciona um **LionDesign Studio** conversacional entre o PRD e a parte tecnica (`src/types/pipeline.ts:560-739`):
 
 - Fase 4 (Design Plan): fase auto que prepara o plano de design antes do estudio.
 - Fase 5 (LionDesign Studio): sessao conversacional com o agente `open-design-studio` que opera o sidecar local Open Design (`vendor/open-design/`). Saida e um `artifact.html` interativo + `design-contract.json` + `design-brief.md`.
@@ -256,7 +268,7 @@ Agentes agora podem usar runtime `external` com providers OpenRouter, OpenAI, Ki
 
 ### Runtime Codex
 
-Agentes podem usar runtime `codex`, rodando o OpenAI Codex CLI por OAuth. Esse runtime usa ferramentas nativas do Codex, sandbox `workspace-write` por padrao e nao usa MCPs, Skills ou Knowledge Base do LionClaw durante a execucao.
+Agentes podem usar runtime `codex`, rodando o OpenAI Codex CLI por OAuth. Esse runtime usa ferramentas nativas do Codex, sandbox `workspace-write` por padrao e, de MCPs do LionClaw, so os da allowlist do agente (perfil agent-scoped, `codex-runtime/mcp-profiles.ts`); Skills e Knowledge Base do LionClaw nao sao injetados durante a execucao.
 
 ### Codex no Windows
 
@@ -268,7 +280,7 @@ A tela **Usage** e um terminal embutido do CodeBurn. O LionClaw inicia `codeburn
 
 ### Seeds e DB atualizados
 
-O boot garante todos os seed agents por uma chamada unica (`ensureAllSeedAgents`) e materializa snapshots em `~/.lionclaw/agents/<id>/config.json`. No boot, o app aplica todas as migrations pendentes do SQLite; atualmente a ultima e a **V145** (`electron/main/db-migration-safety.ts:13`).
+O boot garante todos os seed agents por uma chamada unica (`ensureAllSeedAgents`) e materializa snapshots em `~/.lionclaw/agents/<id>/config.json`. No boot, o app aplica todas as migrations pendentes do SQLite; atualmente a ultima e a **V169** (`electron/main/db-migration-safety.ts:12`).
 
 ---
 
@@ -282,10 +294,10 @@ O boot garante todos os seed agents por uma chamada unica (`ensureAllSeedAgents`
 | **Git** | qualquer versao recente | `git --version` | [git-scm.com](https://git-scm.com/) |
 
 > [!IMPORTANT]
-> **Node 24 e fortemente recomendado** por causa do vendor Open Design (`vendor/open-design/package.json` declara `engines.node: ~24`). O boot-installer **nao bloqueia por versao de Node** - ele apenas loga (`installer.ts:23-32`, `boot-installer.ts:72-103`). O risco real ao usar outro major e **ABI nativo invalido**: modulos como `better-sqlite3` ficam incompativeis e a fase LionDesign Studio do `development-v2` pode nao subir. Se voce trocar o major do Node depois de instalar, o app detecta o drift de ABI e reinstala o vendor no proximo boot (ver "Primeiro boot" abaixo).
+> **Node 24 e fortemente recomendado** por causa do vendor Open Design (`vendor/open-design/package.json` declara `engines.node: ~24`). O boot-installer **nao bloqueia por versao de Node** - ele apenas loga (`open-design/installer.ts:31-36`). O risco real ao usar outro major e **ABI nativo invalido**: modulos como `better-sqlite3` ficam incompativeis e a fase LionDesign Studio do `development-v2` pode nao subir. Se voce trocar o major do Node depois de instalar, o app detecta o drift de ABI e reinstala o vendor no proximo boot (ver "Primeiro boot" abaixo).
 
 > [!NOTE]
-> **Voce nao precisa instalar pnpm manualmente.** O vendor Open Design usa pnpm (10.33.2), mas o app resolve o binario por cascata pnpm > corepack > npx automaticamente (`pnpm-runner.ts:24-35`). So e preciso ter internet na primeira instalacao do vendor.
+> **Voce nao precisa instalar pnpm manualmente.** O vendor Open Design usa pnpm (10.33.2), mas o app resolve o binario por cascata pnpm > corepack > npx automaticamente (`pnpm-runner.ts:17-21`). So e preciso ter internet na primeira instalacao do vendor.
 
 Modulos que podem exigir build nativo: `better-sqlite3`, `keytar`, `sqlite-vec` e `node-pty`. O vendor Open Design tambem usa `better-sqlite3` proprio, instalado pelo boot-installer.
 
@@ -389,7 +401,7 @@ cd lionclawv1.0
 npm install
 ```
 
-O `npm install` instala todas as dependencias, incluindo modulos nativos, e roda o `postinstall` (`npm run prepare:codegraph && npm run build:mcps`), que prepara o runtime do CodeGraph e compila todos os MCP servers. Se houver erro de compilacao, verifique os Build Tools acima.
+O `npm install` instala todas as dependencias, incluindo modulos nativos, e roda o `postinstall` (`npm run prepare:codegraph && npm run build:mcps && npm run build:cursor-sidecar`), que prepara o runtime do CodeGraph, compila o sidecar do Cursor e compila todos os MCP servers. Se houver erro de compilacao, verifique os Build Tools acima.
 
 > [!WARNING]
 > **Para usuarios de Windows:** apos rodar `npm install`, e necessario recompilar as bibliotecas nativas para a versao interna de Node.js que o Electron utiliza. Caso contrario, o app pode falhar ao iniciar com `ERR_DLOPEN_FAILED`.
@@ -469,7 +481,7 @@ O primeiro uso passa por **dois gates de onboarding independentes**, nesta ordem
 2. **Wizard de SDK orquestrador** (flag `orchestratorSetupCompleted`): escolhe e valida o SDK que conduz o chat. Se o app for fechado entre a senha e a escolha de SDK, o proximo login volta direto para esta tela, sem perder a senha.
 3. **Entrevista inicial no chat** (flag `onboarding_completed`): conduzida pelo agente para conhecer o usuario e preencher `USER.md` / `SOUL.md`.
 
-Os dois flags sao distintos: um governa o setup tecnico do SDK, o outro a entrevista de personalizacao (`App.tsx:139-147`, `onboarding.ts`, `orchestrator.ts`).
+Os dois flags sao distintos: um governa o setup tecnico do SDK, o outro a entrevista de personalizacao (`App.tsx:79-81,113,204`, `onboarding.ts`, `orchestrator.ts`).
 
 ### Open Design vendor (boot-installer)
 
@@ -496,7 +508,7 @@ pnpm install --frozen-lockfile   # roda manualmente para ver o stderr real
 Se voce ja tem o LionClaw instalado e quer subir para esta release, o fluxo e basicamente `git pull` + reinstalar dependencias + rebuild nativo. **Nao existe um script unico de upgrade**; siga os passos do seu sistema.
 
 > [!NOTE]
-> O banco SQLite e o vendor Open Design se **auto-curam no boot**: as migrations pendentes (ate V159) sao aplicadas automaticamente e o boot-installer reinstala o vendor se detectar drift de ABI ou de lockfile. Voce nao roda migration na mao.
+> O banco SQLite e o vendor Open Design se **auto-curam no boot**: as migrations pendentes (ate V169) sao aplicadas automaticamente e o boot-installer reinstala o vendor se detectar drift de ABI ou de lockfile. Voce nao roda migration na mao.
 
 Antes de comecar, garanta que sua working tree esta limpa (`git status`) - o LionClaw nunca faz commit por voce.
 
@@ -504,16 +516,19 @@ Antes de comecar, garanta que sua working tree esta limpa (`git status`) - o Lio
 
 ```bash
 git pull
-npm install                        # reinstala deps (inclui o Codex CLI 0.156 do projeto); o postinstall recompila os MCP servers e o sidecar Cursor
+npm install                        # reinstala deps (inclui o Codex CLI 0.162 do projeto); o postinstall recompila os MCP servers e o sidecar Cursor
 ```
 
 Em `npm run dev` o app usa o Codex CLI que vem com o projeto (`node_modules/.bin/codex`), entao o `npm install` acima ja resolve. Quem roda o app **empacotado** usa o Codex global do sistema e precisa atualiza-lo tambem:
 
 ```bash
-npm i -g @openai/codex@latest      # Codex CLI 0.155+ (gpt-6-sol/gpt-6-luna nao existem em CLI mais antigo)
+npm i -g @openai/codex@latest      # Codex CLI 0.162+ (gpt-6.1-sol nao existe em CLI mais antigo)
 ```
 
 Se o `npm install` nao recompilar os MCPs (ex.: erro de permissao ao limpar `node_modules` de algum servidor), rode `npm run build:mcps` de novo antes de subir o app.
+
+> [!IMPORTANT]
+> O `dist/` de cada MCP server (`mcp-servers/*/dist`) e gitignored: o `git pull` traz so o codigo-fonte. Depois de atualizar, `npm run build:mcps` e obrigatorio (o `postinstall` do `npm install` ja faz isso); sem ele o app sobe com os MCPs da versao anterior, por exemplo o `lionclaw-swarm` sem os exemplos novos de briefing e sem as tools recentes.
 
 ### macOS / Linux
 
@@ -534,8 +549,8 @@ npm run dev
 
 No primeiro boot pos-upgrade:
 
-- As migrations rodam ate V159, com backup verificado do banco antes de qualquer upgrade de schema.
-- Os seed agents sao reconciliados (INSERT-ONLY; suas customizacoes sobrevivem). Nesta versao, quem estava no orquestrador padrao sobe para o Claude Opus 5.5 e os sub-agentes acompanham (V157/V159); o coder Codex dos workflows vai para o GPT-6 Sol (V158).
+- As migrations rodam ate V169, com backup verificado do banco antes de qualquer upgrade de schema.
+- Os seed agents sao reconciliados (INSERT-ONLY; suas customizacoes sobrevivem). Nesta versao, quem estava no orquestrador padrao sobe para o Claude Opus 5.5 e os sub-agentes acompanham (V157/V159); o coder Codex dos workflows vai para o GPT-6 Sol (V158) e depois para o GPT-6.1 Sol (V169, que tambem tira do `gpt-5.5`/`gpt-5.4`/`gpt-5.4-mini`/`gpt-5.3-codex-spark` os agentes e o orquestrador Codex); os seeds que nasciam em Sonnet 4.6 e Haiku 4.5 sobem para Sonnet 5.5 e Haiku 5.5 (V168).
 - Se o orquestrador for o Codex e o chat recusar o modelo dizendo que ele nao e anunciado pelo CLI, o Codex CLI esta desatualizado: `npm i -g @openai/codex@latest` e reinicie.
 - O vendor Open Design reinstala se necessario.
 
@@ -606,6 +621,12 @@ Referencia oficial: [OpenRouter API Authentication](https://openrouter.ai/docs/a
 
 | Modelo | Label no app | Contexto |
 |--------|--------------|----------|
+| `anthropic/claude-opus-5-5` | Claude Opus 5.5 | 1M |
+| `anthropic/claude-sonnet-5.5` | Claude Sonnet 5.5 | 1M |
+| `anthropic/claude-haiku-5.5` | Claude Haiku 5.5 | 1M |
+| `openai/gpt-6.1-sol` | GPT-6.1 Sol | 1M |
+| `openai/gpt-6-sol` | GPT-6 Sol | 1M |
+| `openai/gpt-6-luna` | GPT-6 Luna | 1M |
 | `deepseek/deepseek-v4-pro` | DeepSeek V4 Pro | 1M |
 | `deepseek/deepseek-v4-flash` | DeepSeek V4 Flash | 1M |
 | `moonshotai/kimi-k2.6` | Kimi K2.6 | 256K |
@@ -627,7 +648,7 @@ Provider `OpenAI` usa:
 |-------|-------|
 | Base URL | `https://api.openai.com/v1` |
 | Vault key | `HARNESS_OPENAI_KEY` |
-| Modelos | `gpt-5.5`, `gpt-5.5-pro` |
+| Modelos | `gpt-6.1-sol` (default), `gpt-6-sol`, `gpt-6-luna`, `gpt-6-astra`, `gpt-5.5`, `gpt-5.5-pro` |
 
 Essa chave e separada de `OPENAI_API_KEY`, que e usada para embeddings e audio.
 
@@ -660,17 +681,17 @@ npm install -g @openai/codex
 ### Versao do Codex CLI
 
 > [!IMPORTANT]
-> **A familia GPT-5.6 (Sol/Terra/Luna) exige Codex CLI `0.144.x` ou superior** (ver [Codex oficial](#codex-oficial-app-server--novo-sdk)). O LionClaw valida os modelos contra o `model/list` do CLI instalado: se o CLI nao anunciar `gpt-5.6-*`, o run falha com erro claro pedindo atualizacao (`codex-session-factory.ts`), nunca degrada silenciosamente. A serie `0.144.x` e a validada; o app embarca a `0.144.1`.
+> **O `gpt-6.1-sol` (default) exige Codex CLI `0.162` ou superior; a familia GPT-6 exige `0.155+` e a GPT-5.6 (Sol/Terra/Luna) exige `0.144+`** (ver [Codex oficial](#codex-oficial-app-server--novo-sdk)). O LionClaw valida os modelos contra o `model/list` do CLI instalado: se o CLI nao anunciar o modelo, o run falha com erro claro pedindo atualizacao (`codex-session-factory.ts`), nunca degrada silenciosamente. A serie `0.162.x` e a validada; o app embarca a `^0.162.1`.
 
-Voce provavelmente nao precisa fazer nada: rodando pelo repo (`npm run dev`), o app resolve primeiro o binario **embarcado** em `node_modules/.bin/codex` (dependencia do `@openai/codex@0.144.1`, `package.json`), que ja anuncia a familia GPT-5.6. O binario global e usado para o `codex login` (a autenticacao em `~/.codex/auth.json` e compartilhada) e pelo sidecar Open Design, entao mantenha-o atualizado tambem:
+Voce provavelmente nao precisa fazer nada: rodando pelo repo (`npm run dev`), o app resolve primeiro o binario **embarcado** em `node_modules/.bin/codex` (dependencia do `@openai/codex@^0.162.1`, `package.json`), que ja anuncia o `gpt-6.1-sol` e as familias GPT-6 e GPT-5.6. O binario global e usado para o `codex login` (a autenticacao em `~/.codex/auth.json` e compartilhada) e pelo sidecar Open Design, entao mantenha-o atualizado tambem:
 
 ```bash
-codex --version                 # confirme >= 0.144
+codex --version                 # confirme >= 0.162
 npm install -g @openai/codex    # atualiza o global
 ```
 
 > [!WARNING]
-> Se voce configurou um **Path customizado do binario** em Settings apontando para um CLI anterior a `0.144`, a familia GPT-5.6 e os efforts `max`/`ultra` vao falhar. Remova o path customizado ou aponte para um CLI `0.144+`.
+> Se voce configurou um **Path customizado do binario** em Settings apontando para um CLI anterior a `0.162`, o `gpt-6.1-sol` vai falhar (e, abaixo de `0.144`, tambem a familia GPT-5.6 e os efforts `max`/`ultra`). Remova o path customizado ou aponte para um CLI `0.162+`.
 
 ### Conectar no LionClaw
 
@@ -686,7 +707,7 @@ O status checa:
 - se o binario `codex` existe;
 - a versao via `codex --version`;
 - se existe `~/.codex/auth.json`;
-- se `codex login status` retorna sucesso.
+- se `codex app-server --help` responde (suporte ao App Server).
 
 Se o binario nao estiver no `PATH`, configure **Path customizado do binario** em Settings. No Windows, o app tambem procura em `%APPDATA%\npm\codex.cmd` e caminhos equivalentes do usuario.
 
@@ -694,30 +715,30 @@ Se o binario nao estiver no `PATH`, configure **Path customizado do binario** em
 
 | Modelo | Descricao no app |
 |--------|------------------|
-| `gpt-6-sol` | GPT-6 agentic, custo 5x menor que Astra (recomendado, **default**) |
+| `gpt-6.1-sol` | Sucessor do GPT-6 Sol: mesmo preco, cache 2x mais barato (recomendado, **default**) |
+| `gpt-6-sol` | GPT-6 agentic, geracao anterior |
 | `gpt-6-astra` | Frontier GPT-6, maximo de capacidade |
 | `gpt-6-luna` | GPT-6 rapido e barato |
 | `gpt-5.6-sol` | Frontier agentic da geracao 5.6 |
 | `gpt-5.6-terra` | Equilibrado, ~5.5 pela metade do preco |
 | `gpt-5.6-luna` | Rapido e barato |
-| `gpt-5.5` | Codex-tuned; sai do Codex em 14/10/2026 |
-| `gpt-5.4` | Generalista frontier |
-| `gpt-5.4-mini` | Mais barato e rapido |
-| `gpt-5.3-codex` | Variante codex-tuned (legado) |
-| `gpt-5.2` | Anterior, generalista |
+| `gpt-5.3-codex` | Variante codex-tuned (deprecado no Codex) |
+| `gpt-5.2` | Anterior, generalista (deprecado no Codex) |
+
+`gpt-5.5` (retirado do Codex em 14/10/2026), `gpt-5.4` e `gpt-5.4-mini` (31/08/2026) e `gpt-5.3-codex-spark` (14/09/2026) sairam da lista; quem digitar o slug ainda recebe os efforts estaticos, e a migration V169 move os agentes e o orquestrador Codex que estavam neles para `gpt-6.1-sol`.
 
 O catalogo estatico e complementado por **descoberta dinamica**: o app consulta o `model/list` do CLI instalado, entao modelos novos anunciados pelo Codex aparecem sem precisar de release (`src/constants/codex-models.ts`, `codex-runtime/model-capabilities.ts`).
 
 O agente Codex tambem tem `reasoningEffort`, na escala `low` -> `medium` -> `high` -> `xhigh` -> `max` -> `ultra`:
 
 - `low` / `medium` / `high`: todos os modelos.
-- `xhigh`: `gpt-5.5`, `gpt-5.4`, `gpt-5.4-mini`, `gpt-5.3-codex` e toda a familia 5.6.
-- `max`: exclusivo da familia 5.6 (Sol, Terra e Luna).
-- `ultra`: apenas Sol e Terra (delega a subagentes internos do Codex; consumo 2 a 3x).
+- `xhigh`: familias GPT-6 e GPT-5.6, `gpt-5.5`, `gpt-5.4`, `gpt-5.4-mini`, `gpt-5.3-codex`, `gpt-5.3-codex-spark`, `gpt-5.2-codex` e `codex-max` (`gpt-5.2` para em `high`).
+- `max`: familias GPT-6 e GPT-5.6 (todas as variantes).
+- `ultra`: `gpt-6.1-sol`, `gpt-6-sol`, `gpt-6-astra`, `gpt-5.6-sol` e `gpt-5.6-terra` (as Luna param em `max`; delega a subagentes internos do Codex, consumo 2 a 3x).
 - Um effort nao suportado pelo modelo sofre **clamp graduado** para o maior valor suportado abaixo (ex.: `ultra` em Luna vira `max`; `max` em `gpt-5.5` vira `xhigh`), nunca um salto direto para `high`.
 
 > [!IMPORTANT]
-> Todo run Codex passa pelo driver oficial (App Server). Modelos `gpt-5.6-*` e os efforts `max`/`ultra` exigem CLI `0.144+`: se o CLI resolvido nao suporta, o run falha com erro claro (`codex-session-factory.ts:194`). Ver [Codex oficial (App Server / novo SDK)](#codex-oficial-app-server--novo-sdk).
+> Todo run Codex passa pelo driver oficial (App Server). Modelos `gpt-5.6-*` e os efforts `max`/`ultra` exigem CLI `0.144+`: se o CLI resolvido nao suporta, o run falha com erro claro (`codex-session-factory.ts:170-189`). Ver [Codex oficial (App Server / novo SDK)](#codex-oficial-app-server--novo-sdk).
 
 ### Como criar um agente Codex
 
@@ -738,6 +759,8 @@ Notas importantes:
 ### Windows Health Check do Codex
 
 No Windows, o Codex CLI pode sofrer com CRLF e encoding do PowerShell 5.1. O LionClaw implementa um fluxo de preparo com consentimento.
+
+Sessoes Codex isoladas (swarm agents e agentes de pipeline, que rodam num CODEX_HOME dedicado em `~/.lionclaw/runtime/codex-pipeline-home`) nao exigem modo desenvolvedor nem preparo do sandbox elevado: o app liga o `auth.json` por symlink, hardlink ou copia, dispara o `codex.exe` real em vez do atalho `codex.cmd` (que perde aspas pelo shell) e declara `[windows] sandbox = "unelevated"` nesse home. Se um swarm agent em Codex falhar antes de ler o repositorio, o motivo esta em `~/.lionclaw/data/lionclaw-dev.log` nas linhas `codex app-server stderr`.
 
 O dialog aparece somente quando todas as condicoes abaixo sao verdadeiras:
 
@@ -761,8 +784,8 @@ Ao clicar **Preparar**, o app executa:
 
 ```bash
 git config core.autocrlf false
+git add .gitattributes
 git add --renormalize .
-git reset
 ```
 
 E cria ou atualiza `.gitattributes` com:
@@ -874,7 +897,7 @@ O fluxo tem 4 estagios: Diagnostico (fase 1), Analise (fases 2-3), Spec (fases 4
 
 ### Development V2 Pipeline
 
-Evolucao do Development Pipeline com **LionDesign Studio integrado** entre PRD e fases tecnicas. 17 fases (`src/types/pipeline.ts:129-145`):
+Evolucao do Development Pipeline com **LionDesign Studio integrado** entre PRD e fases tecnicas. 17 fases (`src/types/pipeline.ts:560-739`):
 
 | Fase | Nome | Tipo | Agente |
 |------|------|------|--------|
@@ -900,7 +923,7 @@ Caracteristicas exclusivas:
 
 - **Design Plan** (fase 4): fase auto que prepara o plano de design antes do estudio.
 - **LionDesign Studio** (fase 5): sessao conversacional com sidecar local Open Design. Saida = `artifact.html` interativo + `design-contract.json` + `design-brief.md`.
-- **Design Lock** (fase 6): congela o design aprovado em `<projectPath>/docs/Docs<pipelineDocsId>/design/` (`pipeline-paths.ts:119-162`, `lock.ts:79-86`). Antes do lock, as fases 1 a 5 sao resetaveis; apos o lock, as fases resetaveis sao 7 a 15 e as fases de design (4 e 5) ficam bloqueadas, reabertas so via escape hatch destrutivo (`open-design:destructive-unlock`, exige digitar a frase `DESBLOQUEAR DESIGN`). As fases 16 e 17 (loop) nunca sao resetaveis (`src/types/pipeline.ts`).
+- **Design Lock** (fase 6): congela o design aprovado em `<projectPath>/docs/Docs<pipelineDocsId>/design/` (`pipeline-paths.ts:88-107`, `lock.ts:44-58`). Antes do lock, as fases 1 a 5 sao resetaveis; apos o lock, as fases resetaveis sao 7 a 15 e as fases de design (4 e 5) ficam bloqueadas, reabertas so via escape hatch destrutivo (`open-design:destructive-unlock`, exige digitar a frase `DESBLOQUEAR DESIGN`). As fases 16 e 17 (loop) nunca sao resetaveis (`src/types/pipeline.ts`).
 - **Sprint metadata UI**: sprints de UI carregam `DevelopmentV2SprintMetadata { touchesUI, affectedScreenIds, affectedComponentIds, designArtifactPath }` para o coder respeitar o design lockado.
 - Identificadores: `runId` (`YYYYMMDD_HHmmss-<hex6>`), `pipelineDocsId` (sufixo de artefatos de texto), `designRevisionId` (apos unlock destrutivo, `rev-<ts>-<hex6>`).
 
@@ -913,13 +936,13 @@ Artefatos de texto em `<projectPath>/.lionclaw/pipelines/development-v2/<runId>/
 
 Quando um pipeline usa o runtime **Codex** em alguma fase, o LionClaw mantem um processo `codex app-server` vivo de proposito (processos Codex ociosos nao consomem rate-limit). Para evitar acumulo de processos orfaos que deixam o app lento, ha uma limpeza cirurgica nos **dois gates de acao humana** do pipeline: ao **Aprovar uma fase** (`pipeline:approve`) e ao **Iniciar Desenvolvimento** (`pipeline:confirm-development`). A limpeza roda no momento em que o projeto esta parado esperando o clique, antes da proxima fase nascer.
 
-A limpeza so dispara quando **as 3 condicoes** abaixo sao todas verdadeiras (helper `maybeKillIdleCodexOnGate` em `pipeline-engine/codex-sessions.ts:137`, delegador em `pipeline-engine/index.ts:1463`, compartilhado pelos dois gates):
+A limpeza so dispara quando **as 3 condicoes** abaixo sao todas verdadeiras (helper `maybeKillIdleCodexOnGate` em `pipeline-engine/codex-sessions.ts:49`, delegador em `pipeline-engine/index.ts:1012`, compartilhado pelos dois gates):
 
 1. **A fase deixada nao e fase de loop** (Coder/Evaluator). Fases loop nunca disparam o kill.
 2. **REGRA MAXIMA: a fase deixada realmente usou Codex.** Verdadeiro quando o agente da fase tem `runtime === 'codex'`, ou quando ha uma sessao Codex rastreada para aquela fase no estado. Se a fase rodou em cloud (Opus), local ou external, nada e morto.
-3. **Existe pelo menos um run oficial ativo desse projeto na superficie pipeline** (guarda anti-no-op, `hasActiveOfficialRun({ surface: 'pipeline', projectId })`, `agent-runtime/codex-session-factory.ts:75`).
+3. **Existe pelo menos um run oficial ativo desse projeto na superficie pipeline** (guarda anti-no-op, `hasActiveOfficialRun({ surface: 'pipeline', projectId })`, `agent-runtime/codex-session-factory.ts:45`).
 
-Quando dispara, chama `resetOfficialProjectRunsNow(projectId, 'pipeline-gate')` (`codex-session-factory.ts:71`), que e **escopado pelo lifecycle registry** (`codex-runtime/lifecycle-registry.ts:136-142,306`) e estruturalmente seguro:
+Quando dispara, chama `resetOfficialProjectRunsNow(projectId, 'pipeline-gate')` (`codex-session-factory.ts:41`), que e **escopado pelo lifecycle registry** (`codex-runtime/lifecycle-registry.ts:41,105-110`) e estruturalmente seguro:
 
 - Fecha so handles com `surface: 'pipeline'` daquele `projectId`: pipelines de **outros projetos** ficam intocados;
 - Sessoes Codex do **chat / orquestrador** (`ownerKind === 'chat'`) nunca sao fechadas sem pedido explicito;
@@ -952,9 +975,9 @@ Sidecar local em `vendor/open-design/` que gera artefatos visuais de design (HTM
 ### Como funciona
 
 1. Na fase LionDesign Studio (fase 5) do pipeline `development-v2`, o agente `open-design-studio` conversa com o usuario para iterar sobre o design.
-2. O sidecar roda a partir do data dir do app - `<userData>/open-design/runtime/.od/` (`open-design/paths.ts:30-43`), exposto ao app por uma WebContentsView embutida. **Nao ha variavel `OPEN_DESIGN_ROOT`** (o env foi removido; o diretorio do sidecar `.od/projects/` pertence ao Open Design e nao entra nos artefatos do pipeline).
+2. O sidecar roda a partir do data dir do app - `<userData>/open-design/runtime/.od/` (`open-design/paths.ts:19-24`), exposto ao app por uma WebContentsView embutida. **Nao ha variavel `OPEN_DESIGN_ROOT`** (o env foi removido; o diretorio do sidecar `.od/projects/` pertence ao Open Design e nao entra nos artefatos do pipeline).
 3. Os 24 canais IPC `open-design:*` registrados no preload cobrem o ciclo de vida (`preflight`, `setup`, `start`, `stop`, `status`, `snapshot`), o boot-installer, a ponte de view e o `destructive-unlock` (escape hatch).
-4. Quando o usuario aprova o design, a fase Design Lock (fase 6) gera o snapshot no destino canonico `<projectPath>/docs/Docs<pipelineDocsId>/design/` (`pipeline-paths.ts:119-162`) com **5 arquivos** (`pipeline-paths.ts:122-127,155-160`):
+4. Quando o usuario aprova o design, a fase Design Lock (fase 6) gera o snapshot no destino canonico `<projectPath>/docs/Docs<pipelineDocsId>/design/` (`pipeline-paths.ts:88-107`) com **5 arquivos** (`pipeline-paths.ts:101-105`):
    - `manifest.json` - metadados do lock
    - `design-contract.json` - schema do design (telas, componentes, props)
    - `artifact.html` - artefato interativo
@@ -963,7 +986,7 @@ Sidecar local em `vendor/open-design/` que gera artefatos visuais de design (HTM
 
 ### Seguranca do artifact HTML
 
-O HTML gerado pelo modelo e **conteudo nao confiavel**. O artefato lockado e renderizado num iframe `sandbox="allow-scripts"` (sem `allow-same-origin`), carregado via protocolo custom `lionclaw-asset://host/locked-design/<projectId>` com CSP propria e path-scoping (`src/components/open-design/LockedDesignViewer.tsx:120-126`, `electron/main/index.ts`). Nunca acessa o DOM do renderer.
+O HTML gerado pelo modelo e **conteudo nao confiavel**. O artefato lockado e renderizado num iframe `sandbox="allow-scripts"` (sem `allow-same-origin`), carregado via protocolo custom `lionclaw-asset://host/locked-design/<projectId>` com CSP propria e path-scoping (`src/components/open-design/LockedDesignViewer.tsx:99-107`, `electron/main/index.ts`). Nunca acessa o DOM do renderer.
 
 ### Boot do vendor
 
@@ -1003,7 +1026,7 @@ Tabelas `kanban_boards`, `kanban_cards`, `kanban_card_events` e `kanban_card_att
 
 Cada agente tem configuracao propria:
 
-- runtime: `cloud`, `codex`, `grok`, `zai`, `minimax-tp`, `kimi`, `local` ou `external`;
+- runtime: `cloud`, `codex`, `grok`, `cursor`, `zai`, `minimax-tp`, `kimi`, `local` ou `external`;
 - modelo;
 - prompt;
 - tools;
@@ -1015,20 +1038,20 @@ Cada agente tem configuracao propria:
 - max tool rounds;
 - squad.
 
-Agentes `cloud` rodam pelo Claude Agent SDK. Agentes `codex` usam Codex CLI. Agentes `grok` usam a CLI oficial da xAI via assinatura Grok Build (`agent-runtime/grok-executor.ts`, catalogo em `src/constants/grok-models.ts`). Agentes `zai` e `minimax-tp` usam o executor Claude-compat (Z.ai GLM e MiniMax Token Plan). Agentes `kimi` usam a CLI nativa do Kimi via assinatura (ver [Kimi como runtime CLI nativo](#kimi-como-runtime-cli-nativo)). Agentes `local` usam Ollama, LM Studio ou OpenAI-compatible local. Agentes `external` usam HTTP OpenAI-compatible.
+Agentes `cloud` rodam pelo Claude Agent SDK. Agentes `codex` usam Codex CLI. Agentes `grok` usam a CLI oficial da xAI via assinatura Grok Build (`agent-runtime/grok-executor.ts`, catalogo em `src/constants/grok-models.ts`). Agentes `zai` e `minimax-tp` usam o executor Claude-compat (Z.ai GLM e MiniMax Token Plan). Agentes `kimi` usam a CLI nativa do Kimi via assinatura (ver [Kimi como runtime CLI nativo](#kimi-como-runtime-cli-nativo)). Agentes `cursor` usam o sidecar Node do Cursor por assinatura (`electron/main/cursor-sdk/`, `agent-runtime/cursor-sidecar/`). Agentes `local` usam Ollama, LM Studio ou OpenAI-compatible local. Agentes `external` usam HTTP OpenAI-compatible.
 
-A pagina Sub-Agentes tem busca, filtro por modelo e abas (Workflow / Library / por squad) para navegar entre os agentes (`SubAgentsPage.tsx:124,277-297`).
+A pagina Sub-Agentes tem busca, filtro por modelo e abas (Workflow / Library / por squad) para navegar entre os agentes (`SubAgentsPage.tsx:145-146,273-310`).
 
-**Sincronizar com orquestrador.** Um botao reescreve runtime, modelo e configs de todos os agentes (ou de um subconjunto filtrado) para casar com o SDK orquestrador atual, preservando tools, MCP servers e skills de cada agente (`agent-sync.ts:409`). Ha preview (dryRun) antes de aplicar. O sync fica indisponivel enquanto houver pipeline ativo, lock de projeto ou sessao enrich em andamento - nesse caso a UI mostra o motivo (`agent-sync.ts`). Um sub-agente `cloud` com `model = default` ja herda o modelo do orquestrador em runtime, sem precisar de sync (`orchestrator.ts:555`).
+**Sincronizar com orquestrador.** Um botao reescreve runtime, modelo e configs de todos os agentes (ou de um subconjunto filtrado) para casar com o SDK orquestrador atual, preservando tools, MCP servers e skills de cada agente (`agent-sync.ts:321`). Ha preview (dryRun) antes de aplicar. O sync fica indisponivel enquanto houver pipeline ativo, lock de projeto ou sessao enrich em andamento - nesse caso a UI mostra o motivo (`agent-sync.ts`). Um sub-agente `cloud` com `model = default` ja herda o modelo do orquestrador em runtime, sem precisar de sync (`orchestrator.ts:572`).
 
 O **reasoning effort** acompanha: o sync leva o effort do orquestrador junto (Claude e Codex), e sub-agentes disparados pelo chat herdam o effort do orquestrador em runtime. No formulario de agente Codex, o select de effort e model-aware - so oferece os valores que o modelo suporta (`xhigh`/`max`/`ultra` conforme o caso, ver [Modelos Codex no app](#modelos-codex-no-app)).
 
 ### Knowledge Base
 
-Ingestao de **PDF, DOCX, TXT, Markdown e CSV** (`knowledge-engine.ts:267-281`). O sistema faz parse, chunking e embeddings, com limite de **100 MB** por arquivo.
+Ingestao de **PDF, DOCX, TXT, Markdown e CSV** (`knowledge-engine.ts:226-240`). O sistema faz parse, chunking e embeddings, com limite de **100 MB** por arquivo.
 
 - **Embeddings**: OpenAI `text-embedding-3-small` quando `OPENAI_API_KEY` existe, com fallback Ollama se configurado e se as dimensoes baterem (o default Ollama de 768 dims e rejeitado; ver Troubleshooting).
-- **Busca hibrida**: combina BM25 (lexica) + vetorial e funde com **RRF (k=60)**; opcionalmente faz **rerank** via Cohere `rerank-multilingual-v3.0` e usa **HyDE** (geracao de documento hipotetico) para enriquecer a query (`knowledge-engine.ts:612,631,733,872`).
+- **Busca hibrida**: combina BM25 (lexica) + vetorial e funde com **RRF (k=60)**; opcionalmente faz **rerank** via Cohere `rerank-multilingual-v3.0` e usa **HyDE** (geracao de documento hipotetico) para enriquecer a query (`knowledge-engine.ts:613,722,793,891-911`).
 - **Chunking agentic**, **reprocessamento** de documentos e **config por agente** (cada agente pode ter sua KB e parametros) estao disponiveis na pagina Knowledge (`KnowledgePage.tsx:904,1147`).
 - **Benchmark** de busca embutido para comparar estrategias (`knowledge-benchmark.ts`).
 
@@ -1047,9 +1070,9 @@ Ver tambem [Dreaming](#dreaming-manutencao-automatica-de-memoria), que faz manut
 
 ### Memory Graph
 
-O **Memory Graph** (mgraph) e um vault de notas com relacionamentos, com pagina **Graph** dedicada (`mgraph-engine.ts`, `GraphPage.tsx`). E desligado por padrao; o toggle fica em Settings e **exige reiniciar o app** para valer (`SettingsPage.tsx:490,558`). Quando ligado (`mgraph_mode=true`), o MCP `graph-search` fica ativo.
+O **Memory Graph** (mgraph) e um vault de notas com relacionamentos, com pagina **Graph** dedicada (`mgraph-engine.ts`, `GraphPage.tsx`). E desligado por padrao; o toggle fica em Settings e **exige reiniciar o app** para valer (`SettingsPage.tsx:778`). Quando ligado (`mgraph_mode=true`), o MCP `graph-search` fica ativo.
 
-O graph tambem ingere documentos (`graph-ingest.ts:854-878`): PDF, DOCX, XLSX/CSV, Markdown/TXT/JSON/YAML, imagens (`.png`, `.jpg`, `.jpeg`, `.webp`, com OCR) e audio (`.mp3`, `.wav`, `.ogg`, `.m4a`, `.flac`, com STT via API OpenAI ou ElevenLabs, setting `ingest_stt_provider`), alem de URLs com protecao contra SSRF. So roda com `mgraph_mode=true`.
+O graph tambem ingere documentos (`graph-ingest.ts:710-745`): PDF, DOCX, XLSX/CSV, Markdown/TXT/JSON/YAML, imagens (`.png`, `.jpg`, `.jpeg`, `.webp`, com OCR) e audio (`.mp3`, `.wav`, `.ogg`, `.m4a`, `.flac`, com STT via API OpenAI ou ElevenLabs, setting `ingest_stt_provider`), alem de URLs com protecao contra SSRF. So roda com `mgraph_mode=true`.
 
 ### Skills
 
@@ -1070,16 +1093,16 @@ O **HarnessEngine** e o motor standalone do loop Planner -> Coder -> Evaluator (
 
 Duas coisas diferentes:
 
-- **Scheduled Tasks** (IA agendada): scheduler baseado em `cron-parser` que roda agentes em horario. Os cron sao avaliados em **UTC** (a UI converte do horario local para UTC), com poll a cada 30s (`scheduler.ts:22,39`). As execucoes rodam em **modo silent** (sessao isolada, vista via "Ver Sessao"). Nao existe "executar agora" - voce pode **pausar/retomar** uma task e **revisar** runs (`scheduler.ts:30-32`, `ipc-handlers.ts:972-1055`). Inclui historico de runs, calendario, kanban e filtros.
+- **Scheduled Tasks** (IA agendada): scheduler baseado em `cron-parser` que roda agentes em horario. Os cron sao avaliados em **UTC** (a UI converte do horario local para UTC), com poll a cada 30s (`scheduler.ts:21,45`). As execucoes rodam em **modo silent** (sessao isolada, vista via "Ver Sessao"). Nao existe "executar agora" - voce pode **pausar/retomar** uma task e **revisar** runs (`electron/main/ipc/scheduler.ts:28-60`). Inclui historico de runs, calendario, kanban e filtros.
 - **Personal Tasks** ("Minhas Tasks"): um kanban manual de to-do, **sem IA** (`TasksPage.tsx`).
 
 ### Canais (Telegram)
 
-A pagina **Canais** integra o LionClaw a apps de mensagem. Hoje so o **Telegram** esta ativo; Slack, Discord e WhatsApp aparecem como "Em breve" (placeholders), com botao "Testar Conexao" (`ChannelsPage.tsx:171-190`).
+A aba **Canais** em Settings integra o LionClaw a apps de mensagem (`SettingsPage.tsx:656-658`, `components/channels/ChannelsSettings.tsx`). Hoje o **Telegram** e o unico canal, com botao "Testar Conexao" (`ChannelsSettings.tsx:106`).
 
-O **Telegram** e uma bridge bidirecional via bot token, **single-user** (so o seu chat). Conversas sao roteadas para o orquestrador e retornam ao Telegram. E multimodal: aceita texto, **voz** (transcrita; exige `OPENAI_API_KEY`), fotos e documentos, e responde com texto, imagem e audio. Setup: crie o bot no BotFather, pegue seu chat id no userinfobot e configure na pagina Canais.
+O **Telegram** e uma bridge bidirecional via bot token, **single-user** (so o seu chat). Conversas sao roteadas para o orquestrador e retornam ao Telegram. E multimodal: aceita texto, **voz** (transcrita; exige `OPENAI_API_KEY`), fotos e documentos, e responde com texto, imagem e audio. Setup: crie o bot no BotFather, pegue seu chat id no userinfobot e configure em Settings > Canais.
 
-Comandos de controle de contexto (`telegram-bridge.ts:688-791`):
+Comandos de controle de contexto (`telegram-bridge.ts:805-920`; um comando desconhecido devolve a lista de comandos):
 
 | Comando | O que faz |
 |---------|-----------|
@@ -1105,10 +1128,10 @@ Autenticacao local com bcrypt e TOTP. O app bloqueia a sessao em suspend e lock-
 
 ## Permissoes
 
-Configuravel em **Settings > Permissoes** (`SettingsPage.tsx:92-99,427-430`). A pagina tem dois blocos: o **toggle de bypass** e o **catalogo de ferramentas**.
+Configuravel em **Settings > Permissoes** (`SettingsPage.tsx:159,649-653`). A pagina tem dois blocos: o **toggle de bypass** e o **catalogo de ferramentas**.
 
 > [!IMPORTANT]
-> O **bypass total de permissoes vem LIGADO por padrao** (`db.ts:3788-3802`). Com bypass ligado, o agente do **chat** executa acoes destrutivas (por exemplo `rm`, `sudo`, escrita em `.env`) **sem pedir confirmacao**. Desligue o toggle se quiser o guard com popups de confirmacao.
+> O **bypass total de permissoes vem LIGADO por padrao** (`db.ts:4326-4334`). Com bypass ligado, o agente do **chat** executa acoes destrutivas (por exemplo `rm`, `sudo`, escrita em `.env`) **sem pedir confirmacao**. Desligue o toggle se quiser o guard com popups de confirmacao.
 
 ### Toggle de bypass
 
@@ -1119,15 +1142,15 @@ Configuravel em **Settings > Permissoes** (`SettingsPage.tsx:92-99,427-430`). A 
 
 ### Catalogo de ferramentas
 
-Cada ferramenta pode ser habilitada/desabilitada com nivel de risco (`PermissionsPage.tsx`, `db.ts:3834`). Algumas vem **desligadas por padrao**: `WebSearch`, `WebFetch` e `NotebookEdit`. O `WebSearch` tem custo extra (~$0.01 por busca).
+Cada ferramenta pode ser habilitada/desabilitada com nivel de risco (`PermissionsPage.tsx`, `db.ts:4695-4711`). Algumas vem **desligadas por padrao**: `WebSearch`, `WebFetch` e `NotebookEdit`. O `WebSearch` tem custo extra (~$0.01 por busca).
 
 ### Comandos Git bloqueados (deny total)
 
-Comandos git que mudam o estado do repositorio sao **negados diretamente, sempre - mesmo com bypass ligado** (`permission-guard.ts:66-95,187-192`). A lista inclui: `commit`, `push` (e `push --force`), `reset`, `rebase`, `merge`, `rm`, `stash drop`, `tag`, `remote add/set-url/remove/rename`, `fetch --force`, `checkout -- <path>` e `clean -f`. O versionamento e **manual** - o LionClaw nunca commita por voce. Git read-only (`status`, `diff`, `log`) e permitido, e troca de branch (`git checkout main`, `git checkout -b`) nao e bloqueada.
+Comandos git que mudam o estado do repositorio sao **negados diretamente, sempre - mesmo com bypass ligado** (`permission-guard.ts:54-68,196-202`). A lista inclui: `commit`, `push` (e `push --force`), `reset`, `rebase`, `merge`, `rm`, `stash drop`, `tag`, `remote add/set-url/remove/rename`, `fetch --force`, `checkout -- <path>` e `clean -f`. O versionamento e **manual** - o LionClaw nunca commita por voce. Git read-only (`status`, `diff`, `log`) e permitido, e troca de branch (`git checkout main`, `git checkout -b`) nao e bloqueada.
 
 ### Acoes destrutivas e auditoria
 
-Com o bypass **desligado**, acoes destrutivas exigem confirmacao via popup, com niveis de risco `medium`/`high`/`critical` (`permission-guard.ts:301-309,87-97`, `ConfirmDialog.tsx:11-21`). Durante a auditoria de seguranca, leitura direta de `.env*` e bloqueada: o agente deve verificar historico Git e `.gitignore` sem abrir secrets. Todas as tool calls geram audit trail.
+Com o bypass **desligado**, acoes destrutivas exigem confirmacao via popup, com niveis de risco `medium`/`high`/`critical` (`permission-guard.ts:73-81,180-190`, `ConfirmDialog.tsx:11-21`). Durante a auditoria de seguranca, leitura direta de `.env*` e bloqueada: o agente deve verificar historico Git e `.gitignore` sem abrir secrets. Todas as tool calls geram audit trail.
 
 ---
 
@@ -1149,6 +1172,7 @@ Main Process Node.js + TypeScript
         |     +-- grok: Grok Build CLI (xAI, ACP)
         |     +-- kimi: Kimi CLI (Moonshot, ACP)
         |     +-- zai / minimax-tp: executor Claude-compat
+        |     +-- cursor: Cursor SDK (sidecar Node)
         |
         +-- SQLite + sqlite-vec
         +-- PipelineEngine
@@ -1174,20 +1198,20 @@ Regras importantes:
 
 ## Boot Sequence
 
-Sequencia do boot atual, na ordem real do `app.whenReady` (`electron/main/index.ts:1019-1416`):
+Sequencia do boot atual, na ordem real do `app.whenReady` (`electron/main/index.ts:971-1346`):
 
-1. Registra handlers de excecao e shutdown e o protocolo `lionclaw-asset://`.
+1. Registra handlers de excecao e shutdown e os protocolos `lionclaw-asset://` e `lionclaw-kanban://`.
 2. Cria arquivos base em `~/.lionclaw/` (`ensureLionClawFiles`).
 3. Copia skills default se ainda nao existem (`copyDefaultSkills`).
 4. Gera `CLAUDE.md` a partir de `SOUL.md`, `RULES.md`, `USER.md`, `MEMORY.md` e inicia o watcher desses arquivos.
-5. Inicializa SQLite e aplica todas as migrations pendentes (atualmente ate **V145**). Antes de migrar, o app faz backup verificado do banco com marker de recuperacao (`db-migration-safety.ts`); em falha de migration, mostra um dialog com o path do backup e encerra.
+5. Inicializa SQLite e aplica todas as migrations pendentes (atualmente ate **V169**). Antes de migrar, o app faz backup verificado do banco com marker de recuperacao (`db-migration-safety.ts`); em falha de migration, mostra um dialog com o path do backup e encerra.
 6. Roda `seedToolDefaults`, `ensureAllSeedAgents` e `ensureDreamingSkillFrontmatter`.
 7. Migra transcripts `.jsonl` legados do Telegram para o DB (`migrateTelegramJsonlOnBoot`).
 8. Registra entradas do Vault para os providers externos.
 9. Inicia Knowledge Bridge (UDS para o MCP subprocess).
 10. Inicia watcher de ingestao graph quando `mgraph_mode=true`.
-11. Instancia HarnessEngine e PipelineEngine e registra os IPC handlers; inicializa o drive coordinator (`initPipelineDriveCoordinator`) e recupera drives interrompidos.
-12. Recupera runs de Workflows Dinamicos interrompidos (`recoverWorkflowRunsOnBoot`).
+11. Instancia HarnessEngine e PipelineEngine e registra os IPC handlers; inicializa o drive coordinator (`initPipelineDriveCoordinator`) e recupera drives interrompidos. No mesmo passo reconstroi os Clears interrompidos (`rebuildClearingSessionsOnBoot`), sobe o cache de fases do pipeline-control e, depois do IPC, recupera as runs do Swarm e inicia a bomba de entrega (`startSwarmDeliveryPump`).
+12. Recupera runs de Workflows Dinamicos interrompidos (`recoverWorkflowRunsOnBoot`); escreve a config do MCP `jev-files` e passa a observar as raizes de projeto (`writeJevFilesConfig`, `watchJevFileToolsProjectRoots`).
 13. Garante MCPs built-in (`ensureBuiltinMCPServers`).
 14. Inicia o local IPC server (`startLocalIpcServer`) antes de spawnar os MCPs helper.
 15. Restaura sessoes OAuth de MCP remoto a partir do Vault (`restoreHiggsfieldSessionFromVault`).
@@ -1198,7 +1222,7 @@ Sequencia do boot atual, na ordem real do `app.whenReady` (`electron/main/index.
 20. Inicia o Telegram bot em background (fire-and-forget).
 21. Cria a BrowserWindow e expoe a janela ao local IPC server (`registerWindowProvider`).
 22. Inicializa o wrapper central de meta-tools MCP (`initMcpInvoke`, modo MCP Index/gateway).
-23. Dispara o boot-installer do Open Design em background (`ensureVendorReady`, idempotente).
+23. Dispara o boot-installer do Open Design em background (`ensureVendorReady`, idempotente); tambem em background, checa o Node do sidecar do Cursor e limpa os workspaces de chat do Cursor.
 24. Inicializa o auto-updater (somente fora de development).
 25. Registra power monitor para auto-lock.
 
@@ -1229,7 +1253,7 @@ Sequencia do boot atual, na ordem real do `app.whenReady` (`electron/main/index.
 
 ## MCP Servers
 
-A pasta `mcp-servers/` traz **26 MCP servers standalone** (mais a lib interna `_shared/`). MCPs built-in sao registrados no banco no boot. Servidores que exigem chave podem ficar inativos ate a configuracao no Vault. As tabelas abaixo cobrem 25 deles; o 26o e o `local-agents`, que aparece apenas no auto-inject no fim da secao.
+A pasta `mcp-servers/` traz **29 MCP servers standalone** (mais a lib interna `_shared/`). MCPs built-in sao registrados no banco no boot. Servidores que exigem chave podem ficar inativos ate a configuracao no Vault. As tabelas abaixo cobrem 28 deles; o 29o e o `local-agents`, que aparece apenas no auto-inject no fim da secao.
 
 | ID | Ativo por padrao | Chaves | Uso |
 |----|------------------|--------|-----|
@@ -1239,6 +1263,7 @@ A pasta `mcp-servers/` traz **26 MCP servers standalone** (mais a lib interna `_
 | `knowledge-base` | Sim | Nenhuma | Busca em documentos indexados |
 | `skills` | Sim | Nenhuma | Carregamento de skills |
 | `graph-search` | Condicional | Nenhuma | Knowledge graph quando `mgraph_mode=true` |
+| `jev-files` | Condicional | `TYPESAFE_JEV_API_KEY` | Ferramentas de arquivo do Jev (TypeSafe), ativas quando a chave existe |
 | `elevenlabs` | Nao | `ELEVENLABS_API_KEY` | Text-to-speech |
 | `nano-banana` | Nao | `GOOGLE_GEMINI_API_KEY` | Geracao de imagens |
 | `shopify` | Nao | Shopify | Integracao Shopify |
@@ -1248,7 +1273,7 @@ A pasta `mcp-servers/` traz **26 MCP servers standalone** (mais a lib interna `_
 | `google-calendar` | Nao | Google OAuth | Calendar |
 | `youtube` | Nao | Google OAuth | YouTube |
 
-Helpers internos visiveis apenas para o orquestrador Codex (`visibleTo='codex-lion-only'`, seedados ativos, `electron/main/index.ts:926-947,974-1007`):
+Helpers internos visiveis apenas para o orquestrador Codex (`visibleTo='codex-lion-only'`, seedados ativos, `electron/main/index.ts:893-953`):
 
 | ID | Uso |
 |----|-----|
@@ -1256,7 +1281,7 @@ Helpers internos visiveis apenas para o orquestrador Codex (`visibleTo='codex-li
 | `lionclaw-skills` | Expoe as skills do Lion ao Codex |
 | `lionclaw-user-question` | Permite ao Codex fazer perguntas ao usuario |
 
-Seams internos do LionClaw (proxies finos para o main process via local IPC, servem os quatro runtimes):
+Seams internos do LionClaw (proxies finos para o main process via local IPC, visiveis a todos os runtimes, `visibleTo: 'all'`):
 
 | ID | Uso |
 |----|-----|
@@ -1264,25 +1289,27 @@ Seams internos do LionClaw (proxies finos para o main process via local IPC, ser
 | `lionclaw-telegram` | Tool `telegram_notify` (push proativo do orquestrador para o Telegram; so envia com o icone ARMADO no chat) |
 | `lionclaw-preview` | Tools `preview_open` e `preview_capture` (abre HTML local/localhost e captura PNG com sessao isolada) |
 | `lionclaw-dynamic-workflows` | Tools `dynamic_workflow_*` (autorar, iniciar e conduzir Workflows Dinamicos) |
-| `lionclaw-toolscript` | Tool `run_tool_script` (executa um script de tool calls num unico turno) |
+| `lionclaw-toolscript` | Tool `run_tool_script` (executa um script de tool calls num unico turno); registrado so quando `resolveToolScriptRegistration()` permite |
+| `lionclaw-kanban` | 10 tools `board_*`/`card_*` do Kanban nativo |
+| `lionclaw-swarm` | Tools `swarm_*` (catalogo, disparo, espera, leitura, mensagem, parada, redisparo) do Swarm |
 | `repo-graph` | 7 tools read-only `repo_graph_*` do Repo Mode (ver [CodeGraph](#codegraph)) |
 | `gateway` | Meta-tools `mcp_invoke`/`mcp_schema` do modo MCP Index: os MCPs de negocio saem do contexto da sessao e viram um indice no system prompt; a execucao passa por aqui. Disponivel nas superficies Claude, Claude-compat e no chat Codex oficial |
 
 ### MCPs remotos (via mcp-remote)
 
-Dois MCPs remotos (HTTP/SSE via `mcp-remote`) shipam no app como seed (`seed-mcps.ts:30-47`):
+Dois MCPs remotos (HTTP/SSE via `mcp-remote`) shipam no app como seed (`seed-mcps.ts:15-34`):
 
 - `higgsfield`
 - `blotato`
 
-O `remote-bridge` e o proxy stdio<->HTTP que carrega os MCPs remotos (`electron/main/remote-mcp-wrapper.ts:77`).
+O `remote-bridge` e o proxy stdio<->HTTP que carrega os MCPs remotos (`electron/main/remote-mcp-wrapper.ts:44`).
 
 Auto-inject:
 
 - `knowledge-base` e injetado quando o agente tem Knowledge Base habilitada e documentos indexados.
 - `skills` e injetado quando o agente tem skills vinculadas.
-- `local-agents` e injetado quando existe agente `runtime=local`/`external` (`orchestrator.ts:377-417`).
-- `codex-agents` e criado **in-process** (sem pasta) quando existe agente `runtime=codex` ativo (`codex-agents-mcp.ts:34-35`).
+- `local-agents` e injetado quando existe agente `runtime=local`/`external` (`orchestrator.ts:1154-1195`).
+- `codex-agents` e criado **in-process** (sem pasta) quando existe agente `runtime=codex` ativo (`codex-agents-mcp.ts:26-27`).
 
 ---
 
@@ -1291,7 +1318,7 @@ Auto-inject:
 | Comando | Descricao |
 |---------|-----------|
 | `npm run dev` | Inicia Electron + Vite em modo desenvolvimento |
-| `npm run build` | Compila main e renderer |
+| `npm run build` | Compila os MCP servers, o main e o renderer |
 | `npm run preview` | Preview do build Electron Vite |
 | `npm run dist` | Build e empacotamento com electron-builder |
 | `npm run dist:mac` | Empacota para macOS |
@@ -1299,6 +1326,9 @@ Auto-inject:
 | `npm run build:mcps` | Compila todos os MCP servers |
 | `npm run prepare:codegraph` | Prepara o runtime do CodeGraph |
 | `npm run build:excalidraw-bundle` | Gera bundle do Excalidraw |
+| `npm run build:cursor-sidecar` | Compila o sidecar do Cursor (roda no `postinstall`) |
+| `npm run prepare:cursor-node` / `prepare:cursor-payload` | Prepara o Node e o payload do sidecar do Cursor para o pacote |
+| `npm run format` / `format:check` | Prettier em todo o repositorio |
 | `npm run rebuild:electron` | Rebuild de `better-sqlite3` e `node-pty` para Electron |
 | `npm run rebuild:node` | Rebuild de `better-sqlite3` e `node-pty` para Node |
 | `npm run typecheck` | TypeScript geral |
@@ -1377,7 +1407,6 @@ LionClaw/
       MemoryPage.tsx
       GraphPage.tsx
       RepositoriesPage.tsx
-      ChannelsPage.tsx
       TasksPage.tsx
       SchedulerPage.tsx
       SkillsPage.tsx
@@ -1416,7 +1445,7 @@ LionClaw/
 
 ### Auto-update
 
-O `electron-builder.yml` **nao tem bloco `publish:`** (sem feed de update configurado). Apesar do `auto-updater` ser inicializado em producao (`index.ts:1364-1398`), sem feed ele nao tem de onde baixar. Na pratica, **a atualizacao e manual** via [Atualizar da versao anterior](#atualizar-da-versao-anterior) (`git pull` + `npm install` + `rebuild:electron`).
+O `electron-builder.yml` **nao tem bloco `publish:`** (sem feed de update configurado). Apesar do `auto-updater` ser inicializado em producao (`index.ts:1297-1330`), sem feed ele nao tem de onde baixar. Na pratica, **a atualizacao e manual** via [Atualizar da versao anterior](#atualizar-da-versao-anterior) (`git pull` + `npm install` + `rebuild:electron`).
 
 ---
 
@@ -1446,7 +1475,7 @@ Causa comum: drift de ABI do Node (modulos nativos como `better-sqlite3` compila
 2. Confira o status do boot-installer no indicador "Open Design" da UI; clique **Tentar novamente** se estiver em failed.
 3. Como ultima diagnose, rode `pnpm install --frozen-lockfile` dentro de `vendor/open-design/` no terminal e veja o stderr.
 
-Paths uteis do Open Design (`open-design/paths.ts:30-43`):
+Paths uteis do Open Design (`open-design/paths.ts:19-27`; logs `sidecar-*.log` em `open-design/manager.ts:339`):
 
 - **Data dir do sidecar**: `<userData>/open-design/runtime/.od/`
 - **Sentinela de install OK**: `<userData>/open-design/runtime/.install/lionclaw-install-ok`
@@ -1468,11 +1497,11 @@ npm install -g @openai/codex
 
 Depois autentique com o comando indicado pelo proprio CLI e clique **Testar conexao** no LionClaw.
 
-### GPT-5.6 falha antes de comecar o run
+### Modelo Codex (GPT-6.1 / GPT-6 / GPT-5.6) falha antes de comecar o run
 
 Sintoma: um run com `gpt-5.6-sol` (ou Terra/Luna), ou com effort `max`/`ultra`, falha imediatamente. Causa tipica:
 
-1. **CLI desatualizado** ("modelo nao anunciado pelo Codex CLI instalado"): o binario resolvido nao anuncia a familia GPT-5.6 no `model/list` (CLI anterior a `0.144`). Cenario comum: **Path customizado do binario** em Settings apontando para um CLI antigo. Remova o path (o app volta ao CLI embarcado `0.144.1`) ou atualize o binario para `0.144+`. Confira o indicador **App Server** em Settings > Provedores externos > Codex CLI (`src/components/settings/CodexSection.tsx:228-249`). Ver [Versao do Codex CLI](#versao-do-codex-cli).
+1. **CLI desatualizado** ("modelo nao anunciado pelo Codex CLI instalado"): o binario resolvido nao anuncia o modelo no `model/list` (CLI anterior a `0.162` para o `gpt-6.1-sol`, a `0.155` para a familia GPT-6, a `0.144` para a GPT-5.6). Cenario comum: **Path customizado do binario** em Settings apontando para um CLI antigo. Remova o path (o app usa o `codex` do PATH: o embarcado `0.162.1` ao rodar com `npm run dev`, senao o global) ou atualize o binario para `0.162+`. Confira o indicador **App Server** em Settings > Provedores externos > Codex CLI (`src/components/settings/CodexSection.tsx:223-237`). Ver [Versao do Codex CLI](#versao-do-codex-cli).
 
 ### Codex no Windows falha em patches
 
@@ -1562,7 +1591,7 @@ Depois veja logs na pagina **Logs**.
 
 ### Knowledge Base nao retorna resultados
 
-Verifique se os documentos estao com status `completed`. Para embeddings, o caminho recomendado e configurar `OPENAI_API_KEY` (`text-embedding-3-small`). O fallback Ollama exige um modelo que retorne **1536 dimensoes**; o default Ollama `nomic-embed-text` (768 dims) e **rejeitado** porque nao bate com a dimensao esperada (`embedding-provider.ts:89,111-117`).
+Verifique se os documentos estao com status `completed`. Para embeddings, o caminho recomendado e configurar `OPENAI_API_KEY` (`text-embedding-3-small`). O fallback Ollama exige um modelo que retorne **1536 dimensoes**; o default Ollama `nomic-embed-text` (768 dims) e **rejeitado** porque nao bate com a dimensao esperada (`embedding-provider.ts:13,87,111-120`).
 
 ### Erro de keytar no Linux
 
@@ -1580,7 +1609,42 @@ Se o keytar ainda falhar, o app usa fallback criptografado local.
 
 UNLICENSED - Proprietary (LionLabs)
 
-## v3.9
+## v4.0
+
+### Modelos de outubro/2026
+
+Catalogos, precos (USD por 1M tokens: input / output / cache read) e janelas atualizados pelas paginas oficiais em 12/10/2026 (`PRICING_VERSION = 2026-10-12`). Migrations **V168** (seeds Sonnet 4.6 -> Sonnet 5.5 e Haiku 4.5 -> Haiku 5.5, so para quem ainda estava no modelo de fabrica, runtime cloud) e **V169** (seed coder Codex `gpt-6-sol` -> `gpt-6.1-sol`; agentes Codex e `orchestrator_model` do Codex em `gpt-5.5`/`gpt-5.4`/`gpt-5.4-mini`/`gpt-5.3-codex-spark` -> `gpt-6.1-sol`).
+
+- **Anthropic** (1M de contexto, 128K de saida, thinking adaptativo; `budget_tokens` nao e enviado para a familia 5): `claude-sonnet-5-5` $2 / $10 / $0.10 (cache write $2.50; effort default `high`); `claude-haiku-5-5` $0.10 / $0.50 / $0.01 (cache write $0.125; effort default `medium`; prompt acima de 100.000 tokens cobra 5x em tudo). Legados continuam no catalogo.
+- **OpenAI / Codex**: `gpt-6.1-sol` $2 / $10 / $0.10 (janela 1.050.000, saida 128K, efforts `low` a `ultra`, acima de 272K cobra 2x input e 1.5x output) vira default do Codex e do OpenAI direto; `gpt-6-astra` entra no OpenAI direto; `gpt-5.5` ganha a faixa acima de 272K. Codex CLI `^0.162.1`.
+- **xAI**: `grok-4.7` $2 / $6 / $0.50 (500K; acima de 200K cobra 2x) e o novo default do Grok Build.
+- **Z.ai**: `glm-5.3-flash` $0.15 / $0.50 / $0.03 (1M, thinking sempre ligado, 3x a quota do 5.3 no Coding Plan) e `glm-5.3-flashx` $0.37 / $1.25 / $0.075 (1M, so pay-as-you-go).
+- **MiniMax**: `MiniMax-M3` corrigido para $0.30 / $1.20 / $0.06 (desconto permanente; acima de 512K cobra 2x); `MiniMax-M3.1-Flash-Preview` so no M Plan / MiniMax Code (sem preco publicado). A partir de 19/10/2026 o M2.7 do M Plan / Token Plan e roteado para o M3.1 Flash Preview e o PAYG do M2.7 termina em 18/11/2026; M2.1, M2 e M2-her foram retirados.
+- **DeepSeek** (fora de pico; pico cobra 2x): `deepseek-v4-pro` $0.66 / $1.98 / $0.022 (promo encerrada); `deepseek-flash` (V4.1-Flash) $0.15 / $0.60 / $0.003, com `deepseek-v4-flash` como alias legado.
+- **Kimi (API Moonshot)**: `kimi-k3` com cache write $3.00; `kimi-k2.7-code` $0.95 / $4 / $0.19 e `kimi-k2.7-code-highspeed` $1.90 / $8 / $0.38 (262.144).
+- **Gemini (Vertex)**: `gemini-3.8-flash` e `gemini-3.6-flash` $0.75 / $3.75 / $0.075, `gemini-3.5-flash-lite` $0.30 / $2.50 / $0.03 (1.048.576 / 65.536).
+- **OpenRouter**: `anthropic/claude-sonnet-5.5`, `anthropic/claude-haiku-5.5` e `openai/gpt-6.1-sol`.
+- **Cursor** (fallback estatico): `claude-fable-5-1`, `claude-opus-5-5`, `claude-sonnet-5-5`, `claude-haiku-5-5`, `grok-4.7` e `gemini-3.8-flash`.
+
+### Swarm em Codex no Windows e correcoes das runs reais (12/10)
+
+Quatro bloqueios em cadeia impediam qualquer swarm agent (e qualquer sessao Codex isolada, como as de pipeline) de rodar no Windows; todos caiam antes de o agente comecar a ler o repositorio:
+
+- **`auth.json` do CODEX_HOME dedicado**: o home isolado linkava o auth real por symlink, que o Windows nega sem modo desenvolvedor (EPERM). Agora tenta symlink, depois hardlink, depois copia (refeita quando o auth real muda).
+- **Atalho `codex.cmd`**: executado via shell, o `cmd.exe` removia as aspas do override `-c mcp_servers.<id>={...}` e o Codex recusava o MCP ("expected struct RawMcpServerConfig", app-server saia com codigo 1). O app resolve o atalho para o `codex.exe` do pacote de plataforma (npm global ou `node_modules` do projeto) e dispara sem shell.
+- **Sandbox read-only "blocked by policy"**: sem a secao `[windows]` no home dedicado o Codex recusa todo comando. O config gerado passa a declarar `sandbox = "unelevated"` (leitura passa, escrita continua negada).
+- **MCP do swarm lancado com `electron.exe`**: o Codex nao propaga `ELECTRON_RUN_AS_NODE`, o Electron abria como app e `swarm_write_findings` nunca aparecia. Em dev o comando e `node`, como no bloco gerenciado do chat; empacotado e o Node interno. As entradas ganham `default_tools_approval_mode = "approve"`.
+
+Correcoes vindas das runs de validacao do README (Opus 5.5 e GPT-6.1 Sol como swarm agents):
+
+- **Reparo de formato na familia Claude**: o host pre-grava o `findings.md` da tentativa, o Write nativo exige Read e o hook de leitura confinada negava; a leitura do proprio findings passa a ser liberada.
+- **Custo de continuacao**: a retomada de sessao devolvia o custo acumulado da sessao e a run somava tudo de novo (US$ 43 em vez de US$ 17); a tentativa passa a ser cobrada pelos proprios tokens.
+- **Validador de achados**: aceita `Evidencia`, `Por que importa` e `Recomendacao` sem acento e em qualquer caixa.
+- **Trailer colado**: o Codex manda o trailer numa mensagem separada e o texto final junta as mensagens sem quebra ("...pelo MCP.---"); a linha que termina em `---` passa a valer. Antes custava 3 a 4 tentativas por agente.
+- **Chip Swarm**: volta a ser so o toggle, sem o contador "N rodando" (o painel de Atividade ja mostra).
+- **Seletor de modelo nos modais**: nos modais de sincronizacao e do mapa a lista abre para baixo; antes abria para cima e era cortada.
+
+Medidas das runs reais de validacao do README (3 swarm agents, 3 secoes): Opus 5.5 US$ 17 e 44 min; GPT-6.1 Sol US$ 1,75 e 10 min, cada agente fechando na primeira tentativa.
 
 ### Conversas paralelas
 
@@ -1589,9 +1653,9 @@ O LionClaw deixou de ser uma conversa por vez. Agora sao duas (por enquanto), ro
 - **Duas conversas, dois cerebros.** Cada conversa tem fila, thread e orquestrador proprios. Uma responde enquanto a outra trabalha, sem uma esperar a outra terminar.
 - **Orquestrador por conversa.** Provedor, modelo e esforco sao escolhidos direto no composer, e a escolha vale so para aquela conversa. Da para deixar uma no Claude e outra no Codex simultaneamente, cada uma com o esforco que faz sentido para a tarefa dela.
 - **Clear por conversa.** O Clear continua fazendo tudo que fazia (resumo, dreaming, memoria semantica, grafo, USER.md e MEMORY.md), mas roda na conversa escolhida, sem congelar a outra. Um dreaming por vez, por desenho: duas conversas nunca escrevem na memoria ao mesmo tempo.
-- **Novo Chat virou Clear com escolha.** Com as duas conversas abertas, o botao pergunta qual delas recebe o Clear e mostra o estado de cada uma (disponivel, ocupada, em Clear, com pipeline rodando). So conversa disponivel pode ser escolhida.
+- **Novo Chat virou Clear com escolha.** Com as duas conversas abertas, o botao pergunta qual delas recebe o Clear e mostra o estado de cada uma (disponivel, ocupada, em Clear, com pipeline rodando). So conversa disponivel pode ser escolhida; sem nenhuma disponivel, o botao fica desabilitado com o motivo.
 - **Pipeline por conversa.** Cada conversa conduz o seu pipeline, sem travar a outra. O pipeline fica preso a conversa que o iniciou e volta para ela depois de um Clear (migration V156).
-- **Nada se perde.** A thread nunca e apagada. Se o app fechar no meio de um Clear, a conversa reaparece em somente leitura com o botao "Refazer Clear", e o trabalho continua de onde parou.
+- **Nada se perde.** A thread nunca e apagada. Se o app fechar no meio de um Clear, a conversa reaparece em somente leitura com o botao "Refazer Clear", que refaz o Clear do inicio sem perder a thread.
 
 ### Kanban nativo
 
@@ -1613,7 +1677,7 @@ A lista de tarefas do agente passa a valer em todos os modelos, e os runtimes Cl
 
 ### Modelos
 
-**Claude Opus 5.5** (`claude-opus-5-5`, lancado em 22/09): janela de 1M, saida de 128K, $4 / $20 por MTok (20% abaixo do Opus 5), esforco padrao `medium` e thinking sempre ligado. Exige o engine Claude Code 2.1.280+: o Agent SDK sobe para 0.3.280 (engine nativo 2.1.280) e o `npm install` traz o binario novo; com engine anterior a API devolve 400 "does not support this model". Vira o default do orquestrador e dos sub-agentes que estavam em Opus 4.8/4.7 (migration V157, preserva escolha customizada). Disponivel tambem via OpenRouter (`anthropic/claude-opus-5-5`).
+**Claude Opus 5.5** (`claude-opus-5-5`, lancado em 22/09): janela de 1M, saida de 128K, $4 / $20 por MTok (20% abaixo do Opus 5), esforco padrao `medium` e thinking sempre ligado. Exige o engine Claude Code 2.1.280+: o Agent SDK sobe para 0.3.280 (engine nativo 2.1.280) e o `npm install` traz o binario novo; com engine anterior a API devolve 400 "does not support this model". Vira o default do orquestrador que estava em Opus 5 e dos seeds cloud que estavam em Opus 4.8/4.7 (migration V157, preserva escolha customizada). Disponivel tambem via OpenRouter (`anthropic/claude-opus-5-5`).
 
 **GPT-6 Sol e Luna** (`gpt-6-sol` $2 / $10, `gpt-6-luna` $0.10 / $0.50; janela 1.05M; Sol com esforco ate `ultra`, Luna ate `max`): Sol vira o default do runtime Codex e do coder Codex dos workflows (migration V158). Nao existe GPT-6 Terra. **Exigem Codex CLI 0.155+**: o app confere o `model/list` do CLI instalado e, se o modelo nao for anunciado, recusa com a instrucao de atualizar (`npm i -g @openai/codex@latest`). Os dois tambem entram no runtime external (OpenAI direto e OpenRouter). `gpt-5.5` sai do Codex em 14/10/2026. Precos dos `gpt-5.6-*` corrigidos pela tabela oficial (Sol $4 / $20, Terra $2 / $12, Luna $0.20 / $1.20).
 
@@ -1629,13 +1693,17 @@ O modo baseado em manifesto e builder foi aposentado. O arquivo `.js` e o workfl
 
 Nao ha teto de custo por desenho: nenhum limite artificial interrompe um desenvolvimento no meio, e o freio operacional e pausar ou abortar pela conversa. O custo autoritativo do run fica em `dynamic_workflow_runs.total_cost_usd`.
 
-O host deriva um veredito deterministico por evento (sem LLM) e so o evento terminal de uma cadeia acorda o orquestrador. Nas fronteiras de fase vale um semaforo fail-closed: achado P1 aberto, retry pendente ou writer sem green-check pausam o run num gate para o orquestrador decidir. O wake e duravel: sobrevive a reinicio do app. `intervene rerun-node` reexecuta um node travado com instrucao nova sem perder o journal ja gravado, e `adjust-next-node` injeta ajuste no proximo node que iniciar.
+O host deriva um veredito deterministico por evento (sem LLM) e so o evento terminal de uma cadeia acorda o orquestrador. Nas fronteiras de fase vale um semaforo: achado P1 aberto, retry pendente ou writer sem green-check pausam o run num gate para o orquestrador decidir (se a leitura dos eventos falhar, a fronteira passa sem gate e registra aviso). O wake e duravel: sobrevive a reinicio do app. `intervene rerun-node` reexecuta um node ja concluido com instrucao nova, truncando o journal a partir dele (o que veio antes fica preservado), e `adjust-next-node` injeta ajuste no proximo node que iniciar.
 
-A pagina do run ganhou cockpit com quatro abas: **Execucao**, **Custo** (por fase), **Saidas** e **Linha do tempo** com hora local. No chat, o workflow em execucao fica fixo no painel de Atividade, fora do scroll, e volta ao turno quando termina.
+A pagina do run ganhou cockpit com cinco abas: **Stream**, **Execucao**, **Custo** (por fase), **Saidas** e **Linha do tempo** com hora local. No chat, o workflow em execucao fica fixo no painel de Atividade, fora do scroll, e volta ao turno quando termina.
 
-### Swarm (previa)
+### Swarm
 
-Com o chip **Swarm** ligado no composer, o orquestrador dispara varios agentes em paralelo a partir do prompt, em dois modos: **comite** (varios especialistas no mesmo alvo) ou **fanout** (um perfil em varios alvos). Acompanhamento no painel de Atividade, limites em Settings. Uma run por conversa, so para analise: desenvolvimento continua nos workflows.
+Com o chip **Swarm** ligado no composer, o orquestrador do chat trabalha como o Claude Code com sub-agentes: reparte o pedido em swarm agents paralelos, cada um com papel generico (explorador, auditor, validador de documento, pesquisador), um agente especializado do esquadrao Swarm ou uma persona efemera, e um briefing escrito na hora (alvo, lente, perguntas, criterio de evidencia, o que nao fazer); o briefing e o trabalho, o papel e o jeito. Dois modos: **comite** (varios swarm agents no mesmo alvo) e **fanout** (um perfil em varios alvos). Serve para analise, nunca para desenvolver: documentacao repartida, SPEC contra codigo, permissoes por runtime, validacao de bug e busca de falhas de seguranca.
+
+O trabalho anda em **etapas**: o orquestrador dispara uma leva, espera no mesmo turno (`swarm_wait`), le os achados, decide e dispara a proxima leva encadeada (`parentRunId` e `stage`), narrando cada passo no chat. No meio da run ele **conduz** cada swarm agent como no Claude Code: le o parcial, manda mensagem com o contexto vivo (retomada de sessao na familia Claude, Codex e Cursor; reenvio de historico nos demais), para um swarm agent, redispara com briefing novo e responde quando o swarm agent pergunta. A entrega final chega num turno automatico sem escrita: le, consolida e pode conduzir a run ou disparar a proxima etapa (na familia Claude e no Codex a trava de escrita e por codigo; em Grok e Cursor a consolidacao roda sem trava por codigo, so pelo prompt).
+
+Todos os runtimes do composer servem de swarm agent (Claude, Codex, GLM, MiniMax, Kimi, Grok, Cursor, local e externo), sempre somente leitura sobre o alvo; a unica escrita e o relatorio de achados, gravado pelo host. Os agentes de fabrica nascem em Claude Opus 5.5; como todo seed, seguem o orquestrador escolhido no onboarding e podem trocar de runtime e modelo em Agentes. Sem teto de custo: o painel de Atividade mostra as runs recentes por etapa, cada swarm agent com status, geracao, provedor, custo acumulado, mensagens trocadas e botoes "Parar" e "Abrir relatorio", mais "Abortar run" e o custo total; o freio e parar ou abortar pelo painel ou pelo chat. Em Settings: concorrencia, tentativas, timeouts e a janela de conducao depois do fim da run (30 min por padrao).
 
 ### Artefatos HTML no painel lateral
 
@@ -1669,12 +1737,12 @@ A skill padrao **revisao-de-decisoes** transforma uma SPEC em pagina de aprovaca
 
 ### Repositorio
 
-Comentarios removidos do codigo do produto, a pasta `docs/` saiu do repositorio e o codigo passou a ser formatado com Prettier (`npm run format`). Documento envelhece e desencontra do codigo; o nome e o teste valem mais que a explicacao.
+Comentarios reduzidos ao minimo no codigo do produto, a pasta `docs/` saiu do repositorio e o codigo passou a ser formatado com Prettier (`npm run format`). Documento envelhece e desencontra do codigo; o nome e o teste valem mais que a explicacao.
 
 
 ## v3.7.1
 
-Esta secao reune as features que entraram nesta release e ainda nao tinham entrada propria nas secoes acima. O que ja esta coberto em outras secoes (pipeline unificado, Development V2 + Open Design, Security e Architecture Review, voz/chat ao vivo, Dreaming, sincronizacao do orquestrador, Memory Graph, Knowledge Base) nao e repetido aqui.
+Esta secao reune as features que entraram nesta release e ainda nao tinham entrada propria nas secoes acima. As referencias `arquivo:linha` desta secao sao da epoca da 3.7.1 e nao foram atualizadas; os nomes de arquivo continuam validos. O que ja esta coberto em outras secoes (pipeline unificado, Development V2 + Open Design, Security e Architecture Review, voz/chat ao vivo, Dreaming, sincronizacao do orquestrador, Memory Graph, Knowledge Base) nao e repetido aqui.
 
 ### Modelos Claude e janelas de 1M
 
@@ -1687,15 +1755,17 @@ O catalogo Claude desta release (`src/constants/claude-models.ts`):
 | `claude-opus-5` | |
 | `claude-opus-4-8` | |
 | `claude-opus-4-7` | |
+| `claude-sonnet-5-5` | $2 / $10, cache read $0.10; seeds Sonnet nascem nele (V168) |
 | `claude-sonnet-5` | |
 | `claude-sonnet-4-6` | |
+| `claude-haiku-5-5` | 1M; $0.10 / $0.50 ate 100K tokens de prompt, 5x acima disso; validadores Haiku nascem nele (V168) |
 | `claude-haiku-4-5-20251001` | |
 
-Opus 5.5, Opus 5, Opus 4.8+, Sonnet 5+ e Fable 5.1 usam **janela de contexto de 1M tokens**. Os modelos Claude-compat (GLM, MiniMax) declaram a janela real ao engine pela variavel `CLAUDE_CODE_MAX_CONTEXT_TOKENS` (injetada por `buildCompatEnv`/`buildZaiEnv`/`buildMinimaxTpEnv` a partir de `getContextWindow`); o antigo sufixo `[1m]` no nome do modelo foi removido porque o engine 0.3.x injeta uma beta que os endpoints compat rejeitam. A janela de cada modelo vem da fonte unica `getContextWindow`, a mesma que alimenta a barra de contexto do chat.
+Opus 5.5, Opus 5, Opus 4.8+, Sonnet 5+, Haiku 5.5 e Fable 5.1 usam **janela de contexto de 1M tokens**. Os modelos Claude-compat (GLM, MiniMax) declaram a janela real ao engine pela variavel `CLAUDE_CODE_MAX_CONTEXT_TOKENS` (injetada por `buildCompatEnv`/`buildZaiEnv`/`buildMinimaxTpEnv` a partir de `getContextWindow`); o antigo sufixo `[1m]` no nome do modelo foi removido porque o engine 0.3.x injeta uma beta que os endpoints compat rejeitam. A janela de cada modelo vem da fonte unica `getContextWindow`, a mesma que alimenta a barra de contexto do chat.
 
 ### Ledger de execucoes
 
-Nova tabela `task_executions` (migration V138): arvore raiz/pai/filho das execucoes de agente, com custo, tokens e runtime por execucao.
+Ledger em `task_executions` (migration V138 adiciona raiz/pai/filho, runtime, provider e status de custo e tokens): arvore raiz/pai/filho das execucoes de agente, com custo, tokens e runtime por execucao.
 
 ### Seguranca de migration e rotacao de log
 
@@ -1725,7 +1795,7 @@ A superficie de preload e `window.lionclaw.repoGraph.*` (12 invokes + listener `
 
 ### CodeGraph
 
-A peca que da ao Repo Mode o seu indice estrutural e o provider **CodeGraph**, que roda o CodeGraph como subprocesso de CLI (`@colbymchenry/codegraph`, pinado em `^0.9.9`). A lib embutida exige Node 22.5+ (`node:sqlite`) e o Electron 33 roda Node 20, entao o provider spawna o binario de `node_modules/.bin/codegraph` em vez de importar a lib (`electron/main/repo-graph/provider-codegraph.ts:6-21,81-96`, `package.json:39`). O indice fica em `<repo>/.codegraph/codegraph.db`, dentro da propria pasta do repositorio.
+A peca que da ao Repo Mode o seu indice estrutural e o provider **CodeGraph**, que roda o CodeGraph como subprocesso de CLI (`@colbymchenry/codegraph`, pinado em `^0.9.9`). A lib embutida exige Node 22.5+ (`node:sqlite`) e o Electron 33 roda Node 20, entao o provider spawna o runtime fisico do CodeGraph (Node privado + entry, preparado no `postinstall` por `scripts/prepare-codegraph-runtime.js` e resolvido em `distribution-runtime.ts`) em vez de importar a lib (`electron/main/repo-graph/provider-codegraph.ts`, `package.json`). O indice fica em `<repo>/.codegraph/codegraph.db`, dentro da propria pasta do repositorio.
 
 - Onde fica: a pagina **Repositorios** na sidebar (`src/components/common/Sidebar.tsx:72`, `src/pages/RepositoriesPage.tsx`). La voce adiciona um repo, cria o indice (botao "Criar graph"), reindexa, faz update incremental ("Atualizar" = `codegraph sync`) e remove. Remover o repo do LionClaw nao apaga o `.codegraph/` local (`src/pages/RepositoriesPage.tsx:301`).
 - No system prompt: quando o graph esta `ready` (ou `stale`), o app injeta uma secao condicional no system prompt anunciando as tools e pedindo usar `repo_graph_search`/`repo_graph_minimal_context` antes de busca bruta no repo (`electron/main/prompt-builder-repo-graph.ts:60-105`). Sem repo ativo o prompt fica byte-identico (zero overhead): `appendRepoGraphSection` retorna o prompt inalterado quando `getRepoGraphPromptSection()` e vazio (`electron/main/prompt-builder-repo-graph.ts:124-143`).
@@ -1767,11 +1837,11 @@ Na UI, o avanco aparece no chat como um bloco de pipeline na barra de Atividade 
 
 Orquestra entregas de feature de ponta a ponta rodando um `workflow.js` sandboxado que coordena subagents. O script roda fora do processo principal em `utilityProcess.fork` dentro de um contexto `vm` limpo, sem acesso ao DOM nem ao global do host (`electron/main/dynamic-workflows/workflow-sandbox.ts`, `workflow-sandbox-child.ts`). Os workflows sao **autorados em JS estilo Claude Code**: `meta` literal + corpo top-level com `agent`/`parallel`/`pipeline`/`phase` (global `args`), compilados com piso de determinismo (`Date.now`/`Math.random`/`new Date()` sem args lancam no vm); o motor deriva um manifesto interno e cria nodes implicitos on-the-fly (`workflow-js-compiler.ts`). Cada node pode declarar **model e reasoning effort proprios**, inclusive cross-provider, com enforcement por dispatch path (cloud/zai/minimax-tp aplicam via guard in-process; codex aplica com clamp model-aware; kimi/local/external e fatal fail-closed). Os papeis do dev-loop (planner, coder, fixer, refuter e validadores; ids em `dev-loop-ids.ts`) sao seed agents do squad `dynamic-workflow`, referenciados pelos workflows autorados.
 
-- **Full-auto e o modo unico**: o run decide os gates de fase sozinho conforme o modo declarado em cada gate do proprio `workflow.js`; o freio humano e pausar/intervir pelo chat. Quando o run **escreveu codigo**, o host auto-injeta um gate de entrega `cc-delivery` (nasce `mode:'orchestrator'`) e **push externo e sempre bloqueado** (`closer-permission-guard.ts`) - integrar o codigo e decisao sua.
+- **Full-auto e o modo unico**: o run decide os gates sozinho; os gates sao criados pelo host (fronteira de fase com semaforo, falha de node e entrega), todos no modo orquestrador, e o freio humano e pausar/intervir pelo chat. Quando o run **escreveu codigo**, o host auto-injeta um gate de entrega `cc-delivery` (nasce `mode:'orchestrator'`) e **push externo e sempre bloqueado** (`closer-permission-guard.ts`) - integrar o codigo e decisao sua.
 - **Quem dirige e o orquestrador do chat**: o driver do run e o orquestrador (tools `dynamic_workflow_author`/`start`/`inspect`/`reply`/`approve`/`intervene`/`abort`/`edit_coordinator`, MCP `lionclaw-dynamic-workflows`); o narrador (`workflow-narrator-executor.ts`) so narra o progresso, sem tools de controle. Perguntas do run sao respondidas inline no proprio banner da tela do run (`DynamicWorkflowRunView.tsx`).
 - Como usar / onde fica: a criacao e EXCLUSIVA do orquestrador do chat - voce conversa com o Lion, ele escreve o `workflow.js` e cria/inicia o run via `dynamic_workflow_author` (nao ha modal de criacao na UI). A aba "Workflows Dinamicos" na sidebar acompanha e controla os runs; edicoes de topologia de um run pausado passam por `dynamic_workflow_edit_coordinator` (aceita apenas `workflowJsSource`; o manifesto interno e sempre re-derivado).
-- Cockpit: abas lazy Stream, Nodes, Artefatos, Custo, Manifest e Linha do tempo (`src/components/dynamic-workflow/DynamicWorkflowRunView.tsx`).
-- Nunca perde trabalho: journal ordenado de chamadas, checkpoints por node e resume idempotente (as-of plan hash) recuperam runs interrompidos (`workflow-runner.ts`); o codigo vive numa worktree dedicada por run, com sprints sequenciais (`workflow-worktree.ts`). No dev-loop, nao-progresso persistente troca o fixer por um cerebro fresco (fresh fixer). Deletar e a unica acao destrutiva e pede confirmacao; Abortar so para e preserva tudo.
+- Cockpit: abas lazy Stream, Execucao, Custo, Saidas e Linha do tempo (`src/components/dynamic-workflow/DynamicWorkflowRunView.tsx`).
+- Nunca perde trabalho: journal ordenado de chamadas, checkpoints por node e resume idempotente (as-of plan hash) recuperam runs interrompidos (`workflow-runner.ts`); em repositorio com commits o codigo vive numa worktree dedicada por run, com sprints sequenciais; em projeto novo (pasta vazia ou repo sem commit) o run trabalha na propria pasta (`workflow-worktree.ts`). No dev-loop, a troca do fixer por um cerebro fresco apos nao-progresso (fresh fixer) e uma convencao do prompt do builder, nao um enforcement do motor. Deletar e a unica acao destrutiva e pede confirmacao; Abortar so para e preserva tudo.
 
 O namespace IPC `dynamic-workflow:*` fica no preload (`electron/preload/index.ts`).
 
@@ -1791,7 +1861,8 @@ Distinto do provider "Kimi (Moonshot)" OpenAI-compat do Lion-SDK / runtime `exte
 
 O runtime `grok` roda agentes pela CLI oficial da xAI usando a assinatura **Grok Build**, sem API key (`agent-runtime/grok-availability.ts`). O executor spawna a CLI e traduz os eventos ao vivo via protocolo ACP (`grok-acp/acp-driver.ts`, `acp-translator.ts`, `acp-transport.ts`).
 
-- Modelo: `grok-4.5`, contexto de 500.000 tokens, efforts `low`/`medium`/`high` com default `high` (`src/constants/grok-models.ts:11-22`).
+- Modelo: `grok-4.7` (default; `grok-4.6` e `grok-4.5` disponiveis), contexto de 500.000 tokens, efforts `low`/`medium`/`high` com default `high` (`src/constants/grok-models.ts`).
+- Versao do CLI: o probe de disponibilidade pede `grok-4.7` ao Grok Build; com CLI anterior a 1.0.40 (que ainda nao anuncia o 4.7) o card mostra "grok-4.7 is not available in the authenticated subscription". Atualize o Grok Build antes de usar o runtime.
 - Tools: expostas ao CLI por uma bridge HTTP-MCP em loopback (`grok-acp/mcp-http-bridge.ts`).
 - Atividade: os eventos chegam ao Activity Log via `grok-sdk/stream-translator.ts`.
 - Onde fica na UI: card Grok em Settings > Provedores externos (`GrokSection.tsx`); por agente, escolha o runtime "Grok Build (assinatura via CLI)" no AgentFormModal.
@@ -1800,7 +1871,7 @@ O runtime `grok` roda agentes pela CLI oficial da xAI usando a assinatura **Grok
 
 O runtime Codex roda num driver unico: o `official-app-server`. Ele sobe um processo `codex app-server` por escopo de sessao e fala JSON-RPC sobre stdio (`initialize`/`initialized`, `thread/start`, `turn/start`, `turn/interrupt`, etc.), traduzindo os eventos do App Server para o contrato `CodexStreamCallbacks`/`CodexResponse` (`electron/main/codex-runtime/official-app-server-driver.ts`, `official-event-translator.ts`). `getActiveCodexImplementation()` retorna `'official-app-server'` e `createCodexDriver()` instancia o driver (`codex-runtime/factory.ts:3-8`), sem flag nem selecao. A autenticacao e via `codex login` (OAuth), sem API key separada.
 
-- **Modelos**: catalogo em `src/constants/codex-models.ts:9-18`, com default `gpt-5.6-sol` (`:20`) e efforts `low` | `medium` | `high` | `xhigh` | `max` | `ultra`.
+- **Modelos**: catalogo em `src/constants/codex-models.ts` (default `gpt-5.6-sol` na 3.7.1; hoje `gpt-6.1-sol`) e efforts `low` | `medium` | `high` | `xhigh` | `max` | `ultra`.
 - **Lifecycle**: os processos do App Server sao escopados por surface/projectId/ownerKind pelo lifecycle registry (`codex-runtime/lifecycle-registry.ts:136-142,306`).
 - **UI**: em **Settings > Provedores externos > Codex CLI**, o bloco Driver Codex mostra o driver ativo e a saude do App Server (`CodexSection.tsx:228-249`).
 

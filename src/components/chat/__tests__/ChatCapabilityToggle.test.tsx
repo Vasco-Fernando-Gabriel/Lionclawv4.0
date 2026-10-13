@@ -324,28 +324,24 @@ describe('ChatCapabilityToggles (S7, A.8)', () => {
     });
   });
 
-  it('Swarm aceita revisão baixa de run nova após run anterior concluída', async () => {
-    let emit: (event: { runId: string; chatSessionId: string; revision: number }) => void = () => {};
+  it('chip Swarm mostra so o rotulo, mesmo com runs vivas na conversa (contador fica no painel de Atividade)', async () => {
     const api = window.lionclaw as unknown as Record<string, unknown>;
     api.swarm = {
-      listRuns: async () => ({ runs: [{ runId: 'old' }], nextCursor: null }),
+      listRuns: async () => ({ runs: [{ runId: 'a' }], nextCursor: null }),
       getRunState: async (_sessionId: string, runId: string) => ({
         runId,
-        revision: runId === 'old' ? 30 : 1,
-        status: runId === 'old' ? 'done' : 'running',
-        items: [{ status: 'running' }],
+        revision: 1,
+        status: 'running',
+        items: [{ status: 'running' }, { status: 'pending' }],
       }),
-      onStream: (callback: typeof emit) => {
-        emit = callback;
-        return () => {};
-      },
+      onStream: () => () => {},
     };
+    getFeatureTogglesMock.mockResolvedValue(okResult(true, true));
     mount(<ChatCapabilityToggles sessionId="s1" />);
     await flush();
-    await act(async () => {
-      emit({ runId: 'new', chatSessionId: 's1', revision: 1 });
-    });
-    expect(chip('swarm').textContent).toContain('0/1');
+    await flush();
+    expect(chip('swarm').textContent).toBe('Swarm');
+    expect(chip('swarm').className).not.toContain('animate-pulse');
   });
 
   it('chips NUNCA mostram nome/fase de execucao — so o rotulo do toggle (AC-A14/A15)', async () => {

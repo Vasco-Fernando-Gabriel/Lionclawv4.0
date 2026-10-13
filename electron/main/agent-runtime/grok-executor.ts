@@ -30,7 +30,13 @@ import {
   GROK_QUOTA_MESSAGE,
   isGrokQuotaFailure,
 } from './grok-concurrency';
-import { buildGrokNativeToolPolicy, buildGrokSessionTools, type GrokToolProfile } from './grok-session-config';
+import {
+  buildGrokNativeToolPolicy,
+  buildGrokSessionTools,
+  type GrokExternalTool,
+  type GrokToolProfile,
+} from './grok-session-config';
+import { swarmRepoGraphToolSchemas } from '../swarm/repo-graph';
 import {
   acquireGrokSandboxSpawnLock,
   assertGrokWorkspaceUnchanged,
@@ -208,10 +214,12 @@ async function run(req: AgentExecutionRequest, config: AgentQueryConfig): Promis
   }
 
   const startedAt = Date.now();
-  const workspaceGrant = resolveGrokWorkspaceGrant({
+  const readOnlyAgent = req.executionAgent?.squad === 'swarm';
+  const resolvedGrant = resolveGrokWorkspaceGrant({
     lane: 'desktop',
     repoRootSnapshot: req.cwd,
   });
+  const workspaceGrant = readOnlyAgent ? { ...resolvedGrant, writeRoots: [] } : resolvedGrant;
   const grokHome = resolveGrokHome();
   const env = buildGrokChildEnv(grokHome);
   const binary = await resolveGrokBinary();
@@ -231,15 +239,32 @@ async function run(req: AgentExecutionRequest, config: AgentQueryConfig): Promis
   );
   const profile = toolProfile(req, config);
   const effort = effectiveEffort(req, config);
+  const swarmDispatch = req.swarmToolDispatch;
+  const sessionConfig = swarmDispatch
+    ? { ...config, allowedTools: config.allowedTools.filter((name) => !name.startsWith('mcp__')) }
+    : config;
   const sessionTools = await buildGrokSessionTools({
     profile,
-    config,
+    config: sessionConfig,
     cwd: req.cwd,
     abortController: req.abortController,
     ...(req.projectId ? { projectId: req.projectId } : {}),
     ...(req.executionContext ? { dispatchContext: req.executionContext } : {}),
   });
-  const externalTools = sessionTools.externalTools.map((tool) => ({
+  const swarmRepoGraphTools: GrokExternalTool[] = swarmDispatch
+    ? swarmRepoGraphToolSchemas(config.allowedTools).map((schema) => ({
+        name: schema.function.name,
+        description: schema.function.description,
+        parameters: schema.function.parameters as Record<string, unknown>,
+        handler: async (input: Record<string, unknown>) => {
+          const result = await swarmDispatch(schema.function.name, input);
+          req.onActivity?.();
+          if (result.isError) throw new Error(result.result);
+          return { output: result.result, message: `${schema.function.name} ok` };
+        },
+      }))
+    : [];
+  const externalTools = [...sessionTools.externalTools, ...swarmRepoGraphTools].map((tool) => ({
     ...tool,
     async handler(input: Record<string, unknown>, callContext?: { toolUseId: string }) {
       assertGrokWorkspaceUnchanged(workspaceGrant);
@@ -251,7 +276,7 @@ async function run(req: AgentExecutionRequest, config: AgentQueryConfig): Promis
       return result;
     },
   }));
-  const nativePolicy = buildGrokNativeToolPolicy(profile, config.allowedTools);
+  const nativePolicy = buildGrokNativeToolPolicy(profile, sessionConfig.allowedTools);
   const role = req.executionContext ? (req.executionContext.depth > 0 ? 'child' : 'parent') : 'standalone';
   const release = await acquireGrokSlot({
     signal: req.abortController.signal,
@@ -283,7 +308,11 @@ async function run(req: AgentExecutionRequest, config: AgentQueryConfig): Promis
     const acpProfile: GrokAcpProfile = profile;
     const releaseSandboxSpawn = await acquireGrokSandboxSpawnLock();
     try {
-      const sandbox = ensureGrokSandboxProfile(workspaceGrant, grokHome, profile === 'one-shot' ? 'strict' : undefined);
+      const sandbox = ensureGrokSandboxProfile(
+        workspaceGrant,
+        grokHome,
+        profile === 'one-shot' ? 'strict' : readOnlyAgent ? 'read-only' : undefined,
+      );
       const sandboxAttestation = snapshotGrokSandboxAttestation(
         grokHome,
         sandbox,

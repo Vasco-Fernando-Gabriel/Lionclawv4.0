@@ -8,7 +8,7 @@ export const dynamicWorkflowRefuter: Omit<AgentConfig, 'sortOrder'> = {
   name: 'Dynamic Workflow Refuter',
   description:
     'Refutador adversarial read-only do dev-loop do workflow dinamico: recebe os findings dos validadores de codigo + o codigo citado + a saida do green-check do host e decide, por finding e SO por evidencia reproduzivel, se ele e real ou ruido. Retorna o REFUTE_SCHEMA estruturado (verdict + evidencia + severityConfirmada). Read-only puro: nao corrige nada, nao edita arquivo.',
-  model: 'claude-sonnet-4-6',
+  model: 'claude-sonnet-5-5',
   effort: 'high' as const,
   thinking: 'enabled' as const,
   thinkingBudget: 8000,

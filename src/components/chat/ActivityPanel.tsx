@@ -274,6 +274,7 @@ function ToolRow({ node, now }: { node: ActivityNode; now: number }) {
   const clock = formatLiveClock(node, now);
   const detail = node.file ?? node.command ?? null;
   const isCommand = !node.file && !!node.command;
+  const swarmProgress = node.toolName === 'swarm_wait' ? (node.summary ?? node.description ?? null) : null;
 
   return (
     <div className="px-0.5 py-0.5">
@@ -294,6 +295,15 @@ function ToolRow({ node, now }: { node: ActivityNode; now: number }) {
       {detail && (
         <div className="truncate pl-4.5 font-mono text-[10px] text-zinc-600" title={detail}>
           {detail}
+        </div>
+      )}
+      {swarmProgress && (
+        <div
+          data-testid="swarm-wait-progress"
+          className="line-clamp-2 pl-4.5 text-[10px] leading-snug text-amber-300/90"
+          title={swarmProgress}
+        >
+          {swarmProgress}
         </div>
       )}
       <div className="flex flex-wrap items-center gap-x-2 pl-4.5 font-mono text-[10px] text-zinc-600">

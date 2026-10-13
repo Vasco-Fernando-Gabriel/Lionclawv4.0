@@ -8,7 +8,7 @@ export const skillCreator: Omit<AgentConfig, 'sortOrder'> = {
   name: 'Skill Creator',
   description:
     'Cria, edita e otimiza skills para o LionClaw. Use quando o usuario quiser criar uma skill nova, melhorar uma existente, ou testar skills.',
-  model: 'claude-sonnet-4-6',
+  model: 'claude-sonnet-5-5',
   effort: 'high' as const,
   thinking: 'adaptive' as const,
   maxTurns: 80,

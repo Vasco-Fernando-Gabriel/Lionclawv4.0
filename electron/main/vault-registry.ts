@@ -2,6 +2,7 @@ import { createLogger } from './logger';
 import { getSecret, getSecretNonInteractive, setSecret, deleteSecret, getSecretReadError } from './secrets-vault';
 import { HIGGSFIELD_SESSION_SECRET_KEY } from './higgsfield-auth';
 import { BLOTATO_API_KEY_SECRET } from './blotato-auth';
+import { JEV_API_KEY_VAULT_KEY } from './jev-settings';
 
 const logger = createLogger('vault-registry');
 
@@ -131,6 +132,16 @@ const VAULT_ENTRIES: Omit<VaultEntry, 'configured'>[] = [
     required: false,
     placeholder: 'co-...',
     docsUrl: 'https://dashboard.cohere.com/api-keys',
+  },
+  {
+    key: JEV_API_KEY_VAULT_KEY,
+    label: 'TypeSafe Jev API Key',
+    description:
+      'Chave da API do Jev (TypeSafe). Usada so pelo modo sombra da revisao de memoria no Clear; sem ela a sombra fica inativa.',
+    service: 'typesafe',
+    required: false,
+    placeholder: 'chave do console TypeSafe',
+    docsUrl: 'https://console.typesafe.ai/',
   },
 ];
 

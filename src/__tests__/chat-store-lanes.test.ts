@@ -137,6 +137,47 @@ beforeEach(async () => {
   });
 });
 
+describe('boot: loadSessions abre a Lane 1 mesmo com loadOpenLanes concorrente', () => {
+  it('a lista pedida pelo boot e atropelada por outra chamada e mesmo assim a Lane 1 fica selecionada', async () => {
+    const { useChatStore } = await getStores();
+    openLanes = [lane('b', 2, { lastUserMessageAt: '2026-09-09T10:00:00.000Z' }), lane('a', 1)];
+    const boot = useChatStore.getState().loadSessions();
+    const concurrent = useChatStore.getState().loadOpenLanes();
+    await Promise.all([boot, concurrent]);
+    await flush();
+    expect(useChatStore.getState().openLanes).toEqual(openLanes);
+    expect(useChatStore.getState().currentSessionId).toBe('a');
+  });
+
+  it('resposta atropelada nao entra no store; quem pediu recebe a lista mais nova', async () => {
+    const { useChatStore } = await getStores();
+    const original = window.lionclaw.chat.listOpenSessions;
+    let resolveOld!: (lanes: OpenChatSession[]) => void;
+    let first = true;
+    window.lionclaw.chat.listOpenSessions = (async () => {
+      if (first) {
+        first = false;
+        return new Promise<OpenChatSession[]>((resolve) => {
+          resolveOld = resolve;
+        });
+      }
+      return [lane('a', 1, { title: 'nova' })];
+    }) as typeof original;
+    try {
+      const older = useChatStore.getState().loadOpenLanes();
+      const newer = useChatStore.getState().loadOpenLanes();
+      await flush();
+      resolveOld([lane('a', 1, { title: 'antiga' })]);
+      const [fromOlder, fromNewer] = await Promise.all([older, newer]);
+      expect(fromNewer[0].title).toBe('nova');
+      expect(fromOlder).toEqual(fromNewer);
+      expect(useChatStore.getState().openLanes[0].title).toBe('nova');
+    } finally {
+      window.lionclaw.chat.listOpenSessions = original;
+    }
+  });
+});
+
 describe('5.3: sendMessage cria a lane antes do primeiro envio e sempre manda sessionId', () => {
   it('sem lane nenhuma: chama chat:create-session e envia com o sessionId criado', async () => {
     const { useChatStore } = await getStores();

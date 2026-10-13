@@ -9,7 +9,7 @@ import {
   DatabaseVersionError,
 } from './db-init-error';
 
-export const LATEST_SCHEMA_VERSION = 159;
+export const LATEST_SCHEMA_VERSION = 169;
 const RECOVERY_MARKER_NAME = 'migration-in-progress.json';
 
 export interface MigrationSafetyResult {

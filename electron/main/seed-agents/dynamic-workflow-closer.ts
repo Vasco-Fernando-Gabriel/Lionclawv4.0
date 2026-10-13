@@ -8,7 +8,7 @@ export const dynamicWorkflowCloser: Omit<AgentConfig, 'sortOrder'> = {
   name: 'Dynamic Workflow Closer',
   description:
     'Agente conversacional de fechamento, socorro e pos-entrega do workflow dinamico. Git local sob confirmacao no chat; push e remotos nunca. Exige runtime guard-capable.',
-  model: 'claude-sonnet-4-6',
+  model: 'claude-sonnet-5-5',
   effort: 'high' as const,
   thinking: 'adaptive' as const,
   maxTurns: 100,

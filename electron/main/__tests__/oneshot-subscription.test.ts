@@ -307,9 +307,9 @@ describe('humanizeModelLabel', () => {
     expect(
       humanizeModelLabel({ runtime: 'claude-compat-sdk', provider: 'zai', model: 'glm-4.7', source: 'settings' }),
     ).toBe('GLM-4.7');
-    expect(humanizeModelLabel({ runtime: 'codex-sdk', provider: 'codex', model: 'gpt-5.5', source: 'settings' })).toBe(
-      'Codex GPT-5.5',
-    );
+    expect(
+      humanizeModelLabel({ runtime: 'codex-sdk', provider: 'codex', model: 'gpt-6.1-sol', source: 'settings' }),
+    ).toBe('Codex GPT-6.1-Sol');
     expect(humanizeModelLabel({ runtime: 'lion-sdk', provider: 'ollama', model: 'qwen3:8b', source: 'settings' })).toBe(
       'qwen3:8b',
     );

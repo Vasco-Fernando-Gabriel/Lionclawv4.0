@@ -31,6 +31,7 @@ export interface CursorSessionTools {
   handlers: Record<string, CursorToolHandler>;
   systemPrompt: string;
   allowedServerIds: string[];
+  catalogToolNames: string[];
 }
 
 const MCP_TOKEN = /mcp__[A-Za-z0-9_-]+__[A-Za-z0-9_-]+/g;
@@ -266,6 +267,7 @@ export async function buildCursorSessionTools(args: BuildCursorSessionToolsArgs)
   const handlers: Record<string, CursorToolHandler> = {};
   let index = '';
   let allowedServerIds: string[] = [];
+  let catalogToolNames: string[] = [];
 
   if (args.dispatchContext) {
     const subagent = buildSubagentTool(args.dispatchContext);
@@ -282,6 +284,7 @@ export async function buildCursorSessionTools(args: BuildCursorSessionToolsArgs)
       }
       const catalog = await readChatCatalog(args.agentId, args.capabilities);
       allowedServerIds = catalog.allowedServerIds;
+      catalogToolNames = catalog.tools.map((tool) => `mcp__${tool.serverId}__${tool.toolName}`);
       const indexed = buildIndexTools({
         scope: args.scope,
         catalog: catalog.tools,
@@ -311,5 +314,6 @@ export async function buildCursorSessionTools(args: BuildCursorSessionToolsArgs)
     handlers,
     systemPrompt: `${prompt}\n\n${steering}`.trim(),
     allowedServerIds,
+    catalogToolNames,
   };
 }

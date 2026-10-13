@@ -7,7 +7,7 @@ export const securityStandardsChecker: Omit<AgentConfig, 'sortOrder'> = {
   id: STANDARDS_CHECKER_ID,
   name: 'Standards Checker',
   description: 'Verifica type hints, dead code, TODOs criticos, convencoes.',
-  model: 'claude-sonnet-4-6',
+  model: 'claude-sonnet-5-5',
   effort: 'medium' as const,
   thinking: 'enabled' as const,
   thinkingBudget: 6000,

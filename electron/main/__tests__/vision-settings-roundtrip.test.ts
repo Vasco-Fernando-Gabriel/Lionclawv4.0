@@ -27,7 +27,7 @@ vi.mock('../cartesia-engine', () => ({
   DEFAULT_CARTESIA_VOICE_ID: 'cartesia-voice',
   DEFAULT_CARTESIA_LANGUAGE: 'pt',
 }));
-vi.mock('./_shared/chat-compaction', () => ({
+vi.mock('../ipc/_shared/chat-compaction', () => ({
   compactActiveChatSession: vi.fn().mockResolvedValue({ reason: 'noop' }),
 }));
 vi.mock('../agent-sync', () => ({ syncAgentsToOrchestrator: vi.fn() }));

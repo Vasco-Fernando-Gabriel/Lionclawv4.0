@@ -16,6 +16,9 @@ import { getLionClawHome } from './paths';
 import { extractBalancedJsonObjectCandidates } from './json-extractor';
 import type { GateOutputApplyItem, MemorySection, DreamingGateResult } from './dreaming-gate';
 import { runDreamingGate, saveDreamingReport } from './dreaming-gate';
+import type { UserAccountingTraceEntry } from './dreaming-gate';
+import { runJevShadowSafe } from './jev-shadow';
+import type { JevShadowSnapshot } from './jev-shadow';
 import { generateEmbedding as generateEmbeddingProvider } from './embedding-provider';
 import {
   executeVaultOperation,
@@ -318,6 +321,9 @@ async function runCompactionUnderMutex(
   }
 
   let gateResult: DreamingGateResult | undefined;
+  let jevSnapshot: JevShadowSnapshot | undefined;
+  let jevUserAccounting: UserAccountingTraceEntry[] | undefined;
+  let gateReportFile: string | null = null;
   try {
     await withMemoryGateLock(async () => {
       await maybeSanitizeUserProfile({ kind: selection.kind, invoker: plainInvoker });
@@ -332,16 +338,34 @@ async function runCompactionUnderMutex(
         Array.isArray(upu) && upu.length > 0
           ? upu.map((u) => ({ action: u.action, section: u.section, fact: u.fact }))
           : undefined;
-      gateResult = await runDreamingGate({
-        candidates: [
-          ...candidateAdds.map((text) => ({ kind: 'add' as const, text })),
-          ...candidateRemoves.map((text) => ({ kind: 'remove' as const, text })),
-        ],
-        ...(userCandidates ? { userCandidates } : {}),
-        currentMemoryMd: memoryMd,
-        currentUserMd: userMd,
-        conversationExcerpt: messageText.slice(-8000),
-      });
+      const gateCandidates = [
+        ...candidateAdds.map((text) => ({ kind: 'add' as const, text })),
+        ...candidateRemoves.map((text) => ({ kind: 'remove' as const, text })),
+      ];
+      jevSnapshot = {
+        sessionId: sessionId ?? null,
+        today: formatToday(),
+        memoryMd,
+        userMd,
+        candidates: gateCandidates,
+        userCandidates: userCandidates ?? [],
+        conversationText: messageText,
+        gateModelLabel: describeCompactionSelection(selection),
+      };
+      gateResult = await runDreamingGate(
+        {
+          candidates: gateCandidates,
+          ...(userCandidates ? { userCandidates } : {}),
+          currentMemoryMd: memoryMd,
+          currentUserMd: userMd,
+          conversationExcerpt: messageText.slice(-8000),
+        },
+        {
+          onUserAccounting: (trace) => {
+            jevUserAccounting = trace;
+          },
+        },
+      );
       await updateWorkingMemory(gateResult.apply);
       await updateUserProfileSectionAware({
         add: gateResult.apply.userAdd ?? [],
@@ -355,11 +379,19 @@ async function runCompactionUnderMutex(
 
   if (gateResult) {
     try {
-      await saveDreamingReport(gateResult);
+      const reportPath = await saveDreamingReport(gateResult);
+      gateReportFile = typeof reportPath === 'string' && reportPath.length > 0 ? path.basename(reportPath) : null;
     } catch (err) {
       const detail = err instanceof Error ? err.message : String(err);
       logger.warn({ err }, 'saveDreamingReport failed (aviso, ciclo segue)');
       warnings.push({ step: 'report', detail });
+    }
+    if (jevSnapshot !== undefined) {
+      void runJevShadowSafe(jevSnapshot, {
+        result: gateResult,
+        userAccounting: jevUserAccounting ?? null,
+        gateReportFile,
+      });
     }
   }
   setLastGateRunAt(Date.now());
@@ -792,6 +824,14 @@ async function summarizeMessages(
   }
 
   return await summarizeWithClaude(messageText, selection.model, priorSummary);
+}
+
+function describeCompactionSelection(selection: CompactionSelection): string {
+  if (selection.kind === 'lion-sdk') return `lion-sdk/${selection.provider}/${selection.model}`;
+  if (selection.kind === 'subscription') {
+    return `${selection.selection.runtime}/${selection.selection.provider}/${selection.selection.model}`;
+  }
+  return `claude/${selection.model}`;
 }
 
 function makePlainCompactionInvoker(selection: CompactionSelection): PlainPromptInvoker {

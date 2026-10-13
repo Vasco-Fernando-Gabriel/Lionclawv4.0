@@ -68,9 +68,15 @@ export interface DreamingGateInput {
 
 export type LlmInvoker = (prompt: string) => Promise<string>;
 
+export interface UserAccountingTraceEntry {
+  candidateId: string;
+  destination: string;
+}
+
 export interface RunDreamingGateOptions {
   invoker?: LlmInvoker;
   timeoutMs?: number;
+  onUserAccounting?: (trace: UserAccountingTraceEntry[]) => void;
 }
 
 const DREAMING_TIMEOUT_MS = 300_000;
@@ -464,6 +470,7 @@ export async function runDreamingGate(
 
   if (input.userCandidates !== undefined && input.userCandidates.length > 0) {
     const accountedIds = new Set<string>();
+    const accountingTrace: UserAccountingTraceEntry[] = [];
     for (const entry of output.apply.userAccounting ?? []) {
       if (
         typeof entry === 'object' &&
@@ -473,6 +480,7 @@ export async function runDreamingGate(
         VALID_ACCOUNTING_DESTINATIONS.has(entry.destination)
       ) {
         accountedIds.add(entry.candidateId.trim().toLowerCase());
+        accountingTrace.push({ candidateId: entry.candidateId.trim(), destination: entry.destination });
       }
     }
 
@@ -513,6 +521,14 @@ export async function runDreamingGate(
           { fact: candidate.fact, candidateId },
           'dreaming_gate: userCandidate nao contabilizado pelo gate -> quarentena (unaccounted_by_gate)',
         );
+      }
+    }
+
+    if (options?.onUserAccounting !== undefined) {
+      try {
+        options.onUserAccounting(accountingTrace);
+      } catch (err) {
+        logger.warn({ err }, 'dreaming_gate: onUserAccounting lancou; rastro ignorado, resultado intacto');
       }
     }
   }

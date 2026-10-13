@@ -7,7 +7,7 @@ export const sprintValidator: Omit<AgentConfig, 'sortOrder'> = {
   name: 'Sprint Validator',
   description:
     'Valida plano de sprints contra a SPEC: cobertura completa, dependencias corretas, sizing realista, criterios verificaveis e hints suficientes para o Coder.',
-  model: 'claude-sonnet-4-6',
+  model: 'claude-sonnet-5-5',
   effort: 'high' as const,
   thinking: 'enabled' as const,
   thinkingBudget: 12000,

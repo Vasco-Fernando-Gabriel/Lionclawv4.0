@@ -69,6 +69,50 @@ export interface ResolveCodexSessionArgs {
   extraArgs?: string[];
   swarmFindingsMcpArgs?: string[];
   swarmFindingsMcpEnv?: Record<string, string>;
+  codexConfigOverrides?: readonly string[];
+}
+
+export const CODEX_CONFIG_OVERRIDE_PATTERN = /^(web_search|features\.[a-z0-9_]+)=("[a-z_-]+"|true|false)$/;
+export const SWARM_MCP_ARG_PREFIXES: readonly string[] = ['mcp_servers.swarm-worker=', 'mcp_servers.lionclaw-swarm='];
+export const SWARM_MCP_COMPANION_ARG_PREFIXES: readonly string[] = ['mcp_servers.repo-graph='];
+function validSwarmMcpPairs(parts: readonly string[]): boolean {
+  if (parts.length < 2 || parts.length % 2 !== 0 || parts.length > 4) return false;
+  for (let i = 0; i < parts.length; i += 2) {
+    const value = parts[i + 1] ?? '';
+    const prefixes = i === 0 ? SWARM_MCP_ARG_PREFIXES : SWARM_MCP_COMPANION_ARG_PREFIXES;
+    if (parts[i] !== '-c' || !prefixes.some((prefix) => value.startsWith(prefix))) return false;
+  }
+  return true;
+}
+export function validateSwarmMcpSpawn(args: {
+  disableGlobalMcp?: boolean;
+  sandbox?: string;
+  swarmFindingsMcpArgs?: string[];
+  swarmFindingsMcpEnv?: Record<string, string>;
+}): { extraArgs: string[]; spawnEnv?: Record<string, string> } | null {
+  if (!args.swarmFindingsMcpArgs) return null;
+  const parts = args.swarmFindingsMcpArgs;
+  if (!args.disableGlobalMcp || args.sandbox !== 'read-only' || !validSwarmMcpPairs(parts)) {
+    throw new Error('Invalid isolated Swarm findings MCP configuration');
+  }
+  if (args.swarmFindingsMcpEnv && Object.keys(args.swarmFindingsMcpEnv).some((key) => key !== 'LIONCLAW_HELPER_TOKEN'))
+    throw new Error('Invalid Swarm MCP environment');
+  return {
+    extraArgs: [...parts],
+    ...(args.swarmFindingsMcpEnv ? { spawnEnv: { ...args.swarmFindingsMcpEnv } } : {}),
+  };
+}
+
+export function validateCodexConfigOverrides(args: ResolveCodexSessionArgs): string[] {
+  const overrides = args.codexConfigOverrides ?? [];
+  if (overrides.length === 0) return [];
+  if (!args.disableGlobalMcp || args.sessionOptions.sandbox !== 'read-only') {
+    throw new Error('codexConfigOverrides exige sessao isolada (disableGlobalMcp) em sandbox read-only');
+  }
+  for (const entry of overrides) {
+    if (!CODEX_CONFIG_OVERRIDE_PATTERN.test(entry)) throw new Error(`codexConfigOverride nao permitido: ${entry}`);
+  }
+  return overrides.flatMap((entry) => ['-c', entry]);
 }
 
 function freshRunId(): string {
@@ -80,7 +124,7 @@ function toLifecycleSurface(surface: CodexSelectableSurface): CodexSurface {
 }
 
 function buildRunKey(args: ResolveCodexSessionArgs): CodexRunSessionKey {
-  const ownerKind: CodexOwnerKind = args.sessionOptions.ownerKind === 'chat' ? 'chat' : 'pipeline';
+  const ownerKind: CodexOwnerKind = args.sessionOptions.ownerKind ?? 'pipeline';
   return {
     surface: toLifecycleSurface(args.surface),
     projectId: args.sessionOptions.projectId,
@@ -170,24 +214,18 @@ export async function resolveCodexSessionForRun(args: ResolveCodexSessionArgs): 
     }
   }
 
-  if (args.swarmFindingsMcpArgs) {
-    const parts = args.swarmFindingsMcpArgs;
-    if (
-      !args.disableGlobalMcp ||
-      args.sessionOptions.sandbox !== 'read-only' ||
-      parts.length !== 2 ||
-      parts[0] !== '-c' ||
-      !parts[1].startsWith('mcp_servers.swarm-worker=')
-    ) {
-      throw new Error('Invalid isolated Swarm findings MCP configuration');
-    }
-    runOptions.extraArgs = [...parts];
-    if (args.swarmFindingsMcpEnv) {
-      if (Object.keys(args.swarmFindingsMcpEnv).some((key) => key !== 'LIONCLAW_HELPER_TOKEN'))
-        throw new Error('Invalid Swarm MCP environment');
-      runOptions.swarmSpawnEnv = { ...args.swarmFindingsMcpEnv };
-    }
+  const swarmSpawn = validateSwarmMcpSpawn({
+    disableGlobalMcp: args.disableGlobalMcp,
+    sandbox: args.sessionOptions.sandbox,
+    swarmFindingsMcpArgs: args.swarmFindingsMcpArgs,
+    swarmFindingsMcpEnv: args.swarmFindingsMcpEnv,
+  });
+  if (swarmSpawn) {
+    runOptions.extraArgs = swarmSpawn.extraArgs;
+    if (swarmSpawn.spawnEnv) runOptions.swarmSpawnEnv = swarmSpawn.spawnEnv;
   }
+  const overrideArgs = validateCodexConfigOverrides(args);
+  if (overrideArgs.length > 0) runOptions.extraArgs = [...(runOptions.extraArgs ?? []), ...overrideArgs];
   const driver = getOfficialCodexDriver();
   const handle = await driver.createRun(runOptions);
   const officialSession = driver.toSyncCodexSession(handle) as CodexSession;

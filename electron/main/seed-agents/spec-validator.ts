@@ -7,7 +7,7 @@ export const specValidator: Omit<AgentConfig, 'sortOrder'> = {
   name: 'Spec Validator',
   description:
     'Valida SPEC.md contra discovery-notes.md. Verifica completude (tudo do discovery aparece na spec), consistencia interna (backend bate com frontend) e consistencia de database (schema bate com endpoints).',
-  model: 'claude-sonnet-4-6',
+  model: 'claude-sonnet-5-5',
   effort: 'high' as const,
   thinking: 'enabled' as const,
   thinkingBudget: 12000,

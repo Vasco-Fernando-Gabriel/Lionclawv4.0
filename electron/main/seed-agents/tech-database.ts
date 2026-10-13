@@ -6,7 +6,7 @@ export const techDatabase: Omit<AgentConfig, 'sortOrder'> = {
   id: TECH_DATABASE_ID,
   name: 'Tech Database',
   description: 'Agente responsavel pelas decisoes tecnicas de Database e persistencia do projeto.',
-  model: 'claude-sonnet-4-6',
+  model: 'claude-sonnet-5-5',
   effort: 'high' as const,
   thinking: 'enabled' as const,
   thinkingBudget: 10000,

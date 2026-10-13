@@ -69,10 +69,19 @@ import {
   getRepoGraphTurnRuntime,
 } from '../repo-graph/turn-context';
 import {
+  executeRepoGraphRead,
+  isRepoGraphReadTool,
+  repoGraphReadBlockedReason,
+  repoGraphResultCount,
+} from '../repo-graph/read-tools';
+import { isSwarmRepoGraphOnlyOwner, resolveSwarmRepoGraphScope, type SwarmRepoGraphBinding } from '../swarm/repo-graph';
+import {
   getActiveChatTurnByLane,
   getChatCapabilityTurn,
+  renewChatCapabilityTurn,
   resolveTurnBinding,
   type ActiveChatTurnBinding,
+  type ChatCapabilityTurnContext,
   type ChatLane,
 } from '../chat-capability-context';
 import { assertChatCapability, failClosedChatCapability, getChatCapabilityGateMode } from '../chat-capability-gate';
@@ -1145,25 +1154,22 @@ async function recordRepoGraphUsage(ctx: JsonRpcContext, input: RepoGraphUsageIn
   }
 }
 
-function repoGraphResultCount(toolName: string, result: unknown): number {
-  const r = result as Record<string, unknown>;
-  switch (toolName) {
-    case 'repo_graph_search':
-      return Array.isArray(r['symbols']) ? r['symbols'].length : 0;
-    case 'repo_graph_minimal_context': {
-      const files = Array.isArray(r['files']) ? r['files'].length : 0;
-      const symbols = Array.isArray(r['symbols']) ? r['symbols'].length : 0;
-      return files + symbols;
-    }
-    case 'repo_graph_impact':
-      return Array.isArray(r['affected']) ? r['affected'].length : 0;
-    case 'repo_graph_node':
-      return r['node'] ? 1 : 0;
-    case 'repo_graph_callers':
-    case 'repo_graph_callees':
-      return Array.isArray(r['related']) ? r['related'].length : 0;
-    default:
-      return 1;
+async function handleSwarmRepoGraphRead(
+  scope: SwarmRepoGraphBinding,
+  toolName: string,
+  params: Record<string, unknown>,
+): Promise<unknown> {
+  if (!isRepoGraphReadTool(toolName)) return { error: `tool do repo-graph nao permitida ao swarm: ${toolName}` };
+  const db = await import('../db');
+  const repo = db.getLocalRepository(scope.repositoryId);
+  if (!repo) return { error: REPO_GRAPH_NO_REPO_ERROR };
+  const blocked = repoGraphReadBlockedReason(toolName, repo);
+  if (blocked) return { error: blocked };
+  try {
+    const { getRepoGraphEngine } = await import('../ipc/repo-graph');
+    return await executeRepoGraphRead(getRepoGraphEngine().asReader(), repo, toolName, params);
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : String(err) };
   }
 }
 
@@ -1173,6 +1179,11 @@ export async function handleRepoGraphRead(
   params: Record<string, unknown>,
   bindingArg?: TurnBindingParams,
 ): Promise<unknown> {
+  const swarmScope =
+    ctx.connection?.authenticatedHelper === true ? resolveSwarmRepoGraphScope(ctx.connection.serverId) : null;
+  if (swarmScope) return handleSwarmRepoGraphRead(swarmScope, toolName, params);
+  if (isSwarmRepoGraphOnlyOwner(ctx.connection?.serverId))
+    return { error: 'swarm agent sem escopo de repo-graph vivo (tentativa encerrada).' };
   let sessionId: string;
   try {
     const binding = bindingArg ?? readTurnBindingParams(params);
@@ -1188,76 +1199,13 @@ export async function handleRepoGraphRead(
 
   const { getRepoGraphEngine } = await import('../ipc/repo-graph');
   const reader: RepoGraphReader = getRepoGraphEngine().asReader();
-  const rootPath = repo.canonicalRootPath;
 
-  if (toolName !== 'repo_graph_status' && repo.status !== 'ready' && repo.status !== 'stale') {
-    const motivo =
-      repo.status === 'building'
-        ? 'o graph deste repositorio esta sendo indexado; tente novamente quando o build concluir.'
-        : 'o graph deste repositorio ainda nao foi criado; o usuario precisa criar pela badge CodeGraph do chat.';
-    return { error: motivo };
-  }
+  const blockedReason = repoGraphReadBlockedReason(toolName, repo);
+  if (blockedReason) return { error: blockedReason };
 
   const startedMs = Date.now();
   try {
-    let result: unknown;
-    switch (toolName) {
-      case 'repo_graph_status': {
-        const detect = await reader.detect(rootPath);
-        result = {
-          repository: {
-            id: repo.id,
-            name: repo.name,
-            rootPath,
-            status: repo.status,
-            indexedCommit: repo.indexedCommit,
-            lastIndexedAt: repo.lastIndexedAt,
-          },
-          graphExists: detect.exists,
-          stats: detect.stats ?? null,
-          ...(detect.error ? { providerError: detect.error } : {}),
-        };
-        break;
-      }
-      case 'repo_graph_search': {
-        const p = params as unknown as RepoGraphSearchParams;
-        if (typeof p.term !== 'string' || !p.term.trim()) throw new Error('term is required');
-        result = await reader.search({ rootPath, term: p.term, kind: p.kind, limit: p.limit });
-        break;
-      }
-      case 'repo_graph_minimal_context': {
-        const p = params as unknown as RepoGraphMinimalContextParams;
-        if (typeof p.task !== 'string' || !p.task.trim()) throw new Error('task is required');
-        result = await reader.minimalContext({ rootPath, repositoryId: repo.id, task: p.task });
-        break;
-      }
-      case 'repo_graph_impact': {
-        const p = params as unknown as RepoGraphImpactParams;
-        if (typeof p.symbol !== 'string' || !p.symbol.trim()) throw new Error('symbol is required');
-        result = await reader.impact({ rootPath, symbol: p.symbol, depth: p.depth });
-        break;
-      }
-      case 'repo_graph_node': {
-        const p = params as unknown as RepoGraphNodeParams;
-        if (typeof p.name !== 'string' || !p.name.trim()) throw new Error('name is required');
-        result = await reader.node({ rootPath, name: p.name });
-        break;
-      }
-      case 'repo_graph_callers': {
-        const p = params as unknown as RepoGraphCallParams;
-        if (typeof p.symbol !== 'string' || !p.symbol.trim()) throw new Error('symbol is required');
-        result = await reader.callers({ rootPath, symbol: p.symbol, limit: p.limit });
-        break;
-      }
-      case 'repo_graph_callees': {
-        const p = params as unknown as RepoGraphCallParams;
-        if (typeof p.symbol !== 'string' || !p.symbol.trim()) throw new Error('symbol is required');
-        result = await reader.callees({ rootPath, symbol: p.symbol, limit: p.limit });
-        break;
-      }
-      default:
-        throw new Error(`unknown repo_graph tool: ${toolName}`);
-    }
+    const result = await executeRepoGraphRead(reader, repo, toolName, params);
 
     await recordRepoGraphUsage(ctx, {
       sessionId,
@@ -1812,6 +1760,127 @@ export interface JsonRpcResponse {
   error?: { code: number; message: string };
 }
 
+const SWARM_METHODS: ReadonlySet<string> = new Set([
+  'swarm_start',
+  'swarm_inspect',
+  'swarm_abort',
+  'swarm_list',
+  'swarm_catalog',
+  'swarm_read',
+  'swarm_stop',
+  'swarm_redispatch',
+  'swarm_message',
+  'swarm_wait',
+]);
+const SWARM_CHIP_METHODS: ReadonlySet<string> = new Set([
+  'swarm_start',
+  'swarm_catalog',
+  'swarm_message',
+  'swarm_redispatch',
+  'swarm_wait',
+]);
+const SWARM_TYPED_ERRORS: ReadonlySet<string> = new Set([
+  'run_closed',
+  'run_aborted',
+  'run-denied',
+  'agent-not-found',
+  'stale_attempt',
+  'context-overflow',
+  'invalid-input',
+]);
+export const SWARM_WAIT_TURN_POLL_MS = 1_000;
+async function dispatchSwarmMethod(
+  ctx: JsonRpcContext,
+  method: string,
+  params: Record<string, unknown>,
+  turn: ChatCapabilityTurnContext,
+  enabled: boolean,
+): Promise<unknown> {
+  const service = getSwarmService();
+  const sessionId = turn.sessionId;
+  const runId = String(params.runId ?? '');
+  const slug = String(params.slug ?? '');
+  switch (method) {
+    case 'swarm_start':
+      return service.start(
+        { sessionId, swarmEnabled: enabled, readRoots: turn.readRoots ?? [] },
+        params as unknown as import('../../../src/types/swarm').SwarmStartInput,
+      );
+    case 'swarm_catalog':
+      return service.getCatalog(sessionId, enabled);
+    case 'swarm_list':
+      return service.listRuns(sessionId, params.cursor as string | undefined, params.limit as number | undefined);
+    case 'swarm_abort':
+      return service.abort(sessionId, runId);
+    case 'swarm_inspect':
+      return service.getRunState(sessionId, runId);
+    case 'swarm_read':
+      return service.read(sessionId, runId, slug);
+    case 'swarm_stop':
+      return service.stop(sessionId, runId, slug);
+    case 'swarm_redispatch':
+      return service.redispatch(sessionId, runId, slug, params.briefing);
+    case 'swarm_message':
+      return service.message(
+        sessionId,
+        runId,
+        slug,
+        params.message,
+        typeof params.attemptId === 'string' ? params.attemptId : undefined,
+        { turnId: turn.turnId },
+      );
+    case 'swarm_wait': {
+      const controller = new AbortController();
+      const alive = () => renewChatCapabilityTurn({ sessionId, turnId: turn.turnId });
+      if (!alive()) controller.abort();
+      const poll = setInterval(() => {
+        if (!alive()) controller.abort();
+      }, SWARM_WAIT_TURN_POLL_MS);
+      poll.unref?.();
+      try {
+        return await service.wait({
+          sessionId,
+          runId,
+          waitId: `${turn.turnId}:${runId}`,
+          turnId: turn.turnId,
+          slugs: Array.isArray(params.slugs) ? params.slugs.map(String) : undefined,
+          sliceMs: typeof params.sliceMs === 'number' ? params.sliceMs : undefined,
+          signal: controller.signal,
+          onProgress: (line) => emitSwarmWaitProgress(ctx, sessionId, runId, line),
+        });
+      } finally {
+        clearInterval(poll);
+      }
+    }
+    default:
+      throw new Error(`Método Swarm desconhecido: ${method}`);
+  }
+}
+function emitSwarmWaitProgress(ctx: JsonRpcContext, sessionId: string, runId: string, line: string): void {
+  try {
+    recordActivity(
+      sessionId,
+      getLatestUserTurnIndex(sessionId),
+      {
+        id: `swarm-wait:${runId}`,
+        kind: 'tool',
+        phase: 'update',
+        label: 'Swarm',
+        toolName: 'swarm_wait',
+        description: line,
+        summary: line,
+        status: 'running',
+      },
+      (chunk) => {
+        const window = ctx.getWindow();
+        if (window && !window.isDestroyed()) window.webContents.send('chat:stream', { ...chunk, sessionId });
+      },
+    );
+  } catch (error) {
+    logger.warn({ err: error, runId }, 'progresso do swarm_wait nao registrado');
+  }
+}
+
 export async function dispatch(ctx: JsonRpcContext, req: JsonRpcRequest): Promise<JsonRpcResponse> {
   const id = req.id ?? null;
   try {
@@ -1828,14 +1897,20 @@ export async function dispatch(ctx: JsonRpcContext, req: JsonRpcRequest): Promis
         },
       };
     }
-    if (ctx.connection?.serverId?.startsWith(SWARM_WORKER_OWNER_PREFIX) && req.method !== 'swarm_write_findings')
-      throw new Error('Worker Swarm só pode entregar seu relatório.');
+    if (
+      ctx.connection?.serverId?.startsWith(SWARM_WORKER_OWNER_PREFIX) &&
+      req.method !== 'swarm_write_findings' &&
+      !(isRepoGraphReadTool(req.method) && resolveSwarmRepoGraphScope(ctx.connection.serverId))
+    )
+      throw new Error('Worker Swarm só pode entregar seu relatório e consultar o repo-graph da run.');
+    if (isSwarmRepoGraphOnlyOwner(ctx.connection?.serverId) && !isRepoGraphReadTool(req.method))
+      throw new Error('Swarm agent só pode consultar o repo-graph da run.');
     if (req.method === 'swarm_write_findings') {
       if (!ctx.connection?.authenticatedHelper || !ctx.connection.serverId?.startsWith(SWARM_WORKER_OWNER_PREFIX))
         throw new Error('Worker autenticado necessário.');
       return { jsonrpc: '2.0', id, result: await dispatchSwarmFindings(ctx.connection.serverId!, params.upload) };
     }
-    if (['swarm_start', 'swarm_inspect', 'swarm_abort', 'swarm_list', 'swarm_catalog'].includes(req.method)) {
+    if (SWARM_METHODS.has(req.method)) {
       const resolution = resolveGatedCallTurnContext(ctx, 'lionclaw-swarm', binding);
       if (!resolution.ok || !resolution.turnContext) {
         logger.warn(
@@ -1856,31 +1931,22 @@ export async function dispatch(ctx: JsonRpcContext, req: JsonRpcRequest): Promis
         };
       }
       const turn = resolution.turnContext;
-      const service = getSwarmService();
-      const enabled = turn.capabilities.swarm === true && turn.origin === 'user';
-      if ((req.method === 'swarm_start' || req.method === 'swarm_catalog') && !enabled)
+      const enabled = turn.capabilities.swarm === true;
+      if (SWARM_CHIP_METHODS.has(req.method) && !enabled)
         return {
           jsonrpc: '2.0',
           id,
           result: { error: 'Ligue o chip Swarm e reenvie.', code: 'chat_capability_swarm_disabled' },
         };
       assertOrchestratorCaller(req.method, binding);
-      let result: unknown;
-      if (req.method === 'swarm_start')
-        result = await service.start(
-          { sessionId: turn.sessionId, swarmEnabled: enabled, readRoots: turn.readRoots ?? [] },
-          params as unknown as import('../../../src/types/swarm').SwarmStartInput,
-        );
-      else if (req.method === 'swarm_catalog') result = await service.getCatalog(turn.sessionId, enabled);
-      else if (req.method === 'swarm_list')
-        result = await service.listRuns(
-          turn.sessionId,
-          params.cursor as string | undefined,
-          params.limit as number | undefined,
-        );
-      else if (req.method === 'swarm_abort') result = await service.abort(turn.sessionId, String(params.runId));
-      else result = await service.getRunState(turn.sessionId, String(params.runId));
-      return { jsonrpc: '2.0', id, result };
+      try {
+        return { jsonrpc: '2.0', id, result: await dispatchSwarmMethod(ctx, req.method, params, turn, enabled) };
+      } catch (error) {
+        const code = (error as { code?: string })?.code;
+        if (typeof code === 'string' && SWARM_TYPED_ERRORS.has(code))
+          return { jsonrpc: '2.0', id, result: { error: (error as Error).message, code } };
+        throw error;
+      }
     }
     if (req.method === 'pipeline_list' || req.method === 'pipeline_inspect' || isPipelineWriteAction(req.method)) {
       const active = assertOrchestratorCaller(

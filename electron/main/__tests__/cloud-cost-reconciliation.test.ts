@@ -19,6 +19,32 @@ describe('reconcileCloudCost', () => {
     expect(result.reconciliationRelativeDelta).toBeGreaterThan(1.8);
   });
 
+  it('sessao retomada (continuacao do Swarm): ignora o total acumulado do SDK e cobra so os tokens desta tentativa', () => {
+    const result = reconcileCloudCost({
+      model: 'claude-opus-5-5',
+      inputTokens: 811_941,
+      outputTokens: 13_923,
+      cacheReadTokens: 790_000,
+      cacheCreationTokens: 20_000,
+      totalCostUsd: 6.819925,
+      modelUsage: {
+        'claude-opus-5-5': {
+          inputTokens: 1_900,
+          outputTokens: 48_760,
+          cacheReadInputTokens: 16_000_000,
+          cacheCreationInputTokens: 1_200_000,
+          costUSD: 6.819925,
+        },
+      },
+      resumedSession: true,
+    });
+
+    expect(result.costSource).toBe('calculated');
+    expect(result.sdkReportedCostUsd).toBe(6.819925);
+    expect(result.costUsd).toBeLessThan(1);
+    expect(result.costUsd).toBeCloseTo(0.007764 + 0.158 + 0.1 + 0.27846, 5);
+  });
+
   it('preserva custo do SDK quando bate com a tabela canonica', () => {
     const result = reconcileCloudCost({
       model: 'claude-fable-5',

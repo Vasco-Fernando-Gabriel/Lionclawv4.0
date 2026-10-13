@@ -7,7 +7,7 @@ export const specEnricher: Omit<AgentConfig, 'sortOrder'> = {
   name: 'SPEC Enricher',
   description:
     'Enriquece a SPEC com caminhos alternativos, edge cases, estados de UI e definicoes completas. Garante que nada sera inventado pelo desenvolvedor.',
-  model: 'claude-sonnet-4-6',
+  model: 'claude-sonnet-5-5',
   effort: 'high' as const,
   thinking: 'enabled' as const,
   thinkingBudget: 12000,

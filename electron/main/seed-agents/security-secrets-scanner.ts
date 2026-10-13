@@ -7,7 +7,7 @@ export const securitySecretsScanner: Omit<AgentConfig, 'sortOrder'> = {
   id: SECRETS_SCANNER_ID,
   name: 'Secrets Scanner',
   description: 'Busca API keys, tokens, senhas hardcoded, arquivos de credenciais expostos.',
-  model: 'claude-sonnet-4-6',
+  model: 'claude-sonnet-5-5',
   effort: 'high' as const,
   thinking: 'enabled' as const,
   thinkingBudget: 8000,

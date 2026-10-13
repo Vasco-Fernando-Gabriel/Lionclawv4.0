@@ -8,7 +8,7 @@ export const dynamicWorkflowNarrator: Omit<AgentConfig, 'sortOrder'> = {
   name: 'Dynamic Workflow Narrator',
   description:
     'Narrador IA opcional do cockpit do workflow dinamico. Recebe um digest do estado em cada marco e devolve 1-2 frases em PT-BR explicando o que esta acontecendo. Read-only, modelo barato, sem ferramentas.',
-  model: 'claude-sonnet-4-6',
+  model: 'claude-sonnet-5-5',
   effort: 'low' as const,
   thinking: 'disabled' as const,
   thinkingBudget: 0,

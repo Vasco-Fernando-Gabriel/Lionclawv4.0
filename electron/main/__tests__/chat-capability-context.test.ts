@@ -12,6 +12,7 @@ vi.mock('../logger', () => ({
 import {
   registerChatCapabilityTurn,
   getChatCapabilityTurn,
+  renewChatCapabilityTurn,
   clearChatCapabilityTurn,
   setActiveChatTurn,
   getActiveChatTurn,
@@ -391,5 +392,40 @@ describe('campos de Fase B opcionais (S3a) — sem placeholder falso', () => {
 
     const ctx = getChatCapabilityTurn({ sessionId: 'sess-1', turnId: 'turn-1' });
     expect(ctx?.allowedServerIds).toEqual(['lionclaw-pipeline-control']);
+  });
+});
+
+describe('GA-2: renovacao do TTL do turno durante o swarm_wait', () => {
+  beforeEach(() => {
+    __resetChatCapabilityContextForTests();
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-10-11T12:00:00Z'));
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+  it('espera de 45 min em fatias de 50 s mantem o turno vivo; turno sem espera expira nos 30 min do TTL padrao', () => {
+    registerChatCapabilityTurn(baseCtx({ sessionId: 's-wait', turnId: 't-wait' }));
+    registerChatCapabilityTurn(baseCtx({ sessionId: 's-idle', turnId: 't-idle' }));
+    const slices = Math.ceil((45 * 60_000) / 50_000);
+    for (let i = 0; i < slices; i++) {
+      vi.advanceTimersByTime(50_000);
+      expect(renewChatCapabilityTurn({ sessionId: 's-wait', turnId: 't-wait' })).toBe(true);
+    }
+    expect(Date.now() - Date.parse('2026-10-11T12:00:00Z')).toBeGreaterThanOrEqual(45 * 60_000);
+    expect(getChatCapabilityTurn({ sessionId: 's-wait', turnId: 't-wait' })).toBeDefined();
+    expect(getChatCapabilityTurn({ sessionId: 's-idle', turnId: 't-idle' })).toBeUndefined();
+    expect(renewChatCapabilityTurn({ sessionId: 's-idle', turnId: 't-idle' })).toBe(false);
+    vi.advanceTimersByTime(DEFAULT_CHAT_TURN_CONTEXT_TTL_MS + 1);
+    expect(renewChatCapabilityTurn({ sessionId: 's-wait', turnId: 't-wait' })).toBe(false);
+    expect(getChatCapabilityTurn({ sessionId: 's-wait', turnId: 't-wait' })).toBeUndefined();
+  });
+  it('turno sem nenhuma fatia expira exatamente no TTL e a renovacao de um turno inexistente devolve false', () => {
+    registerChatCapabilityTurn(baseCtx({ sessionId: 's-only', turnId: 't-only' }));
+    vi.advanceTimersByTime(DEFAULT_CHAT_TURN_CONTEXT_TTL_MS - 1);
+    expect(renewChatCapabilityTurn({ sessionId: 's-only', turnId: 't-only' })).toBe(true);
+    vi.advanceTimersByTime(DEFAULT_CHAT_TURN_CONTEXT_TTL_MS);
+    expect(renewChatCapabilityTurn({ sessionId: 's-only', turnId: 't-only' })).toBe(false);
+    expect(renewChatCapabilityTurn({ sessionId: 'nunca', turnId: 'registrado' })).toBe(false);
   });
 });

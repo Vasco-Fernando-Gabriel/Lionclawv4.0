@@ -3,7 +3,13 @@ import path from 'node:path';
 import { createHash, randomBytes } from 'node:crypto';
 import { TextDecoder } from 'node:util';
 import { z } from 'zod';
-import type { SwarmFindingsAck, SwarmFindingsOperation, SwarmRun } from '../../../src/types/swarm';
+import type {
+  SwarmFindingsAck,
+  SwarmFindingsOperation,
+  SwarmItem,
+  SwarmMessageRecord,
+  SwarmRun,
+} from '../../../src/types/swarm';
 import { SwarmDomainError, isWithin, swarmMemberSchema, validateSwarmSettings } from './validation';
 
 const runPattern = /^swarm-\d{8}_\d{6}-[a-f0-9]{6}$/;
@@ -18,8 +24,24 @@ const uploadStateSchema = z
   })
   .strict();
 type UploadState = z.infer<typeof uploadStateSchema>;
+const ACCENT_CLASSES: Record<string, string> = {
+  a: '[aáàâã]',
+  c: '[cç]',
+  e: '[eéê]',
+  i: '[ií]',
+  o: '[oóôõ]',
+  u: '[uú]',
+};
+function accentInsensitive(text: string): string {
+  return text
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .split('')
+    .map((char) => ACCENT_CLASSES[char.toLowerCase()] ?? char)
+    .join('');
+}
 function findingField(finding: string, field: string): string {
-  const label = new RegExp(`^- \\*\\*${field}(?:\\s*\\([^)]*\\))?\\s*(?::\\*\\*|\\*\\*:)`);
+  const label = new RegExp(`^- \\*\\*${accentInsensitive(field)}(?:\\s*\\([^)]*\\))?\\s*(?::\\*\\*|\\*\\*:)`, 'i');
   const lines = finding.split(/\r?\n/);
   const start = lines.findIndex((line) => label.test(line));
   if (start === -1) return '';
@@ -54,6 +76,8 @@ const attemptSchema = z
     outcome: z
       .enum([
         'ok',
+        'needs-input',
+        'context-overflow',
         'timeout-idle',
         'timeout-hard',
         'provider-error',
@@ -81,15 +105,87 @@ const attemptSchema = z
         tokenStatus: z.enum(['reported', 'not_reported']).optional(),
         inputTokens: z.number().nonnegative().optional(),
         outputTokens: z.number().nonnegative().optional(),
+        turns: z.number().int().nonnegative().optional(),
         durationMs: z.number().nonnegative().optional(),
         costStatusReasons: z.array(z.string()).optional(),
       })
       .strict(),
+    repoGraph: z.boolean().optional(),
+  })
+  .strict();
+const executionSchema = z
+  .object({
+    attemptId: z.string().regex(segmentPattern),
+    kind: z.enum(['initial', 'retry', 'continuation', 'redispatch', 'repair']),
+    generation: z.number().int().positive(),
+    mechanism: z.enum(['resend', 'session']).nullable(),
+    continuationMode: z.enum(['session', 'replay']).nullable().optional(),
+    continuationReason: z.string().nullable().optional(),
+    messageId: z.string().nullable(),
+    reason: z.string().nullable(),
+    question: z.string().nullable(),
+    questionRevision: z.number().int().positive().nullable(),
+  })
+  .strict();
+const sessionRefSchema = z
+  .object({
+    runtime: z.enum(['cloud', 'codex', 'zai', 'minimax-tp', 'kimi', 'grok', 'cursor', 'local', 'external']),
+    id: z.string().min(1),
+    attemptId: z.string().regex(segmentPattern),
+    generation: z.number().int().positive(),
+  })
+  .strict();
+const queuedMessageSchema = z
+  .object({
+    id: z.string().regex(segmentPattern),
+    message: z.string(),
+    attemptId: z.string().nullable(),
+    createdAt: z.string().datetime(),
+  })
+  .strict();
+const launchSchema = z
+  .object({
+    kind: z.enum(['continuation', 'redispatch', 'repair']),
+    messageId: z.string().nullable(),
+    promptFile: z.string().nullable(),
+    mode: z.enum(['session', 'replay']).nullable().optional(),
+    fallbackPromptFile: z.string().nullable().optional(),
+    reason: z.string().nullable().optional(),
+  })
+  .strict()
+  .nullable();
+const itemSchema = z
+  .object({
+    slug: z.string().regex(/^[a-z0-9-]{1,80}$/),
+    target: z.string(),
+    prompt: z.string(),
+    member: swarmMemberSchema,
+    runtime: z.enum(['cloud', 'codex', 'zai', 'minimax-tp', 'kimi', 'grok', 'cursor', 'local', 'external']),
+    model: z.string().min(1),
+    resolvedConfigFile: z.string(),
+    status: z.enum(['pending', 'running', 'stopping', 'waiting', 'retrying', 'ok', 'failed', 'cancelled']),
+    currentAttemptId: z.string().nullable(),
+    nextAttemptAt: nullableDate,
+    attempts: z.array(attemptSchema),
+    executions: z.array(executionSchema).optional(),
+    generation: z.number().int().positive().optional(),
+    autoRetries: z.number().int().nonnegative().optional(),
+    question: z.string().nullable().optional(),
+    inbox: z.array(queuedMessageSchema).optional(),
+    launch: launchSchema.optional(),
+    session: sessionRefSchema.nullable().optional(),
+    sessionLostReason: z.string().nullable().optional(),
+    repoGraph: z.enum(['ready', 'stale', 'no-repository', 'off']).optional(),
+    targetWarning: z.string().nullable().optional(),
+    findingsFile: z.string().nullable(),
+    summary: z.string().nullable(),
+    lastSignalAt: nullableDate,
+    error: errorSchema,
   })
   .strict();
 const runSchema = z
   .object({
-    schemaVersion: z.literal(1),
+    schemaVersion: z.union([z.literal(1), z.literal(2)]),
     revision: z.number().int().positive(),
     terminalRevision: z.number().int().positive().nullable(),
     runId: z.string().regex(runPattern),
@@ -99,69 +195,135 @@ const runSchema = z
     mode: z.enum(['fanout', 'comite']),
     cwd: z.string().refine(path.isAbsolute),
     objective: z.string().min(1),
-    status: z.enum(['queued', 'running', 'aborting', 'done', 'partial', 'failed', 'aborted']),
+    parentRunId: z.string().regex(runPattern).nullable().optional(),
+    stage: z.string().nullable().optional(),
+    status: z.enum(['queued', 'running', 'open', 'aborting', 'done', 'partial', 'failed', 'aborted']),
     createdAt: z.string().datetime(),
     startedAt: nullableDate,
     finishedAt: nullableDate,
+    openedAt: nullableDate.optional(),
+    deliveredSignatures: z.record(z.string(), z.string()).nullable().optional(),
+    deliveryError: z
+      .object({
+        kind: z.enum(['terminal', 'question']),
+        revision: z.number().int().nonnegative(),
+        message: z.string(),
+        at: z.string().datetime(),
+      })
+      .strict()
+      .nullable()
+      .optional(),
     settings: z
       .object({
         concurrencyCap: z.number(),
         maxAttempts: z.number(),
         idleTimeoutMs: z.number(),
         hardTimeoutMs: z.number(),
+        openWindowMs: z.number().optional(),
       })
       .strict(),
-    items: z
-      .array(
-        z
-          .object({
-            slug: z.string().regex(/^[a-z0-9-]{1,80}$/),
-            target: z.string(),
-            prompt: z.string(),
-            member: swarmMemberSchema,
-            runtime: z.enum(['cloud', 'codex', 'zai', 'minimax-tp', 'kimi', 'local', 'external']),
-            model: z.string().min(1),
-            resolvedConfigFile: z.string(),
-            status: z.enum(['pending', 'running', 'stopping', 'retrying', 'ok', 'failed', 'cancelled']),
-            currentAttemptId: z.string().nullable(),
-            nextAttemptAt: nullableDate,
-            attempts: z.array(attemptSchema),
-            findingsFile: z.string().nullable(),
-            summary: z.string().nullable(),
-            lastSignalAt: nullableDate,
-            error: errorSchema,
-          })
-          .strict(),
-      )
-      .min(1)
-      .max(100),
+    items: z.array(itemSchema).min(1).max(100),
   })
   .strict();
-function validRun(value: unknown, runId: string): value is SwarmRun {
+type ParsedRun = z.infer<typeof runSchema>;
+type ParsedItem = z.infer<typeof itemSchema>;
+export const SWARM_MANIFEST_VERSION = 2;
+const DEFAULT_OPEN_WINDOW_MS = 30 * 60_000;
+export function deriveExecutions(item: Pick<ParsedItem, 'attempts'>): SwarmItem['executions'] {
+  return item.attempts.map((attempt, i) => ({
+    attemptId: attempt.id,
+    kind: i === 0 ? 'initial' : 'retry',
+    generation: 1,
+    mechanism: null,
+    continuationMode: null,
+    continuationReason: null,
+    messageId: null,
+    reason: null,
+    question: null,
+    questionRevision: null,
+  }));
+}
+type ParsedExecution = NonNullable<ParsedItem['executions']>[number];
+function normalizeExecution(execution: ParsedExecution): SwarmItem['executions'][number] {
+  const continuationMode =
+    execution.continuationMode ??
+    (execution.mechanism === 'resend' ? 'replay' : execution.mechanism === 'session' ? 'session' : null);
+  return { ...execution, continuationMode, continuationReason: execution.continuationReason ?? null };
+}
+function normalizeItem(item: ParsedItem): SwarmItem {
+  const executions = item.executions ? item.executions.map(normalizeExecution) : deriveExecutions(item);
+  const generation = item.generation ?? Math.max(1, ...executions.map((e) => e.generation));
+  const launch: SwarmItem['launch'] = item.launch
+    ? {
+        ...item.launch,
+        mode: item.launch.mode ?? (item.launch.kind === 'continuation' ? 'replay' : null),
+        fallbackPromptFile: item.launch.fallbackPromptFile ?? null,
+        reason: item.launch.reason ?? null,
+      }
+    : null;
+  return {
+    ...item,
+    executions,
+    generation,
+    autoRetries:
+      item.autoRetries ??
+      executions.filter((e) => (e.kind === 'retry' || e.kind === 'repair') && e.generation === generation).length,
+    question: item.question ?? null,
+    inbox: item.inbox ?? [],
+    launch,
+    session: item.session ?? null,
+    sessionLostReason: item.sessionLostReason ?? null,
+    repoGraph: item.repoGraph ?? 'off',
+    targetWarning: item.targetWarning ?? null,
+  };
+}
+export function normalizeRun(run: ParsedRun): SwarmRun {
+  const { openWindowMs, ...settings } = run.settings;
+  return {
+    ...run,
+    parentRunId: run.parentRunId ?? null,
+    stage: run.stage ?? null,
+    openedAt: run.openedAt ?? null,
+    deliveredSignatures: run.deliveredSignatures ?? null,
+    deliveryError: run.deliveryError ?? null,
+    settings: { ...settings, openWindowMs: openWindowMs ?? DEFAULT_OPEN_WINDOW_MS },
+    items: run.items.map(normalizeItem),
+  };
+}
+const TERMINAL_RUN = ['done', 'partial', 'failed', 'aborted'];
+const TERMINAL_ITEM = ['ok', 'failed', 'cancelled'];
+function validRun(value: unknown, runId: string): SwarmRun | null {
   const parsed = runSchema.safeParse(value);
-  if (!parsed.success || parsed.data.runId !== runId) return false;
-  const r = parsed.data;
+  if (!parsed.success || parsed.data.runId !== runId) return null;
+  const r = normalizeRun(parsed.data);
   try {
     validateSwarmSettings(r.settings);
   } catch {
-    return false;
+    return null;
   }
-  if (new Set(r.items.map((i) => i.slug)).size !== r.items.length) return false;
-  const terminal = ['done', 'partial', 'failed', 'aborted'].includes(r.status);
-  if (terminal !== (r.terminalRevision !== null && r.finishedAt !== null) || (r.terminalRevision ?? 0) > r.revision)
-    return false;
-  if (!terminal && (r.terminalRevision !== null || r.finishedAt !== null)) return false;
-  return r.items.every((item) => {
+  if (new Set(r.items.map((i) => i.slug)).size !== r.items.length) return null;
+  const terminal = TERMINAL_RUN.includes(r.status);
+  if ((r.terminalRevision ?? 0) > r.revision) return null;
+  if (terminal && (r.terminalRevision === null || r.finishedAt === null)) return null;
+  if (r.status === 'open' && (r.terminalRevision === null || r.openedAt === null)) return null;
+  if (!terminal && r.finishedAt !== null) return null;
+  if (!terminal && r.status !== 'open' && r.openedAt !== null) return null;
+  if (r.status === 'queued' && r.terminalRevision !== null) return null;
+  const consistent = r.items.every((item) => {
     if (item.resolvedConfigFile !== `_attempts/${item.slug}/config.json`) return false;
-    if (terminal && !['ok', 'failed', 'cancelled'].includes(item.status)) return false;
+    if ((terminal || r.status === 'open') && !TERMINAL_ITEM.includes(item.status)) return false;
     if (item.status === 'retrying' && !item.nextAttemptAt) return false;
     if (
-      ['running', 'stopping'].includes(item.status) &&
+      ['running', 'stopping', 'waiting'].includes(item.status) &&
       (!item.attempts.length || item.currentAttemptId !== item.attempts.at(-1)?.id)
     )
       return false;
+    if (item.status === 'waiting' && (item.question === null || item.attempts.at(-1)?.outcome !== 'needs-input'))
+      return false;
     if (item.findingsFile !== null && item.findingsFile !== `${item.slug}.md`) return false;
     if (item.status === 'ok' && !item.findingsFile) return false;
+    if (item.executions.length !== item.attempts.length) return false;
+    if (item.executions.some((e, i) => e.attemptId !== item.attempts[i].id)) return false;
     return item.attempts.every(
       (a, i) =>
         a.n === i + 1 &&
@@ -170,8 +332,49 @@ function validRun(value: unknown, runId: string): value is SwarmRun {
         (a.outcome === null || (a.endedAt !== null && a.terminationConfirmedAt !== null)),
     );
   });
+  return consistent ? r : null;
 }
 
+const SEVERITIES: Record<string, string> = {
+  ALTA: 'ALTA',
+  MEDIA: 'MEDIA',
+  MÉDIA: 'MEDIA',
+  BAIXA: 'BAIXA',
+  INFO: 'INFO',
+};
+const FINDING_HEADING = /^###\s*\[?\s*(alta|m[eé]dia|baixa|info)\s*\]?\s*:?\s*(?:[-–—]\s*)?(\S.*?)\s*$/i;
+const SECTION_HEADINGS: ReadonlyArray<{ canonical: string; pattern: RegExp }> = [
+  { canonical: '## Resumo', pattern: /^#{1,3}\s*Resumo\s*:?\s*$/i },
+  { canonical: '## Achados', pattern: /^#{1,3}\s*Achados\s*:?\s*$/i },
+  {
+    canonical: '## Fora de escopo / não verificado',
+    pattern: /^#{1,3}\s*Fora de escopo\s*\/\s*n[aã]o verificado\s*:?\s*$/i,
+  },
+];
+export function normalizeFindingsFormat(content: string): string {
+  const lines = content.split(/\r?\n/);
+  let inFindings = false;
+  return lines
+    .map((line) => {
+      const section = SECTION_HEADINGS.find(({ pattern }) => pattern.test(line));
+      if (section) {
+        inFindings = section.canonical === '## Achados';
+        return section.canonical;
+      }
+      if (/^##\s/.test(line)) inFindings = false;
+      if (!inFindings) return line;
+      const finding = FINDING_HEADING.exec(line);
+      if (!finding) return line;
+      return `### [${SEVERITIES[finding[1].toUpperCase()]}] ${finding[2]}`;
+    })
+    .join('\n');
+}
+export const OUT_OF_SCOPE_HEADING = /^## Fora de escopo \/ não verificado\s*$/m;
+const REQUIRED_SECTIONS: ReadonlyArray<{ heading: string; pattern: RegExp }> = [
+  { heading: 'Resumo', pattern: /^## Resumo\s*$/m },
+  { heading: 'Achados', pattern: /^## Achados\s*$/m },
+  { heading: 'Fora de escopo / não verificado', pattern: OUT_OF_SCOPE_HEADING },
+];
 export class SwarmArtifacts {
   readonly root: string;
   constructor(root: string) {
@@ -269,9 +472,55 @@ export class SwarmArtifacts {
         `Manifest indisponível: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
-    if (!validRun(value, runId))
-      throw new SwarmDomainError('invalid-manifest', `Manifest inválido/incompatível: ${runId}`);
-    return value;
+    const run = validRun(value, runId);
+    if (!run) throw new SwarmDomainError('invalid-manifest', `Manifest inválido/incompatível: ${runId}`);
+    return run;
+  }
+  exists(relative: string): boolean {
+    try {
+      return fs.existsSync(this.file(relative));
+    } catch {
+      return false;
+    }
+  }
+  readOptional(relative: string): string | null {
+    try {
+      return this.exists(relative) ? this.read(relative) : null;
+    } catch {
+      return null;
+    }
+  }
+  appendMessage(runId: string, slug: string, record: SwarmMessageRecord): void {
+    this.assertRun(runId);
+    if (!/^[a-z0-9-]{1,80}$/.test(slug)) fail('Slug inválido.');
+    const file = this.file(`${runId}/_attempts/${slug}/messages.jsonl`, true);
+    const fd = fs.openSync(
+      file,
+      fs.constants.O_WRONLY | fs.constants.O_CREAT | fs.constants.O_APPEND | fs.constants.O_NOFOLLOW,
+      0o600,
+    );
+    try {
+      fs.writeFileSync(fd, `${JSON.stringify(record)}\n`);
+      fs.fsyncSync(fd);
+    } finally {
+      fs.closeSync(fd);
+    }
+  }
+  readMessages(runId: string, slug: string): SwarmMessageRecord[] {
+    this.assertRun(runId);
+    if (!/^[a-z0-9-]{1,80}$/.test(slug)) fail('Slug inválido.');
+    const content = this.readOptional(`${runId}/_attempts/${slug}/messages.jsonl`);
+    if (!content) return [];
+    const records: SwarmMessageRecord[] = [];
+    for (const line of content.split('\n')) {
+      if (!line.trim()) continue;
+      try {
+        records.push(JSON.parse(line) as SwarmMessageRecord);
+      } catch {
+        continue;
+      }
+    }
+    return records;
   }
   list(): string[] {
     return fs
@@ -310,20 +559,20 @@ export class SwarmArtifacts {
     this.assertAttempt(slug, attemptId);
     let content: string;
     try {
-      content = this.read(`${runId}/_attempts/${slug}/${attemptId}/findings.md`);
+      content = normalizeFindingsFormat(this.read(`${runId}/_attempts/${slug}/${attemptId}/findings.md`));
     } catch {
       throw new SwarmDomainError('invalid-findings', 'Findings ausente, ilegível ou path inválido.');
     }
-    if (
-      !content.trim() ||
-      !/^#\s+\S/m.test(content) ||
-      !/^## Resumo\s*$/m.test(content) ||
-      !/^## Achados\s*$/m.test(content) ||
-      !/^## Fora de escopo \/ não verificado\s*$/m.test(content)
-    )
+    if (!content.trim() || !/^#\s+\S/m.test(content) || REQUIRED_SECTIONS.some(({ pattern }) => !pattern.test(content)))
       throw new SwarmDomainError('invalid-findings', 'Findings não segue a estrutura obrigatória.');
-    for (const heading of ['Resumo', 'Achados', 'Fora de escopo / não verificado']) {
-      const body = content.split(`## ${heading}`)[1]?.split(/\n## /)[0]?.trim();
+    for (const { heading, pattern } of REQUIRED_SECTIONS) {
+      const match = pattern.exec(content);
+      const body = match
+        ? content
+            .slice(match.index + match[0].length)
+            .split(/\n## /)[0]
+            ?.trim()
+        : '';
       if (!body) throw new SwarmDomainError('invalid-findings', `Seção ${heading} sem conteúdo.`);
       if (
         heading === 'Achados' &&
@@ -431,10 +680,53 @@ export class SwarmArtifacts {
   }
 }
 
-export function parseSwarmTrailer(output: string, slug: string): { status: 'ok' | 'failed'; summary: string } {
-  const normalized = output.replace(/\r\n/g, '\n').trimEnd();
-  const match = /(?:^|\n)---\nSTATUS: (ok|failed)\nSUMMARY: ([^\n]+)\nFINDINGS: ([^\n]+)$/.exec(normalized);
-  if (!match || match[3].trim() !== `${slug}.md` || !match[2].trim())
-    throw new SwarmDomainError('bad-trailer', 'Trailer STATUS/SUMMARY/FINDINGS ausente ou inválido.');
-  return { status: match[1] as 'ok' | 'failed', summary: match[2].trim() };
+export interface SwarmTrailer {
+  status: 'ok' | 'failed' | 'needs-input';
+  summary: string;
+  question: string | null;
+}
+const TRAILER_KEYS = new Set(['STATUS', 'QUESTION', 'SUMMARY', 'FINDINGS']);
+export function parseSwarmTrailer(output: string, slug: string): SwarmTrailer {
+  const lines = output.replace(/\r\n/g, '\n').trimEnd().split('\n');
+  const trimmed = lines.map((line) => line.trim());
+  let separator = -1;
+  for (let i = trimmed.length - 1; i >= 0; i -= 1) {
+    if (trimmed[i] === '---' || (trimmed[i].endsWith('---') && !trimmed[i].startsWith('-'))) {
+      separator = i;
+      break;
+    }
+  }
+  const invalid = () => new SwarmDomainError('bad-trailer', 'Trailer STATUS/SUMMARY/FINDINGS ausente ou inválido.');
+  if (separator === -1) throw invalid();
+  const fields: Array<[string, string]> = [];
+  for (const raw of lines.slice(separator + 1)) {
+    const line = raw.trim();
+    if (!line) continue;
+    const match = /^([A-Z]+)\s*:\s*(.*)$/.exec(line);
+    if (!match || !TRAILER_KEYS.has(match[1])) throw invalid();
+    fields.push([match[1], match[2].trim()]);
+  }
+  const keys = fields.map(([key]) => key);
+  const count = (key: string) => keys.filter((k) => k === key).length;
+  if (
+    keys[0] !== 'STATUS' ||
+    keys.at(-1) !== 'FINDINGS' ||
+    count('STATUS') !== 1 ||
+    count('FINDINGS') !== 1 ||
+    count('SUMMARY') !== 1 ||
+    count('QUESTION') > 1
+  )
+    throw invalid();
+  const value = (key: string) => fields.find(([k]) => k === key)?.[1] ?? '';
+  const status = value('STATUS');
+  if (
+    (status !== 'ok' && status !== 'failed' && status !== 'needs-input') ||
+    value('FINDINGS') !== `${slug}.md` ||
+    !value('SUMMARY')
+  )
+    throw invalid();
+  const question = value('QUESTION') || null;
+  if (status === 'needs-input' && !question)
+    throw new SwarmDomainError('bad-trailer', 'STATUS: needs-input exige a linha QUESTION: no trailer.');
+  return { status, summary: value('SUMMARY'), question: status === 'needs-input' ? question : null };
 }

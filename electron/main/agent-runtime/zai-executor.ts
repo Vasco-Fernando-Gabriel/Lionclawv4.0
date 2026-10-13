@@ -115,7 +115,7 @@ export function buildZaiQueryOptions(
     ...(req.permission.canUseTool ? { canUseTool: req.permission.canUseTool } : {}),
     includePartialMessages: true,
     abortController: childAbort,
-    ...(req.continueSession ? { continue: true as const } : {}),
+    ...(req.resumeSessionId ? { resume: req.resumeSessionId } : req.continueSession ? { continue: true as const } : {}),
     ...(config.maxTurns !== undefined ? { maxTurns: config.maxTurns } : {}),
     ...(config.effort !== undefined ? { effort: config.effort } : {}),
     ...(config.thinking === 'enabled'

@@ -16,6 +16,9 @@ import { CartesiaVoiceSelector } from '@/components/settings/CartesiaVoiceSelect
 import { VoiceSelector } from '@/components/settings/VoiceSelector';
 import { GoogleOAuthSetup } from '@/components/settings/GoogleOAuthSetup';
 import { ExternalProvidersPanel } from '@/components/settings/ExternalProvidersPanel';
+import { JevShadowSettings } from '@/components/settings/JevShadowSettings';
+import { JevFileToolsSettings } from '@/components/settings/JevFileToolsSettings';
+import { ArchmapJevTriageSettings } from '@/components/settings/ArchmapJevTriageSettings';
 import { OrchestratorSelector } from '@/components/settings/OrchestratorSelector';
 import { CompactionModelSelector } from '@/components/settings/CompactionModelSelector';
 import { CompactionTriggerSettings } from '@/components/settings/CompactionTriggerSettings';
@@ -39,6 +42,7 @@ import type { AppSettings } from '@/types';
 export function SettingsPage() {
   const [settings, setSettings] = useState<AppSettings | null>(null);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'orquestrador' | 'geral' | 'permissoes' | 'canais'>('orquestrador');
   const [uiFont, setUiFontState] = useState<'system' | 'dmsans' | 'lionlabs'>(() =>
     typeof localStorage !== 'undefined'
@@ -63,23 +67,43 @@ export function SettingsPage() {
 
   const handleSave = async () => {
     if (!settings) return;
-    await window.lionclaw.settings.update({
-      ...settings,
-    });
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    const payload: Partial<AppSettings> = { ...settings };
+    delete payload.jevFileToolsRoots;
+    try {
+      const result = await window.lionclaw.settings.update(payload);
+      if (result.error) {
+        setSaveError(result.error);
+        return;
+      }
+      setSaveError(null);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (err) {
+      setSaveError(err instanceof Error ? err.message : String(err));
+    }
   };
 
   const handleSettingsPatch = useCallback(async (patch: Partial<AppSettings>) => {
     setSettings((prev) => (prev ? { ...prev, ...patch } : prev));
     try {
-      await window.lionclaw.settings.update(patch);
+      const result = await window.lionclaw.settings.update(patch);
+      if (result.error) {
+        setSaveError(result.error);
+        window.lionclaw.settings.get().then((s) => setSettings(s));
+        return;
+      }
+      setSaveError(null);
       setSaved(true);
       setTimeout(() => setSaved(false), 1500);
     } catch (err) {
       console.error('settings update failed:', err);
+      setSaveError(err instanceof Error ? err.message : String(err));
       window.lionclaw.settings.get().then((s) => setSettings(s));
     }
+  }, []);
+
+  const handleSettingsPersisted = useCallback((patch: Partial<AppSettings>) => {
+    setSettings((prev) => (prev ? { ...prev, ...patch } : prev));
   }, []);
 
   const handleOrchestratorSettingsChange = useCallback((patch: Partial<AppSettings>) => {
@@ -163,6 +187,16 @@ export function SettingsPage() {
             <CompactionTriggerSettings settings={settings} onUpdate={handleSettingsPatch} />
 
             <TimelineReinjectSettings settings={settings} onUpdate={handleSettingsPatch} />
+
+            <JevShadowSettings settings={settings} onUpdate={handleSettingsPatch} />
+
+            <JevFileToolsSettings
+              settings={settings}
+              onUpdate={handleSettingsPatch}
+              onPersisted={handleSettingsPersisted}
+            />
+
+            <ArchmapJevTriageSettings settings={settings} onUpdate={handleSettingsPatch} />
 
             <TranscriptionModelSelector settings={settings} onUpdate={handleSettingsPatch} />
 
@@ -604,6 +638,11 @@ export function SettingsPage() {
               {saved ? <CheckCircle size={16} /> : <Save size={16} />}
               {saved ? 'Salvo!' : 'Salvar configuracoes'}
             </button>
+            {saveError && (
+              <p className="text-xs text-red-400" data-testid="settings-save-error">
+                Nao foi possivel salvar: {saveError}
+              </p>
+            )}
           </div>
         )}
 

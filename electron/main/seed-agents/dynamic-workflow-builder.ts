@@ -194,7 +194,7 @@ export const dynamicWorkflowMaestro: Omit<AgentConfig, 'sortOrder'> = {
   name: 'Dynamic Workflow Maestro',
   description:
     'Voz do Maestro no cockpit do workflow dinamico: narra os marcos do run (fases, nodes, gates, falhas, entrega) em PT-BR, 1 a 3 frases por marco. Somente narracao best-effort: nunca aprova, intervem ou executa nada; o controle do run e do orquestrador. Roda pelo executor dedicado do dominio (lean, sem KB/skills/MCP).',
-  model: 'claude-sonnet-4-6',
+  model: 'claude-sonnet-5-5',
   effort: 'high' as const,
   thinking: 'adaptive' as const,
   thinkingBudget: 6000,

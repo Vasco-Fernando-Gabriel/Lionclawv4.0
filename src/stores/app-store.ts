@@ -20,7 +20,8 @@ export type Page =
   | 'harness'
   | 'pipeline'
   | 'dynamic-workflow'
-  | 'repositories';
+  | 'repositories'
+  | 'archmap';
 
 const VALID_PAGES: readonly Page[] = [
   'chat',
@@ -42,6 +43,7 @@ const VALID_PAGES: readonly Page[] = [
   'pipeline',
   'dynamic-workflow',
   'repositories',
+  'archmap',
 ];
 
 export interface PendingChat {

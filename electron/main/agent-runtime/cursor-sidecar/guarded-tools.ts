@@ -118,11 +118,12 @@ async function guardedRead(env: GuardedRunEnv, rawArgs: Record<string, unknown>,
   }
   const raw = await fs.promises.readFile(resolved, 'utf8');
   const lines = raw.split('\n');
+  const rangeArgs = { ...rawArgs, ...effective };
   const offset =
-    typeof rawArgs['offset'] === 'number' && rawArgs['offset'] >= 0 ? Math.floor(rawArgs['offset'] as number) : 0;
+    typeof rangeArgs['offset'] === 'number' && rangeArgs['offset'] >= 0 ? Math.floor(rangeArgs['offset'] as number) : 0;
   const limit =
-    typeof rawArgs['limit'] === 'number' && rawArgs['limit'] > 0
-      ? Math.floor(rawArgs['limit'] as number)
+    typeof rangeArgs['limit'] === 'number' && rangeArgs['limit'] > 0
+      ? Math.floor(rangeArgs['limit'] as number)
       : READ_DEFAULT_LIMIT_LINES;
   const sliced = lines.slice(offset, offset + limit);
   const suffix =

@@ -1,4 +1,9 @@
-import { isSwarmAggregationTool } from '../swarm/aggregation-policy';
+import {
+  isSwarmAggregationTool,
+  isSwarmConductionGatewayCall,
+  isSwarmConductionGatewayTool,
+  swarmConductionMcpConfig,
+} from '../swarm/aggregation-policy';
 import { persistSwarmResponse } from '../swarm/chat-persistence';
 
 import type { BrowserWindow } from 'electron';
@@ -310,6 +315,7 @@ export async function executeLionSdkQuery(
         lane: lane.kind,
         ...(activeChatTurn ? { turn: activeChatTurn } : {}),
       });
+      if (options.swarmDelivery) mcpConfig = swarmConductionMcpConfig(mcpConfig);
       if (mcpConfig && Object.keys(mcpConfig).length > 0) {
         if (useLazyMcpSetup) {
           const activeServerIds = Object.keys(mcpConfig);
@@ -374,7 +380,10 @@ export async function executeLionSdkQuery(
   const toolSchemas = isOnboarding
     ? []
     : options.swarmDelivery
-      ? orchestratorToolSchemas.filter((tool) => isSwarmAggregationTool(tool.name))
+      ? orchestratorToolSchemas.filter(
+          (tool) =>
+            isSwarmAggregationTool(tool.name) || (isSwarmConductionGatewayTool(tool.name) && mcpConfig !== undefined),
+        )
       : orchestratorToolSchemas;
 
   const p5ExplicitServerIds = options.agentId && mcpConfig ? Object.keys(mcpConfig) : [];
@@ -583,8 +592,12 @@ export async function executeLionSdkQuery(
   let shouldGenerateTitle = false;
 
   const dispatcher: LionToolDispatcher = async (call) => {
-    if (options.swarmDelivery && !isSwarmAggregationTool(call.name)) {
-      return { content: 'Agregação Swarm permite somente leitura e busca.', isError: true };
+    if (
+      options.swarmDelivery &&
+      !isSwarmAggregationTool(call.name) &&
+      !isSwarmConductionGatewayCall(call.name, call.input)
+    ) {
+      return { content: 'Agregação Swarm permite somente leitura, busca e as tools do swarm.', isError: true };
     }
     if (isOnboarding) {
       return {

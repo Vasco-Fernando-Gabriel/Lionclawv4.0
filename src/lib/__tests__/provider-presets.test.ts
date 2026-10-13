@@ -64,8 +64,8 @@ describe('PROVIDER_PRESETS: openai', () => {
     expect(PROVIDER_PRESETS['openai'].requiresApiKey).toBe(true);
   });
 
-  it('openai.defaultModel = "gpt-5.5"', () => {
-    expect(PROVIDER_PRESETS['openai'].defaultModel).toBe('gpt-6-sol');
+  it('openai.defaultModel = "gpt-6.1-sol"', () => {
+    expect(PROVIDER_PRESETS['openai'].defaultModel).toBe('gpt-6.1-sol');
   });
 
   it('openai.protocol = "openai-compatible"', () => {
@@ -142,8 +142,22 @@ describe('PROVIDER_PRESETS: novos providers (SPEC-005)', () => {
 });
 
 describe('MODEL_CATALOG: openai', () => {
-  it('tem 4 modelos OpenAI curados (GPT-6 Sol/Luna + GPT-5.5/Pro)', () => {
-    expect(MODEL_CATALOG['openai']).toHaveLength(4);
+  it('tem 6 modelos OpenAI curados (GPT-6.1 Sol, GPT-6 Sol/Luna/Astra + GPT-5.5/Pro), nesta ordem', () => {
+    expect(MODEL_CATALOG['openai']).toHaveLength(6);
+    expect(MODEL_CATALOG['openai'].map((m: CatalogedModel) => m.id)).toEqual([
+      'gpt-6.1-sol',
+      'gpt-6-sol',
+      'gpt-6-luna',
+      'gpt-6-astra',
+      'gpt-5.5',
+      'gpt-5.5-pro',
+    ]);
+  });
+
+  it('gpt-6-astra: contextWindow = 1_050_000 e pricingKey = "gpt-6-astra"', () => {
+    const model = MODEL_CATALOG['openai'].find((m: CatalogedModel) => m.id === 'gpt-6-astra');
+    expect(model?.contextWindow).toBe(1_050_000);
+    expect(model?.pricingKey).toBe('gpt-6-astra');
   });
 
   it('contem gpt-5.5', () => {
@@ -178,11 +192,17 @@ describe('MODEL_CATALOG: openai', () => {
 });
 
 describe('MODEL_CATALOG: openrouter', () => {
-  it('tem 15 modelos OpenRouter curados', () => {
-    expect(MODEL_CATALOG['openrouter']).toHaveLength(15);
+  it('tem 18 modelos OpenRouter curados', () => {
+    expect(MODEL_CATALOG['openrouter']).toHaveLength(18);
   });
 
   const OPENROUTER_MODELS: Array<{ id: string; contextWindow: number; pricingKey: string }> = [
+    { id: 'anthropic/claude-opus-5-5', contextWindow: 1_000_000, pricingKey: 'or:anthropic/claude-opus-5-5' },
+    { id: 'anthropic/claude-sonnet-5.5', contextWindow: 1_000_000, pricingKey: 'or:anthropic/claude-sonnet-5.5' },
+    { id: 'anthropic/claude-haiku-5.5', contextWindow: 1_000_000, pricingKey: 'or:anthropic/claude-haiku-5.5' },
+    { id: 'openai/gpt-6.1-sol', contextWindow: 1_050_000, pricingKey: 'or:openai/gpt-6.1-sol' },
+    { id: 'openai/gpt-6-sol', contextWindow: 1_050_000, pricingKey: 'or:openai/gpt-6-sol' },
+    { id: 'openai/gpt-6-luna', contextWindow: 1_050_000, pricingKey: 'or:openai/gpt-6-luna' },
     { id: 'deepseek/deepseek-v4-pro', contextWindow: 1_000_000, pricingKey: 'or:deepseek/deepseek-v4-pro' },
     { id: 'deepseek/deepseek-v4-flash', contextWindow: 1_000_000, pricingKey: 'or:deepseek/deepseek-v4-flash' },
     { id: 'moonshotai/kimi-k2.6', contextWindow: 256_000, pricingKey: 'or:moonshotai/kimi-k2.6' },
@@ -287,10 +307,10 @@ describe('MODEL_CATALOG: novos providers (SPEC-005)', () => {
 });
 
 describe('MODEL_CATALOG: integridade geral', () => {
-  it('total de modelos OpenAI + OpenRouter = 19 (4 OpenAI + 15 OpenRouter)', () => {
+  it('total de modelos OpenAI + OpenRouter = 24 (6 OpenAI + 18 OpenRouter)', () => {
     const openaiCount = MODEL_CATALOG['openai']?.length ?? 0;
     const openrouterCount = MODEL_CATALOG['openrouter']?.length ?? 0;
-    expect(openaiCount + openrouterCount).toBe(19);
+    expect(openaiCount + openrouterCount).toBe(24);
   });
 
   it('todos os modelos openai/openrouter tem id, label, pricingKey nao-null, supportsTools, contextWindow', () => {

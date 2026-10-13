@@ -7,7 +7,7 @@ export const pipe2SpecValidator: Omit<AgentConfig, 'sortOrder'> = {
   name: 'Pipe2 Spec Validator',
   description:
     'Valida a SPEC do pipeline development-v2 contra PRD, user stories e design lock. Falha se houver tela ausente, rota fora do design, endpoint esperado sem backend, dataRequirement sem campo ou story sem tela.',
-  model: 'claude-sonnet-4-6',
+  model: 'claude-sonnet-5-5',
   effort: 'high' as const,
   thinking: 'enabled' as const,
   thinkingBudget: 8000,

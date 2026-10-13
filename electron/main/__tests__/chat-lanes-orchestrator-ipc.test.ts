@@ -84,7 +84,7 @@ import { getPipelineDriveCoordinator } from '../pipeline-drive-coordinator';
 import { getSessionMessages, insertMessage } from '../db';
 
 const CLAUDE = { runtime: 'claude-sdk', provider: 'anthropic', model: 'claude-opus-5', effort: 'high' };
-const CODEX = { runtime: 'codex-sdk', provider: 'codex', model: 'gpt-5.4-mini', effort: 'high' };
+const CODEX = { runtime: 'codex-sdk', provider: 'codex', model: 'gpt-6.1-sol', effort: 'high' };
 
 function lane(
   id: string,
@@ -305,7 +305,7 @@ describe('AC-11 (main): chat:set-session-orchestrator (7.4)', () => {
     const result = await invoke('chat:set-session-orchestrator', 'a', { ...CODEX, effort: 'xhigh' });
     expect(result).toEqual({
       ok: true,
-      orchestrator: { runtime: 'codex-sdk', provider: 'codex', model: 'gpt-5.4-mini', effort: 'xhigh' },
+      orchestrator: { runtime: 'codex-sdk', provider: 'codex', model: 'gpt-6.1-sol', effort: 'xhigh' },
     });
     expect(sessionUpdatedEvents()).toEqual([
       expect.objectContaining({ sessionId: 'a', orchestrator: expect.objectContaining({ effort: 'xhigh' }) }),
@@ -364,7 +364,7 @@ describe('AC-13 (main): chat:get-context-usage por lane (10.6)', () => {
     const usageA = (await invoke('chat:get-context-usage', 'a')) as Record<string, unknown>;
     const usageB = (await invoke('chat:get-context-usage', 'b')) as Record<string, unknown>;
     expect(usageA).toMatchObject({ contextTokens: 120_000, contextWindowTokens: 1_000_000, source: 'estimate' });
-    expect(usageB).toMatchObject({ contextTokens: 120_000, contextWindowTokens: 400_000, source: 'estimate' });
+    expect(usageB).toMatchObject({ contextTokens: 120_000, contextWindowTokens: 1_050_000, source: 'estimate' });
   });
 
   it('lane sem orquestrador = null (RM7, sem fallback ao padrao)', async () => {

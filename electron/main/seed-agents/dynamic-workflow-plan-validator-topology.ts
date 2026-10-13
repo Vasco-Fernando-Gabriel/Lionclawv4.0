@@ -8,7 +8,7 @@ export const dynamicWorkflowPlanValidatorTopology: Omit<AgentConfig, 'sortOrder'
   name: 'Dynamic Workflow Plan Validator (Topologia)',
   description:
     'Validador adversarial read-only do PLANO de sprints do workflow dinamico, eixo TOPOLOGIA: confere sizing das sprints, ordem e completude das dependencias, ausencia de ciclos e granularidade. Retorna verdict + findings sobre o plano.',
-  model: 'claude-haiku-4-5-20251001',
+  model: 'claude-haiku-5-5',
   effort: 'high' as const,
   thinking: 'enabled' as const,
   thinkingBudget: 8000,

@@ -2432,3 +2432,59 @@ exports[`Swarm V1 IPC payload snapshots > stream identifica sessão, run e revis
   "runId": "swarm-20260913_120000-abc123",
 }
 `;
+
+exports[`Swarm v2 IPC payload snapshots (S5) > get-messages devolve os registros do messages.jsonl do swarm agent sem credenciais nem caminhos 1`] = `
+{
+  "messages": [
+    {
+      "at": "2026-10-11T10:00:30.000Z",
+      "attemptId": "att-1",
+      "id": "msg-1-a1b2c3",
+      "kind": "message",
+      "text": "Foque em X",
+    },
+    {
+      "at": "2026-10-11T10:02:00.000Z",
+      "attemptId": "att-1",
+      "id": "msg-2-d4e5f6",
+      "kind": "answer",
+      "text": "Ignore vendor",
+    },
+    {
+      "at": "2026-10-11T10:03:00.000Z",
+      "attemptId": "att-2",
+      "costUsd": 0.02,
+      "id": "msg-2-d4e5f6-att-2-response",
+      "kind": "response",
+      "mechanism": "session",
+      "text": "Continuando sem vendor",
+    },
+  ],
+  "runId": "swarm-20261011_100000-abc123",
+  "slug": "auditor",
+}
+`;
+
+exports[`Swarm v2 IPC payload snapshots (S5) > settings carregam a janela de conducao em milissegundos 1`] = `
+{
+  "concurrencyCap": 5,
+  "hardTimeoutMs": 7200000,
+  "idleTimeoutMs": 1200000,
+  "maxAttempts": 2,
+  "openWindowMs": 1800000,
+}
+`;
+
+exports[`Swarm v2 IPC payload snapshots (S5) > stop-agent devolve so a mudanca e o status do swarm agent parado 1`] = `
+{
+  "changed": true,
+  "status": "stopping",
+}
+`;
+
+exports[`Swarm v2 IPC payload snapshots (S5) > stop-agent devolve so a mudanca e o status do swarm agent parado 2`] = `
+{
+  "changed": false,
+  "status": "ok",
+}
+`;

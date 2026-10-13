@@ -7,7 +7,7 @@ export const prdValidator: Omit<AgentConfig, 'sortOrder'> = {
   name: 'PRD Validator',
   description:
     'Valida e refina user stories e requisitos com o usuario em conversa interativa. Garante que nada foi esquecido ou mal definido antes de gerar o PRD completo.',
-  model: 'claude-sonnet-4-6',
+  model: 'claude-sonnet-5-5',
   effort: 'high' as const,
   thinking: 'enabled' as const,
   thinkingBudget: 12000,

@@ -16,6 +16,7 @@ import { calculateCost } from '../pricing';
 import { resolveExternalPricing } from './external-http';
 import { warnMcpToolsDroppedOnce, warnOncePerAgent } from './mcp-warning';
 import { executeLocalTool } from '../local-tool-executor';
+import { swarmRepoGraphToolSchemas } from '../swarm/repo-graph';
 import type { AgentQueryConfig } from '../agent-config-resolver';
 import type { OllamaChatMessage } from '../ollama-client';
 import type { RuntimeExecutor, AgentExecutionRequest, AgentExecutionResult } from './types';
@@ -179,13 +180,34 @@ const BUILTIN_GEMINI_SCHEMAS: Record<string, FunctionDeclaration> = {
   },
 };
 
-export function buildGeminiTools(allowedTools: string[]): Tool[] | undefined {
-  const builtinNames = allowedTools.filter((t) => !t.startsWith('mcp__'));
-  if (builtinNames.length === 0) return undefined;
+function geminiType(value: unknown): Type {
+  const kind = value && typeof value === 'object' ? (value as { type?: unknown }).type : undefined;
+  if (kind === 'number' || kind === 'integer') return Type.NUMBER;
+  if (kind === 'boolean') return Type.BOOLEAN;
+  return Type.STRING;
+}
+export function swarmRepoGraphGeminiDeclarations(allowedTools: readonly string[]): FunctionDeclaration[] {
+  return swarmRepoGraphToolSchemas(allowedTools).map((schema) => ({
+    name: schema.function.name,
+    description: schema.function.description,
+    parameters: {
+      type: Type.OBJECT,
+      properties: Object.fromEntries(
+        Object.entries(schema.function.parameters.properties).map(([key, value]) => [key, { type: geminiType(value) }]),
+      ),
+      required: schema.function.parameters.required ?? [],
+    },
+  }));
+}
 
-  const functionDeclarations = builtinNames
-    .map((name) => BUILTIN_GEMINI_SCHEMAS[name])
-    .filter((s): s is FunctionDeclaration => s !== undefined);
+export function buildGeminiTools(allowedTools: string[], extra: FunctionDeclaration[] = []): Tool[] | undefined {
+  const builtinNames = allowedTools.filter((t) => !t.startsWith('mcp__'));
+  const functionDeclarations = [
+    ...builtinNames
+      .map((name) => BUILTIN_GEMINI_SCHEMAS[name])
+      .filter((s): s is FunctionDeclaration => s !== undefined),
+    ...extra,
+  ];
 
   if (functionDeclarations.length === 0) return undefined;
 
@@ -270,7 +292,10 @@ async function run(req: AgentExecutionRequest, config: AgentQueryConfig): Promis
 
   const { systemInstruction, contents } = toGeminiContents(config.systemPrompt, req.prompt, req.priorMessages);
 
-  const tools = buildGeminiTools(config.allowedTools);
+  const tools = buildGeminiTools(
+    config.allowedTools,
+    req.swarmToolDispatch ? swarmRepoGraphGeminiDeclarations(config.allowedTools) : [],
+  );
   const toolConfig: ToolConfig | undefined = tools
     ? { functionCallingConfig: { mode: FunctionCallingConfigMode.AUTO } }
     : undefined;

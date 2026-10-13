@@ -7,7 +7,7 @@ export const featPrdCompleto: Omit<AgentConfig, 'sortOrder'> = {
   name: 'Feature PRD Completo',
   description:
     'Consolida PRD.md final a partir de feature-discovery-notes + stories-requisitos.md validados. Tipo auto, sem interacao.',
-  model: 'claude-sonnet-4-6',
+  model: 'claude-sonnet-5-5',
   effort: 'medium' as const,
   thinking: 'adaptive' as const,
   maxTurns: 80,

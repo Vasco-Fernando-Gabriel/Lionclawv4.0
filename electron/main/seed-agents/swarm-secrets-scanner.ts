@@ -1,20 +1,20 @@
 import type { AgentConfig } from '../../../src/types';
 import { SWARM_CONTRACT } from './_shared/swarm-contract';
-import { KIMI_DEFAULT_MODEL } from '../../../src/constants/kimi-models';
+import { CLAUDE_DEFAULT_MODEL } from '../../../src/constants/claude-models';
 
 export const swarmSecretsScanner: Omit<AgentConfig, 'sortOrder'> = {
   id: 'swarm-secrets-scanner',
   name: 'Swarm Secrets Scanner',
   description: 'Você é um auditor de vazamento de credenciais. Sua lente é EXCLUSIVAMENTE secrets.',
-  model: KIMI_DEFAULT_MODEL,
-  runtime: 'kimi',
+  model: CLAUDE_DEFAULT_MODEL,
+  runtime: 'cloud',
   squad: 'swarm',
   effort: 'high',
   thinking: 'adaptive',
   maxTurns: 80,
   maxToolRounds: 50,
   allowedTools: ['Read', 'Grep', 'Glob', 'Bash', 'Write'],
-  mcpServers: [],
+  mcpServers: ['repo-graph'],
   skills: [],
   isActive: true,
   systemPrompt:

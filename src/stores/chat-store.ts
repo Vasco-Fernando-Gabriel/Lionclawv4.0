@@ -27,6 +27,7 @@ import {
   laneErrorTitle,
   laneLabel,
   normalizeStaleLaneDays,
+  pickFirstLane,
   pickMostRecentLane,
   resolveNewChatAction,
   type LaneCompactionInfo,
@@ -620,6 +621,9 @@ async function hydrateThreadData(sessionId: string): Promise<{
 
 export const useChatStore = create<ChatState>((set, get) => {
   let openLanesRequest = 0;
+  let openLanesLatest: Promise<OpenChatSession[] | null> = Promise.resolve(null);
+  const settledOpenLanes = (): Promise<OpenChatSession[]> =>
+    openLanesLatest.then((result) => result ?? settledOpenLanes());
   const pendingTextByThread = new Map<string, { text: string; timer: ReturnType<typeof setTimeout> | null }>();
 
   const patchThread = (sessionId: string, patch: ThreadPatch): void => {
@@ -731,7 +735,7 @@ export const useChatStore = create<ChatState>((set, get) => {
       }));
       const { currentSessionId } = get();
       if (currentSessionId) return;
-      const preferred = pickMostRecentLane(openLanes);
+      const preferred = pickFirstLane(openLanes);
       if (preferred) await get().selectSession(preferred.id);
     },
 
@@ -739,26 +743,30 @@ export const useChatStore = create<ChatState>((set, get) => {
       if (get().threads[sessionId]) patchThread(sessionId, { drivePaused: paused });
     },
 
-    loadOpenLanes: async () => {
+    loadOpenLanes: () => {
       const request = ++openLanesRequest;
-      let failure: string;
-      try {
-        const lanes = await window.lionclaw.chat.listOpenSessions();
-        if (request !== openLanesRequest) return get().openLanes;
-        if (Array.isArray(lanes)) {
-          set((state) => ({ openLanes: lanes, threads: withThreadMeta({ ...state, openLanes: lanes }) }));
-          return lanes;
+      const current = (async (): Promise<OpenChatSession[] | null> => {
+        let failure: string;
+        try {
+          const lanes = await window.lionclaw.chat.listOpenSessions();
+          if (request !== openLanesRequest) return null;
+          if (Array.isArray(lanes)) {
+            set((state) => ({ openLanes: lanes, threads: withThreadMeta({ ...state, openLanes: lanes }) }));
+            return lanes;
+          }
+          failure = lanes.error;
+        } catch (err) {
+          failure = err instanceof Error ? err.message : String(err);
         }
-        failure = lanes.error;
-      } catch (err) {
-        failure = err instanceof Error ? err.message : String(err);
-      }
-      if (request !== openLanesRequest) return get().openLanes;
-      console.error('listOpenSessions failed:', failure);
-      useErrorToastStore
-        .getState()
-        .pushError({ error: failure }, { title: `Nao foi possivel carregar as lanes: ${failure}`, source: 'chat' });
-      return get().openLanes;
+        if (request !== openLanesRequest) return null;
+        console.error('listOpenSessions failed:', failure);
+        useErrorToastStore
+          .getState()
+          .pushError({ error: failure }, { title: `Nao foi possivel carregar as lanes: ${failure}`, source: 'chat' });
+        return get().openLanes;
+      })();
+      openLanesLatest = current;
+      return current.then((result) => result ?? settledOpenLanes());
     },
 
     applySessionUpdated: (event) => {

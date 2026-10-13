@@ -157,6 +157,19 @@ export function getChatCapabilityTurn(input: {
   };
 }
 
+export function renewChatCapabilityTurn(input: { sessionId: string; turnId: string }): boolean {
+  const key = turnKey(input.sessionId, input.turnId);
+  const entry = turnContexts.get(key);
+  if (!entry) return false;
+  const now = Date.now();
+  if (now >= entry.expiresAt) {
+    turnContexts.delete(key);
+    return false;
+  }
+  entry.expiresAt = now + entry.ttlMs;
+  return true;
+}
+
 export function clearChatCapabilityTurn(input: { sessionId: string; turnId: string }): void {
   turnContexts.delete(turnKey(input.sessionId, input.turnId));
 }

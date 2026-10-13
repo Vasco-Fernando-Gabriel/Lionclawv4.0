@@ -7,7 +7,7 @@ export const securityResolutionTracker: Omit<AgentConfig, 'sortOrder'> = {
   id: RESOLUTION_TRACKER_ID,
   name: 'Resolution Tracker',
   description: 'Verifica resolucao de findings apos execucao do Coder. Gera SecurityScan JSON.',
-  model: 'claude-haiku-4-5-20251001',
+  model: 'claude-haiku-5-5',
   effort: 'low' as const,
   thinking: 'disabled' as const,
   thinkingBudget: 0,

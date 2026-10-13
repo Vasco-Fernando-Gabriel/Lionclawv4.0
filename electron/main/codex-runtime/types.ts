@@ -11,7 +11,7 @@ export interface CodexSessionOptions {
   externallyManagedWatchdog?: boolean;
   swarmOwnerDirectory?: string;
   projectId?: string;
-  ownerKind?: 'chat' | 'pipeline';
+  ownerKind?: CodexOwnerKind;
   ownerId?: string;
 }
 
@@ -74,7 +74,7 @@ export type CodexSurface = 'chat' | 'pipeline' | 'one-shot' | 'codex-agents-mcp'
 
 export type CodexSelectableSurface = CodexSurface | 'agent-scoped';
 
-export type CodexOwnerKind = 'chat' | 'pipeline';
+export type CodexOwnerKind = 'chat' | 'pipeline' | 'swarm';
 
 export type CodexMcpProfile = 'chat' | 'pipeline' | 'one-shot' | 'agent-scoped';
 

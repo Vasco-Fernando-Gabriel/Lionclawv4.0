@@ -10,7 +10,7 @@ export const architectureDecisionInterviewer: Omit<AgentConfig, 'sortOrder'> = {
   name: 'Architecture Decision Interviewer',
   description:
     'Fase 4 do pipeline architecture-review: entrevista pergunta-a-pergunta. Cada decisao fechada vira append em decisions.md. Sugere fechar quando cobriu o essencial.',
-  model: 'claude-sonnet-4-6',
+  model: 'claude-sonnet-5-5',
   effort: 'high' as const,
   thinking: 'enabled' as const,
   thinkingBudget: 4000,

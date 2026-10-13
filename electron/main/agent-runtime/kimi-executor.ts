@@ -1,4 +1,5 @@
 import { builtinToolsToOllamaSchemas } from './tool-schemas';
+import { swarmRepoGraphToolSchemas } from '../swarm/repo-graph';
 
 import { createLogger } from '../logger';
 import { randomUUID } from 'crypto';
@@ -129,7 +130,10 @@ async function run(req: AgentExecutionRequest, config: AgentQueryConfig): Promis
     const sessionTools = req.swarmToolDispatch
       ? {
           systemPrompt: config.systemPrompt,
-          externalTools: builtinToolsToOllamaSchemas(config.allowedTools).map((schema) => ({
+          externalTools: [
+            ...builtinToolsToOllamaSchemas(config.allowedTools),
+            ...swarmRepoGraphToolSchemas(config.allowedTools),
+          ].map((schema) => ({
             name: schema.function.name,
             description: schema.function.description,
             parameters: schema.function.parameters,

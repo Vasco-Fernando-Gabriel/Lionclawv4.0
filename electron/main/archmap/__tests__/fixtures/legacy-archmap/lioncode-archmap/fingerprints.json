@@ -1,0 +1,144 @@
+{
+  "schemaVersion": 1,
+  "version": "1.0.0",
+  "gitCommitHash": "0000000000000000000000000000000000000000",
+  "generatedAt": "2026-09-12T16:28:15.600Z",
+  "files": {
+    "README.md": {
+      "filePath": "README.md",
+      "contentHash": "329c8be2010e45a483d27aa927ba9c9465116723416969be04f1c093a92f7199",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 4,
+      "hasStructuralAnalysis": false
+    },
+    "config/app.yaml": {
+      "filePath": "config/app.yaml",
+      "contentHash": "17d7d11c9be3802c8b01890d2a7bee99348df4b93e6e7c0d78e644d9150c0731",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 3,
+      "hasStructuralAnalysis": false
+    },
+    "docs/guide.md": {
+      "filePath": "docs/guide.md",
+      "contentHash": "452b33b7cb6a91ae2b1c67338641b0457d09057ff6b4ffea43f58507be3cf937",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 4,
+      "hasStructuralAnalysis": false
+    },
+    "package.json": {
+      "filePath": "package.json",
+      "contentHash": "1fe2161d5a3a40a55063453c9a430f1e7de63e29d3a3d81e7911c8711c155176",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 2,
+      "hasStructuralAnalysis": false
+    },
+    "src/greet.ts": {
+      "filePath": "src/greet.ts",
+      "contentHash": "93438f9ef14898b630271a8dd30145a2ce795504f80a1d541f145aad17e43c95",
+      "functions": [
+        {
+          "name": "greet",
+          "params": [
+            "name"
+          ],
+          "returnType": "string",
+          "exported": true,
+          "lineCount": 1
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "./util/strings",
+          "specifiers": [
+            "upper"
+          ]
+        }
+      ],
+      "exports": [
+        "greet"
+      ],
+      "totalLines": 3,
+      "hasStructuralAnalysis": true
+    },
+    "src/index.ts": {
+      "filePath": "src/index.ts",
+      "contentHash": "4a33b8e7d8d993c61495a641bd5d0dd7bd0df5364cea28fe0c9af2dc72ef4545",
+      "functions": [
+        {
+          "name": "main",
+          "params": [],
+          "returnType": "string",
+          "exported": true,
+          "lineCount": 1
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "./math",
+          "specifiers": [
+            "add"
+          ]
+        },
+        {
+          "source": "./greet",
+          "specifiers": [
+            "greet"
+          ]
+        }
+      ],
+      "exports": [
+        "main"
+      ],
+      "totalLines": 4,
+      "hasStructuralAnalysis": true
+    },
+    "src/math.ts": {
+      "filePath": "src/math.ts",
+      "contentHash": "6a0f4a03e81d8213e9a455f6caf1fb6704cc443aff148e1b0c3947eeb71c3605",
+      "functions": [
+        {
+          "name": "add",
+          "params": [
+            "a",
+            "b"
+          ],
+          "returnType": "number",
+          "exported": true,
+          "lineCount": 1
+        },
+        {
+          "name": "sub",
+          "params": [
+            "a",
+            "b"
+          ],
+          "returnType": "number",
+          "exported": true,
+          "lineCount": 1
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [
+        "add",
+        "sub"
+      ],
+      "totalLines": 3,
+      "hasStructuralAnalysis": true
+    }
+  }
+}

@@ -16,6 +16,8 @@ import {
 } from '../mcp-display';
 import { getChatCapabilityForServer } from '../chat-capability-gate';
 import { isChatTurnScopedMcpHelper, isDirectMcpHelper } from '../mcp-risk-patterns';
+import { SWARM_MCP_SERVER_ID } from '../swarm/aggregation-policy';
+import { createSwarmConductionCodexMcp } from '../swarm/conduction-mcp';
 import type { ChatFeatureToggles, CodexChatReasoningEffort } from '../../../src/types';
 
 export interface CreateChatCodexSessionOptions {
@@ -60,6 +62,7 @@ export async function createChatCodexSession(opts: CreateChatCodexSessionOptions
     capabilities: opts.capabilities,
   });
   const mcpServers = getAllMCPServers().filter((s) => s.isActive);
+  const swarmConduction = opts.swarmReadOnly === true && opts.capabilities?.swarm === true;
   const catalogServers = (
     opts.capabilities
       ? mcpServers.filter((s) => {
@@ -67,11 +70,13 @@ export async function createChatCodexSession(opts: CreateChatCodexSessionOptions
           return gated === undefined || opts.capabilities?.[gated] !== false;
         })
       : mcpServers
-  ).filter((s) => opts.capabilities !== undefined || !isChatTurnScopedMcpHelper(s.id));
+  )
+    .filter((s) => opts.capabilities !== undefined || !isChatTurnScopedMcpHelper(s.id))
+    .filter((s) => !opts.swarmReadOnly || (swarmConduction && s.id === SWARM_MCP_SERVER_ID));
   const catalogEntries = (indexMode ? catalogServers.filter((s) => isDirectMcpHelper(s.id)) : catalogServers).map(
     (s) => ({ id: s.id, description: s.description }),
   );
-  if (indexMode) {
+  if (indexMode && !opts.swarmReadOnly) {
     catalogEntries.push({
       id: CODEX_GATEWAY_SERVER_ID,
       description: `LionClaw gateway meta-tools: ${CODEX_GATEWAY_INVOKE_TOOL_NAME}(server, tool, args) executes any tool from the MCP index above; ${CODEX_GATEWAY_SCHEMA_TOOL_NAME}(server, tool) returns its full contract`,
@@ -105,27 +110,57 @@ export async function createChatCodexSession(opts: CreateChatCodexSessionOptions
   }
 
   const reasoningEffort: CodexChatReasoningEffort = opts.reasoningEffort ?? 'high';
-  return resolveCodexSessionForRun({
-    surface: 'chat',
-    mcpProfile: opts.swarmReadOnly ? 'one-shot' : 'chat',
-    disableGlobalMcp: opts.swarmReadOnly,
-    reasoningEffortOverride: reasoningEffort,
-    extraArgs: !opts.swarmReadOnly && mcpComposition.extraArgs.length > 0 ? mcpComposition.extraArgs : undefined,
-    sessionOptions: {
-      cwd,
-      model: opts.model,
-      systemPrompt,
-      approvalPolicy: 'never',
-      sandbox:
-        opts.isOnboarding || opts.swarmReadOnly
-          ? 'read-only'
-          : getPermissionBypass()
-            ? 'danger-full-access'
-            : 'workspace-write',
-      reasoningEffort,
-      turnSettleMs: readCodexTurnSettleMs(getSetting),
-      ownerKind: 'chat',
-      ownerId: opts.sessionId,
-    },
-  });
+  const conduction = swarmConduction ? createSwarmConductionCodexMcp({ sessionId: opts.sessionId }) : null;
+  let session: CodexSession;
+  try {
+    session = await resolveCodexSessionForRun({
+      surface: 'chat',
+      mcpProfile: opts.swarmReadOnly ? 'one-shot' : 'chat',
+      disableGlobalMcp: opts.swarmReadOnly,
+      reasoningEffortOverride: reasoningEffort,
+      extraArgs: !opts.swarmReadOnly && mcpComposition.extraArgs.length > 0 ? mcpComposition.extraArgs : undefined,
+      ...(conduction ? { swarmFindingsMcpArgs: conduction.extraArgs, swarmFindingsMcpEnv: conduction.spawnEnv } : {}),
+      sessionOptions: {
+        cwd,
+        model: opts.model,
+        systemPrompt,
+        approvalPolicy: 'never',
+        sandbox:
+          opts.isOnboarding || opts.swarmReadOnly
+            ? 'read-only'
+            : getPermissionBypass()
+              ? 'danger-full-access'
+              : 'workspace-write',
+        reasoningEffort,
+        turnSettleMs: readCodexTurnSettleMs(getSetting),
+        ownerKind: 'chat',
+        ownerId: opts.sessionId,
+      },
+    });
+  } catch (error) {
+    conduction?.dispose();
+    throw error;
+  }
+  return conduction ? withConductionRevocation(session, conduction.dispose) : session;
+}
+
+export function withConductionRevocation(session: CodexSession, revoke: () => void): CodexSession {
+  const close = session.close.bind(session);
+  session.close = () => {
+    try {
+      close();
+    } finally {
+      revoke();
+    }
+  };
+  const closeConfirmed = session.closeConfirmed?.bind(session);
+  if (closeConfirmed)
+    session.closeConfirmed = async () => {
+      try {
+        await closeConfirmed();
+      } finally {
+        revoke();
+      }
+    };
+  return session;
 }

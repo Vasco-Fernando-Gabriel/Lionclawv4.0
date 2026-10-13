@@ -8,7 +8,7 @@ export const dynamicWorkflowValidatorRegression: Omit<AgentConfig, 'sortOrder'> 
   name: 'Dynamic Workflow Validator (Regressao)',
   description:
     'Validador adversarial read-only do workflow dinamico: cetico de regressao e quebra de contrato. Tenta provar que ha bug tracando consumidores. Retorna verdict + findings.',
-  model: 'claude-haiku-4-5-20251001',
+  model: 'claude-haiku-5-5',
   effort: 'high' as const,
   thinking: 'enabled' as const,
   thinkingBudget: 8000,

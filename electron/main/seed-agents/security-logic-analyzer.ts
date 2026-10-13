@@ -7,7 +7,7 @@ export const securityLogicAnalyzer: Omit<AgentConfig, 'sortOrder'> = {
   id: LOGIC_ANALYZER_ID,
   name: 'Logic Analyzer',
   description: 'Detecta race conditions, blocking calls, error handling inadequado.',
-  model: 'claude-sonnet-4-6',
+  model: 'claude-sonnet-5-5',
   effort: 'high' as const,
   thinking: 'enabled' as const,
   thinkingBudget: 8000,

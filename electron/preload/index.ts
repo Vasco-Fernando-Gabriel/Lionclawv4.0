@@ -29,6 +29,13 @@ import type {
 } from '../../src/types';
 import type { PipelineAuditAgentProgressEvent, RepoManifest } from '../../src/types/pipeline';
 import type { RepoGraphStatusEvent } from '../../src/types/repo-graph';
+import type {
+  ArchmapBuildRequest,
+  ArchmapEstimateRequest,
+  ArchmapFileRequest,
+  ArchmapStatusEvent,
+  ArchmapUpdateRequest,
+} from '../../src/types/archmap';
 import type { DynamicWorkflowStreamChunk } from '../../src/types/dynamic-workflow';
 import type { KanbanChangedEvent } from '../../src/types/kanban';
 
@@ -40,6 +47,8 @@ const api: LionClawAPI = {
     openFindings: (sessionId, runId, slug) => ipcRenderer.invoke('swarm:open-findings', sessionId, runId, slug),
     start: (sessionId, input) => ipcRenderer.invoke('swarm:start', sessionId, input),
     abort: (sessionId, runId) => ipcRenderer.invoke('swarm:abort', sessionId, runId),
+    stopAgent: (sessionId, runId, slug) => ipcRenderer.invoke('swarm:stop-agent', sessionId, runId, slug),
+    getMessages: (sessionId, runId, slug) => ipcRenderer.invoke('swarm:get-messages', sessionId, runId, slug),
     getRunState: (sessionId, runId) => ipcRenderer.invoke('swarm:get-run-state', sessionId, runId),
     listRuns: (sessionId, cursor, limit) => ipcRenderer.invoke('swarm:list-runs', sessionId, cursor, limit),
     getCatalog: (sessionId) => ipcRenderer.invoke('swarm:get-catalog', sessionId),
@@ -331,6 +340,11 @@ const api: LionClawAPI = {
       },
       value: string,
     ) => ipcRenderer.invoke('vault:register-and-set', entry, value),
+  },
+  jev: {
+    check: () => ipcRenderer.invoke('jev:check'),
+    fileToolsStats: () => ipcRenderer.invoke('jev:file-tools-stats'),
+    fileToolsRoots: () => ipcRenderer.invoke('jev:file-tools-roots'),
   },
   higgsfield: {
     authStatus: () => ipcRenderer.invoke('higgsfield:auth-status'),
@@ -1072,6 +1086,26 @@ const api: LionClawAPI = {
       ipcRenderer.on('repo-graph:on-status', handler);
       return () => {
         ipcRenderer.removeListener('repo-graph:on-status', handler);
+      };
+    },
+  },
+  archmap: {
+    status: (repositoryId: string) => ipcRenderer.invoke('archmap:status', repositoryId),
+    estimate: (request: ArchmapEstimateRequest) => ipcRenderer.invoke('archmap:estimate', request),
+    cancel: (repositoryId: string) => ipcRenderer.invoke('archmap:cancel', repositoryId),
+    build: (request: ArchmapBuildRequest) => ipcRenderer.invoke('archmap:build', request),
+    update: (request: ArchmapUpdateRequest) => ipcRenderer.invoke('archmap:update', request),
+    graph: (repositoryId: string) => ipcRenderer.invoke('archmap:graph', repositoryId),
+    meta: (repositoryId: string) => ipcRenderer.invoke('archmap:meta', repositoryId),
+    file: (request: ArchmapFileRequest) => ipcRenderer.invoke('archmap:file', request),
+    runs: (repositoryId: string) => ipcRenderer.invoke('archmap:runs', repositoryId),
+    freshness: (repositoryId: string) => ipcRenderer.invoke('archmap:freshness', repositoryId),
+    runtimeCapabilities: () => ipcRenderer.invoke('archmap:runtime-capabilities'),
+    onStatus: (cb: (event: ArchmapStatusEvent) => void): (() => void) => {
+      const handler = (_: Electron.IpcRendererEvent, event: ArchmapStatusEvent) => cb(event);
+      ipcRenderer.on('archmap:on-status', handler);
+      return () => {
+        ipcRenderer.removeListener('archmap:on-status', handler);
       };
     },
   },

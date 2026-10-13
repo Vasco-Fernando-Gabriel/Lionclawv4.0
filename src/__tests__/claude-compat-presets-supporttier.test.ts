@@ -11,7 +11,7 @@ describe('CLAUDE_COMPAT_PRESETS - SPEC-006 supportTier', () => {
   });
 
   it('minimax has exactly 5 models', () => {
-    expect(minimax?.models.length).toBe(5);
+    expect(minimax?.models.length).toBe(6);
   });
 
   it('MiniMax-M3 has supportTier = "official"', () => {

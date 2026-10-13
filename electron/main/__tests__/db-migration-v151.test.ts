@@ -97,7 +97,7 @@ describe('migration v151 - writers do dynamic-workflow (maxTurns + allowedComman
     expect(dynamicWorkflowDocWriter.allowedCommands).toEqual([]);
   });
 
-  it('LATEST_SCHEMA_VERSION = 150', () => {
-    expect(LATEST_SCHEMA_VERSION).toBe(150);
+  it('LATEST_SCHEMA_VERSION ja passou da V151', () => {
+    expect(LATEST_SCHEMA_VERSION).toBeGreaterThanOrEqual(151);
   });
 });

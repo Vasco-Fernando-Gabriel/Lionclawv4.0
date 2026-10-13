@@ -9,7 +9,7 @@ export interface QueuedMessage {
   message: string;
   options: {
     sessionId?: string;
-    swarmDelivery?: { runId: string; terminalRevision: number; claimId: string };
+    swarmDelivery?: import('../../src/types/swarm').SwarmDeliveryRef;
     agentId?: string;
     silent?: boolean;
     displayMessage?: string;

@@ -9,3 +9,9 @@ resources/
 mcp-servers/*/dist/
 **/__snapshots__/
 package-lock.json
+electron/main/archmap/core/
+electron/main/archmap/__tests__/core/
+electron/main/archmap/__tests__/fixtures/
+src/archmap/dashboard/
+src/archmap/core/
+src/archmap/__tests__/fixtures/

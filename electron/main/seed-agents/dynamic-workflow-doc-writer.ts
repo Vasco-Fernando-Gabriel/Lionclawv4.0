@@ -8,7 +8,7 @@ export const dynamicWorkflowDocWriter: Omit<AgentConfig, 'sortOrder'> = {
   name: 'Dynamic Workflow Doc Writer',
   description:
     'Writer de documentos/specs do workflow dinamico: escreve e edita arquivos markdown/spec na worktree do run, seguindo o briefing do node. Nao toca codigo-fonte; sem shell.',
-  model: 'claude-sonnet-4-6',
+  model: 'claude-sonnet-5-5',
   effort: 'high' as const,
   thinking: 'adaptive' as const,
   maxTurns: 100,

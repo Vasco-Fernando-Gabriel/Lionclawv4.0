@@ -8,7 +8,7 @@ export const specValidatorEnrich: Omit<AgentConfig, 'sortOrder'> = {
   name: 'SPEC Validator',
   description:
     'Valida consistencia tecnica da SPEC contra o codigo existente e o PRD. Reporta erros, inconsistencias e sugestoes.',
-  model: 'claude-sonnet-4-6',
+  model: 'claude-sonnet-5-5',
   effort: 'high' as const,
   thinking: 'enabled' as const,
   thinkingBudget: 12000,

@@ -8,24 +8,26 @@ directories:
 
 files:
   - dist/**/*
-  - "!dist/renderer/src/**"
+  - '!dist/renderer/src/**'
   - node_modules/**/*
   - package.json
+  - electron/main/archmap/core/grammars/**/*
+  - electron/main/archmap/prompts/context/**/*.md
 
 extraResources:
   - from: .lionclaw
     to: .lionclaw
     filter:
-      - "**/*"
-      - "!data/**"
+      - '**/*'
+      - '!data/**'
   - from: resources/cursor-sidecar
     to: cursor-sidecar
     filter:
-      - "**/*"
+      - '**/*'
   - from: resources/cursor-sidecar/node_modules
     to: cursor-sidecar/node_modules
     filter:
-      - "**/*"
+      - '**/*'
 
 mac:
   icon: resources/icon.icns
@@ -67,12 +69,16 @@ nsis:
 asar: true
 
 asarUnpack:
-  - "**/@anthropic-ai/claude-agent-sdk-*/**"
-  - "**/*.node"
-  - "**/better-sqlite3/**"
-  - "**/keytar/**"
-  - "**/sqlite-vec/**"
-  - "**/@cursor/sdk-*/**"
+  - '**/@anthropic-ai/claude-agent-sdk-*/**'
+  - '**/*.node'
+  - '**/better-sqlite3/**'
+  - '**/keytar/**'
+  - '**/sqlite-vec/**'
+  - '**/@cursor/sdk-*/**'
+  - '**/electron/main/archmap/core/grammars/**'
+  - '**/web-tree-sitter/web-tree-sitter.wasm'
+  - 'dist/main/archmap-worker.js'
+  - 'dist/main/chunks/**'
 
 electronDownload:
   cache: .cache/electron

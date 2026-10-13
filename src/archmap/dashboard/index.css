@@ -1,0 +1,308 @@
+/* Fork do index.css do dashboard: sem o import do tailwindcss (o Tailwind e o do app, ver
+   theme.css) e com TODA regra escopada em `.archmap-root`, para o tema do mapa nao vazar para o
+   resto do LionClaw nem o tema do app quebrar o mapa. As variaveis de tema sao definidas aqui no
+   proprio `.archmap-root` (antes: `@theme`, emitido em `:root`) e sobrescritas pelo ThemeProvider
+   no mesmo elemento. */
+
+.archmap-root {
+  --color-root: #0a0a0a;
+  --color-surface: #111111;
+  --color-elevated: #1a1a1a;
+  --color-panel: #141414;
+
+  --color-accent: #d4a574;
+  --color-accent-dim: #c9a96e;
+  --color-accent-bright: #e8c49a;
+
+  --color-text-primary: #f5f0eb;
+  --color-text-secondary: #a39787;
+  --color-text-muted: #6b5f53;
+
+  --color-border-subtle: rgba(212, 165, 116, 0.12);
+  --color-border-medium: rgba(212, 165, 116, 0.25);
+
+  --color-node-file: #4a7c9b;
+  --color-node-function: #5a9e6f;
+  --color-node-class: #8b6fb0;
+  --color-node-module: #c9a06c;
+  --color-node-concept: #b07a8a;
+  --color-node-config: #5eead4;
+  --color-node-document: #7dd3fc;
+  --color-node-service: #a78bfa;
+  --color-node-table: #6ee7b7;
+  --color-node-endpoint: #fdba74;
+  --color-node-pipeline: #fda4af;
+  --color-node-schema: #fcd34d;
+  --color-node-resource: #a5b4fc;
+
+  --color-node-article: #d4a574;
+  --color-node-entity: #7ba4c9;
+  --color-node-topic: #c9b06c;
+  --color-node-claim: #6fb07a;
+  --color-node-source: #8a8a8a;
+
+  --color-diff-changed: #e05252;
+  --color-diff-affected: #d4a030;
+  --color-diff-changed-dim: rgba(224, 82, 82, 0.25);
+  --color-diff-affected-dim: rgba(212, 160, 48, 0.25);
+
+  --glass-bg: rgba(20, 20, 20, 0.8);
+  --glass-bg-heavy: rgba(20, 20, 20, 0.95);
+  --glass-border: rgba(212, 165, 116, 0.1);
+  --glass-border-heavy: rgba(212, 165, 116, 0.15);
+
+  --scrollbar-thumb: rgba(212, 165, 116, 0.2);
+  --scrollbar-thumb-hover: rgba(212, 165, 116, 0.35);
+
+  --glow-accent: rgba(212, 165, 116, 0.15);
+  --glow-accent-strong: rgba(212, 165, 116, 0.4);
+  --glow-accent-pulse: rgba(212, 165, 116, 0.6);
+
+  --color-edge: rgba(212, 165, 116, 0.3);
+  --color-edge-dim: rgba(212, 165, 116, 0.08);
+  --color-edge-dot: rgba(212, 165, 116, 0.15);
+
+  --color-accent-overlay-bg: rgba(212, 165, 116, 0.05);
+  --color-accent-overlay-border: rgba(212, 165, 116, 0.25);
+
+  --kbd-bg: rgba(212, 165, 116, 0.1);
+
+  --font-serif: 'DM Serif Display', Georgia, serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-heading: var(--font-serif);
+
+  font-family: var(--font-sans);
+  background-color: var(--color-root);
+  color: var(--color-text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  user-select: text;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.archmap-root .font-heading { font-family: var(--font-heading); }
+
+.archmap-root .architecture-card {
+  background: color-mix(in srgb, var(--color-elevated) 94%, var(--color-text-primary));
+  border: 1px solid color-mix(in srgb, var(--color-text-primary) 28%, var(--color-elevated));
+  box-shadow: 0 3px 10px #0003;
+  font-family: var(--font-sans);
+}
+.archmap-root .architecture-card:hover { border-color: var(--color-accent); }
+.archmap-root .architecture-card-title { color: var(--color-text-primary); font-family: var(--font-sans); }
+.archmap-root .architecture-card-summary {
+  color: color-mix(in srgb, var(--color-text-primary) 78%, var(--color-text-secondary));
+}
+.archmap-root .architecture-viewport-controls {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--color-border-medium);
+  border-radius: 8px;
+  background: var(--color-surface);
+  box-shadow: 0 2px 8px #0003;
+}
+.archmap-root .architecture-viewport-controls button {
+  padding: 7px 10px;
+  border-radius: 5px;
+  color: var(--color-text-primary);
+  font: 500 12px var(--font-sans);
+  cursor: pointer;
+}
+.archmap-root .architecture-viewport-controls button:hover { background: var(--color-elevated); }
+.archmap-root .architecture-viewport-controls button:focus-visible { outline: 2px solid var(--color-accent); }
+
+.archmap-root .architecture-graph .react-flow__edge .react-flow__edge-path {
+  stroke-dasharray: 7 13;
+  stroke-linecap: round;
+  animation: archmap-current 2.4s linear infinite, archmap-breathe 4.8s ease-in-out infinite;
+}
+.archmap-root .architecture-graph .react-flow__edge:nth-child(3n) .react-flow__edge-path {
+  animation-delay: -.8s, -1.6s;
+}
+.archmap-root .architecture-graph .react-flow__edge:nth-child(3n + 1) .react-flow__edge-path {
+  animation-delay: -1.6s, -3.2s;
+}
+.archmap-root .architecture-graph .react-flow__edge.animated .react-flow__edge-path {
+  animation-duration: 1.2s, 2.4s;
+}
+.archmap-root .architecture-graph .architecture-edge-muted .react-flow__edge-path {
+  animation: none;
+  stroke-dasharray: none;
+}
+.archmap-root .architecture-graph.motion-paused .react-flow__edge .react-flow__edge-path {
+  animation: none;
+}
+.archmap-root .architecture-motion-toggle {
+  border: 1px solid #713510;
+  border-radius: 6px;
+  background: #101010;
+  color: #ff8a36;
+  padding: 7px 12px;
+  font: 11px var(--font-mono);
+  cursor: pointer;
+}
+.archmap-root .architecture-motion-toggle:focus-visible { outline: 2px solid #ff6a00; outline-offset: 3px; }
+.archmap-root .architecture-motion-toggle:disabled { color: #b8b8b8; cursor: default; }
+@keyframes archmap-current { to { stroke-dashoffset: -40; } }
+@keyframes archmap-breathe { 0%, 100% { stroke-opacity: .65; } 50% { stroke-opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .archmap-root .architecture-graph .react-flow__edge .react-flow__edge-path { animation: none !important; }
+}
+@media print {
+  .archmap-root .architecture-graph .react-flow__edge .react-flow__edge-path { animation: none !important; }
+  .archmap-root .architecture-motion-toggle { display: none; }
+}
+
+.archmap-root .noise-overlay::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.03;
+  pointer-events: none;
+  z-index: 9999;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+}
+
+.archmap-root .glass {
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.archmap-root .glass-heavy {
+  background: var(--glass-bg-heavy);
+  border: 1px solid var(--glass-border-heavy);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.archmap-root .kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.75rem;
+  height: 1.75rem;
+  padding: 0 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-accent);
+  background: var(--kbd-bg);
+  border: 1px solid var(--color-border-medium);
+  border-radius: 0.25rem;
+  box-shadow: 0 1px 0 var(--scrollbar-thumb);
+}
+
+@keyframes archmap-fade-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes archmap-slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes archmap-accent-pulse {
+  0%, 100% {
+    box-shadow: 0 0 8px var(--glow-accent-strong);
+  }
+  50% {
+    box-shadow: 0 0 20px var(--glow-accent-pulse);
+  }
+}
+
+.archmap-root .animate-fade-slide-in {
+  animation: archmap-fade-slide-in 0.3s ease-out forwards;
+}
+
+.archmap-root .animate-slide-up {
+  animation: archmap-slide-up 0.3s ease-out forwards;
+}
+
+.archmap-root .animate-accent-pulse {
+  animation: archmap-accent-pulse 2s ease-in-out infinite;
+}
+
+.archmap-root .node-glow {
+  box-shadow: 0 0 20px var(--glow-accent);
+}
+
+.archmap-root .diff-changed-glow {
+  box-shadow: 0 0 16px rgba(224, 82, 82, 0.25);
+}
+
+.archmap-root .diff-affected-glow {
+  box-shadow: 0 0 12px rgba(212, 160, 48, 0.2);
+}
+
+.archmap-root .diff-faded {
+  opacity: 0.25;
+  filter: saturate(0.3);
+  transition: opacity 0.3s ease, filter 0.3s ease;
+}
+
+.archmap-root .scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.archmap-root .scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.archmap-root ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.archmap-root ::-webkit-scrollbar-track {
+  background: transparent;
+}
+.archmap-root ::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 4px;
+}
+.archmap-root ::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+.archmap-root .react-flow__background {
+  background-color: var(--color-root) !important;
+}
+
+.archmap-root[data-theme="light"] {
+  color-scheme: light;
+}
+
+.archmap-root[data-theme="light"] .diff-faded {
+  opacity: 0.35;
+}
+
+.archmap-root[data-theme="light"] ::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.archmap-root[data-theme="light"] .warning-banner {
+  background: rgba(180, 130, 30, 0.1);
+  border-color: rgba(180, 130, 30, 0.3);
+  color: #92600a;
+}
+
+.archmap-root[data-theme="dark"] {
+  color-scheme: dark;
+}

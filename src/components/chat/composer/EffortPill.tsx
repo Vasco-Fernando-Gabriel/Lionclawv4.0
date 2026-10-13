@@ -34,6 +34,7 @@ export interface EffortPillProps {
   contextWindow?: number;
   disabled?: boolean;
   disabledReason?: string;
+  placement?: 'top' | 'bottom';
   onChange: (effort: string) => void;
 }
 
@@ -44,6 +45,7 @@ export function EffortPill({
   contextWindow,
   disabled,
   disabledReason,
+  placement = 'top',
   onChange,
 }: EffortPillProps) {
   const [open, setOpen] = useState(false);
@@ -109,7 +111,8 @@ export function EffortPill({
         <div
           role="menu"
           aria-label="Reasoning effort"
-          className="absolute bottom-[calc(100%+6px)] right-0 z-50 flex w-[200px] flex-col gap-px rounded-lg border border-zinc-800 bg-zinc-900 p-1 text-zinc-100 shadow-xl"
+          data-placement={placement}
+          className={`absolute ${placement === 'bottom' ? 'top-[calc(100%+6px)]' : 'bottom-[calc(100%+6px)]'} right-0 z-50 flex w-[200px] flex-col gap-px rounded-lg border border-zinc-800 bg-zinc-900 p-1 text-zinc-100 shadow-xl`}
         >
           <div className="px-2 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-wide text-zinc-500">
             Reasoning

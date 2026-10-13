@@ -21,6 +21,7 @@ export interface ProviderModelPickerProps {
   disabled?: boolean;
   disabledReason?: string;
   align?: 'left' | 'right';
+  placement?: 'top' | 'bottom';
   onOpen?: () => void;
   onRefresh: () => void;
   onSelect: (model: PickerModel) => void;
@@ -40,6 +41,7 @@ export function ProviderModelPicker({
   disabled,
   disabledReason,
   align = 'right',
+  placement = 'top',
   onOpen,
   onRefresh,
   onSelect,
@@ -133,7 +135,11 @@ export function ProviderModelPicker({
       </button>
 
       {open && (
-        <div className={`absolute bottom-[calc(100%+6px)] z-50 ${align === 'right' ? 'right-0' : 'left-0'}`}>
+        <div
+          data-testid="model-picker-popover"
+          data-placement={placement}
+          className={`absolute z-50 ${placement === 'bottom' ? 'top-[calc(100%+6px)]' : 'bottom-[calc(100%+6px)]'} ${align === 'right' ? 'right-0' : 'left-0'}`}
+        >
           <ModelPickerContent
             ref={contentRef}
             selection={selection}

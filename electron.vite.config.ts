@@ -20,6 +20,7 @@ export default defineConfig({
             __dirname,
             'electron/main/dynamic-workflows/workflow-sandbox-child.ts',
           ),
+          'archmap-worker': path.resolve(__dirname, 'electron/main/archmap/pipeline/worker.ts'),
         },
         external: ['@anthropic-ai/claude-agent-sdk', '@anthropic-ai/sdk'],
       },

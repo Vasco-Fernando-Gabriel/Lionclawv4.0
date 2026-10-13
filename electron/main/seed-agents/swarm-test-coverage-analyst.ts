@@ -1,20 +1,20 @@
 import type { AgentConfig } from '../../../src/types';
 import { SWARM_CONTRACT } from './_shared/swarm-contract';
-import { dynamicWorkflowCoderGlm } from './dynamic-workflow-coder-glm';
+import { CLAUDE_DEFAULT_MODEL } from '../../../src/constants/claude-models';
 
 export const swarmTestCoverageAnalyst: Omit<AgentConfig, 'sortOrder'> = {
   id: 'swarm-test-coverage-analyst',
   name: 'Swarm Test Coverage Analyst',
   description: 'Você é um analista de cobertura e qualidade de testes.',
-  model: dynamicWorkflowCoderGlm.model,
-  runtime: 'zai',
+  model: CLAUDE_DEFAULT_MODEL,
+  runtime: 'cloud',
   squad: 'swarm',
   effort: 'high',
   thinking: 'adaptive',
   maxTurns: 80,
   maxToolRounds: 50,
   allowedTools: ['Read', 'Grep', 'Glob', 'Bash', 'Write'],
-  mcpServers: [],
+  mcpServers: ['repo-graph'],
   skills: [],
   isActive: true,
   systemPrompt:

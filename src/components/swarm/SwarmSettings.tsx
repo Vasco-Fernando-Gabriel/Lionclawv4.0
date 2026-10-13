@@ -24,16 +24,17 @@ export function SwarmSettings() {
   return (
     <section className="space-y-3 rounded-lg border border-zinc-800 p-4">
       <h2 className="text-sm font-medium text-zinc-200">Swarm</h2>
-      <p className="text-xs text-zinc-500">Análises paralelas. Tentativas e timeouts valem para novas execuções.</p>
+      <p className="text-xs text-zinc-500">Analises paralelas. Tentativas e timeouts valem para novas execucoes.</p>
       {value && (
         <>
           <div className="grid grid-cols-2 gap-3">
             {(
               [
-                ['concurrencyCap', 'Concorrência máxima', 1],
+                ['concurrencyCap', 'Concorrencia maxima', 1],
                 ['maxAttempts', 'Tentativas por item', 1],
                 ['idleTimeoutMs', 'Sem atividade (minutos)', 60000],
                 ['hardTimeoutMs', 'Teto por item (minutos)', 60000],
+                ['openWindowMs', 'Janela de conducao apos o fim (minutos)', 60000],
               ] as const
             ).map(([key, label, unit]) => (
               <label key={key} className="text-xs text-zinc-400">

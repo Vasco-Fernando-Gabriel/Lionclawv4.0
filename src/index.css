@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
+@import "./archmap/dashboard/theme.css";
 
 :root {
   --color-brand: #f59e0b;

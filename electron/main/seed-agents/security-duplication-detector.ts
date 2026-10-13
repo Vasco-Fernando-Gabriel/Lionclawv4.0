@@ -7,7 +7,7 @@ export const securityDuplicationDetector: Omit<AgentConfig, 'sortOrder'> = {
   id: DUPLICATION_DETECTOR_ID,
   name: 'Duplication Detector',
   description: 'Identifica codigo duplicado, logica repetida, DRY violations.',
-  model: 'claude-sonnet-4-6',
+  model: 'claude-sonnet-5-5',
   effort: 'medium' as const,
   thinking: 'enabled' as const,
   thinkingBudget: 6000,

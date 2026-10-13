@@ -5,6 +5,7 @@ import {
   resolveNewChatAction,
   staleLaneDays,
   normalizeStaleLaneDays,
+  pickFirstLane,
   pickMostRecentLane,
   laneErrorTitle,
 } from '@/lib/lanes';
@@ -109,7 +110,17 @@ describe('5.9: aviso de lane parada', () => {
   });
 });
 
-describe('10.1: selecao no boot pela lane com lastUserMessageAt mais recente', () => {
+describe('boot abre sempre na Lane 1', () => {
+  it('escolhe a lane de menor badge, mesmo que outra tenha atividade mais recente', () => {
+    const older = lane({ id: 'a', laneBadge: 1, lastUserMessageAt: '2026-09-01T00:00:00.000Z' });
+    const newer = lane({ id: 'b', laneBadge: 2, lastUserMessageAt: '2026-09-07T00:00:00.000Z' });
+    expect(pickFirstLane([newer, older])?.id).toBe('a');
+    expect(pickFirstLane([newer])?.id).toBe('b');
+    expect(pickFirstLane([])).toBeNull();
+  });
+});
+
+describe('fallback de envio sem lane selecionada: lane com lastUserMessageAt mais recente', () => {
   it('escolhe a lane com ultima mensagem humana mais recente', () => {
     const older = lane({ id: 'a', laneBadge: 1, lastUserMessageAt: '2026-09-01T00:00:00.000Z' });
     const newer = lane({ id: 'b', laneBadge: 2, lastUserMessageAt: '2026-09-07T00:00:00.000Z' });

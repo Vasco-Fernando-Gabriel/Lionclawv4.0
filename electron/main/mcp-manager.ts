@@ -967,5 +967,6 @@ function mapServer(row: Record<string, unknown>): MCPServerConfig {
     visibleTo,
     indexMode,
     status: getServerStatus(id),
+    ...(serverErrorStates.has(id) ? { error: serverErrorStates.get(id)?.error } : {}),
   };
 }

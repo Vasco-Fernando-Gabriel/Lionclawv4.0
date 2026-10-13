@@ -1,9 +1,10 @@
 import { persistSwarmChatMessageOnce } from '../db';
+import type { SwarmDeliveryRef } from '../../../src/types/swarm';
 
 export interface SwarmChatTarget {
   kind: 'chat';
   sessionId: string;
-  swarmDelivery: { runId: string; terminalRevision: number; claimId: string };
+  swarmDelivery: SwarmDeliveryRef;
   messageKind: 'event' | 'response';
   serializedMetadata?: string;
 }
@@ -12,9 +13,12 @@ export function persistSwarmChatMessage(target: SwarmChatTarget, role: 'system' 
     throw new Error('Papel incompatível com a mensagem Swarm.');
   }
   persistSwarmChatMessageOnce({
-    ...target.swarmDelivery,
+    runId: target.swarmDelivery.runId,
+    kind: target.swarmDelivery.kind,
+    revision: target.swarmDelivery.revision,
+    claimId: target.swarmDelivery.claimId,
     sessionId: target.sessionId,
-    kind: target.messageKind,
+    messageKind: target.messageKind,
     content,
     metadata: target.serializedMetadata,
   });

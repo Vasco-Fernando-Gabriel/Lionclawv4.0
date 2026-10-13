@@ -10,7 +10,7 @@ export const architectureTargetTriage: Omit<AgentConfig, 'sortOrder'> = {
   name: 'Architecture Target Triage',
   description:
     'Fase 2 do pipeline architecture-review: le o Map e propoe candidatos numerados de aprofundamento. Recomenda 1 e aguarda escolha do usuario.',
-  model: 'claude-sonnet-4-6',
+  model: 'claude-sonnet-5-5',
   effort: 'high' as const,
   thinking: 'enabled' as const,
   thinkingBudget: 4000,

@@ -5,6 +5,7 @@ import { emitIPC } from '../pipeline-shared/ipc-emitter';
 import { CodexAuthError, CodexUnavailableError } from '../codex-runtime/errors';
 import type { CodexResponse } from '../codex-runtime/types';
 import { resolveCodexSessionForRun } from './codex-session-factory';
+import { swarmCodexOwnerId } from '../codex-runtime/swarm-session-guard';
 
 import { getCodexSessionSignature, getCodexUsageSemantics, settleCodexBilledUsage } from './codex-session-signature';
 import {
@@ -194,6 +195,7 @@ async function run(req: AgentExecutionRequest, config: AgentQueryConfig): Promis
             disableGlobalMcp: true,
             swarmFindingsMcpArgs: req.swarmFindingsMcpArgs,
             swarmFindingsMcpEnv: req.swarmFindingsMcpEnv,
+            codexConfigOverrides: req.codexConfigOverrides,
           }
         : {}),
       mcpProfile: req.onCodexSessionCreated ? 'pipeline' : 'agent-scoped',
@@ -209,6 +211,9 @@ async function run(req: AgentExecutionRequest, config: AgentQueryConfig): Promis
         externallyManagedWatchdog: Boolean(req.swarmLifecycle),
         swarmOwnerDirectory: req.swarmOwnerDirectory,
         projectId: req.projectId,
+        ...(req.executionAgent && req.sessionScope
+          ? { ownerKind: 'swarm' as const, ownerId: swarmCodexOwnerId(req.sessionScope) }
+          : {}),
       },
     });
     req.onCodexSessionCreated?.(session);

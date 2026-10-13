@@ -5,7 +5,7 @@ import { applyMigrationV158, __V158_INTERNAL } from '../db-migrations/v158-gpt6-
 import { applyMigrationV159, __V159_INTERNAL } from '../db-migrations/v159-subagents-follow-opus-5-5';
 import { LATEST_SCHEMA_VERSION } from '../db-migration-safety';
 import { CLAUDE_DEFAULT_MODEL } from '../../../src/constants/claude-models';
-import { CODEX_DEFAULT_MODEL } from '../../../src/constants/codex-models';
+import { __V169_INTERNAL } from '../db-migrations/v169-codex-gpt-6-1-sol';
 import { aiEngineer } from '../seed-agents/ai-engineer';
 import { bugRootCauseAnalyst } from '../seed-agents/bug-root-cause-analyst';
 import { dynamicWorkflowCoderCodex } from '../seed-agents/dynamic-workflow-coder-codex';
@@ -115,10 +115,11 @@ describe('migration v158 - GPT-6 Sol como default do codex', () => {
     expect(modelOf(db, SEED_ID)).toBe('gpt-6-luna');
   });
 
-  it('o resultado bate com o seed e com CODEX_DEFAULT_MODEL', () => {
-    expect(__V158_INTERNAL.NEW_MODEL).toBe(CODEX_DEFAULT_MODEL);
-    expect(dynamicWorkflowCoderCodex.model).toBe(__V158_INTERNAL.NEW_MODEL);
-    expect(dynamicWorkflowCoderCodex.codexConfig?.model).toBe(__V158_INTERNAL.NEW_MODEL);
+  it('o resultado da V158 (gpt-6-sol) e o ponto de partida da V169, que leva o seed ao default atual', () => {
+    expect(__V158_INTERNAL.NEW_MODEL).toBe('gpt-6-sol');
+    expect(__V169_INTERNAL.PREVIOUS_SEED_MODEL).toBe(__V158_INTERNAL.NEW_MODEL);
+    expect(dynamicWorkflowCoderCodex.model).toBe(__V169_INTERNAL.NEW_MODEL);
+    expect(dynamicWorkflowCoderCodex.codexConfig?.model).toBe(__V169_INTERNAL.NEW_MODEL);
   });
 
   it('LATEST_SCHEMA_VERSION cobre as duas migrations', () => {

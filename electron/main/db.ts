@@ -6,6 +6,16 @@ import { applyMigrationV156 } from './db-migrations/v156-drive-session-column';
 import { applyMigrationV157 } from './db-migrations/v157-opus-5-5-orchestrator-default';
 import { applyMigrationV158 } from './db-migrations/v158-gpt6-sol-codex-default';
 import { applyMigrationV159 } from './db-migrations/v159-subagents-follow-opus-5-5';
+import { applyMigrationV160 } from './db-migrations/v160-jev-shadow-settings';
+import { applyMigrationV161 } from './db-migrations/v161-jev-file-tools-settings';
+import { applyMigrationV162 } from './db-migrations/v162-archmap';
+import { applyMigrationV163 } from './db-migrations/v163-archmap-jev-triage';
+import { applyMigrationV164 } from './db-migrations/v164-swarm-seeds-claude';
+import { applyMigrationV165 } from './db-migrations/v165-swarm-generic-roles';
+import { applyMigrationV166 } from './db-migrations/v166-swarm-delivery-queue';
+import { applyMigrationV167 } from './db-migrations/v167-swarm-seeds-repo-graph';
+import { applyMigrationV168 } from './db-migrations/v168-seeds-sonnet-haiku-5-5';
+import { applyMigrationV169 } from './db-migrations/v169-codex-gpt-6-1-sol';
 import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
@@ -1523,6 +1533,85 @@ function runMigrations(hooks?: RunMigrationsHooks): void {
     db.prepare('INSERT INTO schema_version (version) VALUES (?)').run(159);
     logger.info(
       'Applied migration v159 - sub-agentes seguem o orquestrador: agents cloud em claude-opus-5 sobem para claude-opus-5-5 quando o orquestrador esta no Opus 5.5',
+    );
+  }
+
+  if (currentVersion < 160) {
+    applyMigrationV160(db);
+    db.prepare('INSERT INTO schema_version (version) VALUES (?)').run(160);
+    logger.info('Applied migration v160 - settings do modo sombra do Jev (jev_shadow_enabled=false, jev_model)');
+  }
+
+  if (currentVersion < 161) {
+    applyMigrationV161(db);
+    db.prepare('INSERT INTO schema_version (version) VALUES (?)').run(161);
+    logger.info(
+      'Applied migration v161 - settings do Jev para arquivos (jev_file_tools_enabled=false, jev_file_tools_roots)',
+    );
+  }
+
+  if (currentVersion < 162) {
+    applyMigrationV162(db);
+    db.prepare('INSERT INTO schema_version (version) VALUES (?)').run(162);
+    logger.info(
+      'Applied migration v162 - Mapa de arquitetura: tabela archmap_runs, colunas archmap_* em local_repositories e settings archmap_enabled/archmap_max_parallel_repos/archmap_batch_parallelism',
+    );
+  }
+
+  if (currentVersion < 163) {
+    applyMigrationV163(db);
+    db.prepare('INSERT INTO schema_version (version) VALUES (?)').run(163);
+    logger.info(
+      'Applied migration v163 - Mapa de arquitetura: triagem Jev (colunas jev_asked/jev_fallback_reason em archmap_runs e settings archmap_jev_triage_enabled=false/archmap_jev_keep_threshold=0.8)',
+    );
+  }
+
+  if (currentVersion < 164) {
+    applyMigrationV164(db);
+    db.prepare('INSERT INTO schema_version (version) VALUES (?)').run(164);
+    logger.info(
+      'Applied migration v164 - agentes de seed do Swarm nascem em Claude Opus 5.5: UPDATE direcionado nos 11 seeds (squad swarm) ainda nos defaults antigos (codex gpt-6-sol/gpt-6-astra, kimi, zai glm-4.7, cloud claude-opus-4-7) para runtime cloud + claude-opus-5-5 com codex_config limpo; runtime ou modelo customizado intocado',
+    );
+  }
+
+  if (currentVersion < 165) {
+    applyMigrationV165(db);
+    db.prepare('INSERT INTO schema_version (version) VALUES (?)').run(165);
+    logger.info(
+      'Applied migration v165 - Swarm v2: papeis genericos (swarm-explorer, swarm-auditor, swarm-doc-validator, swarm-researcher) inseridos com INSERT OR IGNORE em cloud + claude-opus-5-5; agentes existentes intocados',
+    );
+  }
+
+  if (currentVersion < 166) {
+    applyMigrationV166(db);
+    db.prepare('INSERT INTO schema_version (version) VALUES (?)').run(166);
+    logger.info(
+      'Applied migration v166 - Swarm v2: fila swarm_delivery_outbox com kind/slug/attempt_id/revision (PK run_id,kind,revision), estados reserved-by-wait e consumed-by-turn, run_status livre; receipts por (run_id,delivery_kind,revision,kind); linhas antigas migradas como terminal; setting swarm_open_window_ms',
+    );
+  }
+
+  if (currentVersion < 167) {
+    const { updated } = applyMigrationV167(db);
+    db.prepare('INSERT INTO schema_version (version) VALUES (?)').run(167);
+    logger.info(
+      { updated },
+      'Applied migration v167 - Swarm v2: repo-graph marcado (mcp_servers = ["repo-graph"]) nos 15 seeds do Swarm que ainda nao tinham nenhum MCP marcado; agentes ja configurados pelo usuario intocados',
+    );
+  }
+
+  if (currentVersion < 168) {
+    applyMigrationV168(db);
+    db.prepare('INSERT INTO schema_version (version) VALUES (?)').run(168);
+    logger.info(
+      'Applied migration v168 - seeds placeholder em Claude Sonnet 5.5 e Haiku 5.5: UPDATE direcionado nos 49 seeds cloud ainda em claude-sonnet-4-6 e nos 8 validadores ainda em claude-haiku-4-5-20251001; agentes alterados pelo usuario ou em outro runtime intocados',
+    );
+  }
+
+  if (currentVersion < 169) {
+    applyMigrationV169(db);
+    db.prepare('INSERT INTO schema_version (version) VALUES (?)').run(169);
+    logger.info(
+      'Applied migration v169 - GPT-6.1 Sol como default do Codex: seed coder-codex gpt-6-sol -> gpt-6.1-sol; agentes codex em modelo retirado do Codex (gpt-5.5, gpt-5.4, gpt-5.4-mini, gpt-5.3-codex-spark) e orchestrator_model nesses modelos com orchestrator_runtime codex-sdk migrados para gpt-6.1-sol',
     );
   }
 }
@@ -6319,6 +6408,25 @@ export function migrateLegacyHarnessSprintsJsonPaths(): void {
   }
 }
 
+const projectPathListeners = new Set<() => void>();
+
+export function onProjectPathsChanged(listener: () => void): () => void {
+  projectPathListeners.add(listener);
+  return () => {
+    projectPathListeners.delete(listener);
+  };
+}
+
+function emitProjectPathsChanged(): void {
+  for (const listener of projectPathListeners) {
+    try {
+      listener();
+    } catch (err) {
+      logger.warn({ err }, 'listener de project paths falhou');
+    }
+  }
+}
+
 export function insertHarnessProject(data: {
   name: string;
   description?: string;
@@ -6349,6 +6457,7 @@ export function insertHarnessProject(data: {
   const id = db.prepare('SELECT id FROM harness_projects WHERE rowid = ?').get(result.lastInsertRowid) as {
     id: string;
   };
+  emitProjectPathsChanged();
   return getHarnessProject(id.id)!;
 }
 
@@ -6450,6 +6559,7 @@ export function updateHarnessProject(
     fields.push(`updated_at = datetime('now')`);
     values.push(id);
     db.prepare(`UPDATE harness_projects SET ${fields.join(', ')} WHERE id = ?`).run(...values);
+    if (updates.projectPath !== undefined) emitProjectPathsChanged();
   }
   return getHarnessProject(id)!;
 }
@@ -6710,6 +6820,7 @@ export function deleteHarnessProject(id: string): void {
     db.prepare('DELETE FROM harness_projects WHERE id = ?').run(id);
   });
   deleteAll();
+  emitProjectPathsChanged();
   logger.info({ projectId: id }, 'Deleted harness project and related data (files on disk preserved)');
 }
 
@@ -10177,6 +10288,7 @@ export function createDynamicWorkflowDefinition(
     input.builderModel ?? null,
     input.status,
   );
+  emitProjectPathsChanged();
   return getDynamicWorkflowDefinition(input.id) as DynamicWorkflowDefinition;
 }
 
@@ -11787,84 +11899,131 @@ export function listSwarmRunIndex(
   return { runs, nextCursor: rows.length > limit ? runs[runs.length - 1].runId : null };
 }
 
+export type SwarmDeliveryKind = 'terminal' | 'question';
+export type SwarmDeliveryState =
+  'pending' | 'reserved-by-wait' | 'claimed' | 'consumed-by-turn' | 'delivered' | 'undeliverable';
 export interface SwarmDelivery {
   runId: string;
-  terminalRevision: number;
+  kind: SwarmDeliveryKind;
+  revision: number;
+  slug: string | null;
+  attemptId: string | null;
   sessionId: string;
   envelope: string;
-  runStatus: Extract<SwarmRunStatus, 'done' | 'partial' | 'failed' | 'aborted'>;
-  state: 'pending' | 'claimed' | 'delivered' | 'undeliverable';
+  runStatus: SwarmRunStatus;
+  state: SwarmDeliveryState;
   claimId: string | null;
+  reservedBy: string | null;
+  leaseUntil: number | null;
+  turnId: string | null;
   error: string | null;
 }
 function mapSwarmDelivery(row: Record<string, unknown>): SwarmDelivery {
   return {
     runId: row.run_id as string,
-    terminalRevision: row.terminal_revision as number,
+    kind: row.kind as SwarmDeliveryKind,
+    revision: row.revision as number,
+    slug: (row.slug as string | null) ?? null,
+    attemptId: (row.attempt_id as string | null) ?? null,
     sessionId: row.session_id as string,
     envelope: row.envelope as string,
-    runStatus: row.run_status as SwarmDelivery['runStatus'],
-    state: row.state as SwarmDelivery['state'],
-    claimId: row.claim_id as string | null,
-    error: row.error as string | null,
+    runStatus: row.run_status as SwarmRunStatus,
+    state: row.state as SwarmDeliveryState,
+    claimId: (row.claim_id as string | null) ?? null,
+    reservedBy: (row.reserved_by as string | null) ?? null,
+    leaseUntil: (row.lease_until as number | null) ?? null,
+    turnId: (row.turn_id as string | null) ?? null,
+    error: (row.error as string | null) ?? null,
   };
 }
 export function getSwarmDelivery(
   runId: string,
-  terminalRevision: number,
+  kind: SwarmDeliveryKind,
+  revision: number,
   dbh: Database.Database = db,
 ): SwarmDelivery | undefined {
   const row = dbh
-    .prepare('SELECT * FROM swarm_delivery_outbox WHERE run_id=? AND terminal_revision=?')
-    .get(runId, terminalRevision) as Record<string, unknown> | undefined;
+    .prepare('SELECT * FROM swarm_delivery_outbox WHERE run_id=? AND kind=? AND revision=?')
+    .get(runId, kind, revision) as Record<string, unknown> | undefined;
   return row ? mapSwarmDelivery(row) : undefined;
 }
-export function enqueueSwarmDelivery(
-  runId: string,
-  terminalRevision: number,
-  sessionId: string,
-  envelope: string,
-  status: SwarmRunStatus,
-  dbh: Database.Database = db,
-): SwarmDelivery {
+export interface EnqueueSwarmDeliveryInput {
+  runId: string;
+  kind: SwarmDeliveryKind;
+  revision: number;
+  sessionId: string;
+  envelope: string;
+  runStatus: SwarmRunStatus;
+  slug?: string;
+  attemptId?: string;
+  reservedBy?: string;
+  leaseUntil?: number;
+}
+export function enqueueSwarmDelivery(input: EnqueueSwarmDeliveryInput, dbh: Database.Database = db): SwarmDelivery {
   return dbh.transaction(() => {
+    const reserved = typeof input.reservedBy === 'string' && typeof input.leaseUntil === 'number';
     dbh
       .prepare(
         `INSERT OR IGNORE INTO swarm_delivery_outbox
-      (run_id,terminal_revision,session_id,envelope,run_status) VALUES (?,?,?,?,?)`,
+      (run_id,kind,revision,slug,attempt_id,session_id,envelope,run_status,state,reserved_by,lease_until)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
       )
-      .run(runId, terminalRevision, sessionId, envelope, status);
-    const delivery = getSwarmDelivery(runId, terminalRevision, dbh);
-    if (
-      !delivery ||
-      delivery.sessionId !== sessionId ||
-      delivery.envelope !== envelope ||
-      delivery.runStatus !== status
-    ) {
+      .run(
+        input.runId,
+        input.kind,
+        input.revision,
+        input.slug ?? null,
+        input.attemptId ?? null,
+        input.sessionId,
+        input.envelope,
+        input.runStatus,
+        reserved ? 'reserved-by-wait' : 'pending',
+        reserved ? input.reservedBy! : null,
+        reserved ? input.leaseUntil! : null,
+      );
+    let delivery = getSwarmDelivery(input.runId, input.kind, input.revision, dbh);
+    if (!delivery || delivery.sessionId !== input.sessionId || delivery.envelope !== input.envelope) {
       throw new Error('Conflito na identidade imutável da entrega Swarm.');
+    }
+    if (delivery.runStatus !== input.runStatus) {
+      dbh
+        .prepare(
+          'UPDATE swarm_delivery_outbox SET run_status=?,updated_at=CURRENT_TIMESTAMP WHERE run_id=? AND kind=? AND revision=?',
+        )
+        .run(input.runStatus, input.runId, input.kind, input.revision);
+      delivery = { ...delivery, runStatus: input.runStatus };
     }
     return delivery;
   })();
 }
-export function getPendingSwarmDeliveries(dbh: Database.Database = db): SwarmDelivery[] {
+export function expireSwarmDeliveryLeases(now: number = Date.now(), dbh: Database.Database = db): number {
+  return dbh
+    .prepare(
+      `UPDATE swarm_delivery_outbox SET state='pending',reserved_by=NULL,lease_until=NULL,updated_at=CURRENT_TIMESTAMP
+    WHERE state='reserved-by-wait' AND (lease_until IS NULL OR lease_until < ?)`,
+    )
+    .run(now).changes;
+}
+export function getPendingSwarmDeliveries(dbh: Database.Database = db, now: number = Date.now()): SwarmDelivery[] {
+  expireSwarmDeliveryLeases(now, dbh);
   return (
-    dbh.prepare("SELECT * FROM swarm_delivery_outbox WHERE state='pending' ORDER BY created_at,run_id").all() as Record<
-      string,
-      unknown
-    >[]
+    dbh
+      .prepare("SELECT * FROM swarm_delivery_outbox WHERE state='pending' ORDER BY created_at,run_id,revision")
+      .all() as Record<string, unknown>[]
   ).map(mapSwarmDelivery);
 }
 export function recoverSwarmDeliveryClaims(dbh: Database.Database = db): number {
   return dbh
     .prepare(
-      `UPDATE swarm_delivery_outbox SET state='pending',claim_id=NULL,updated_at=CURRENT_TIMESTAMP
-    WHERE state='claimed'`,
+      `UPDATE swarm_delivery_outbox SET state='pending',claim_id=NULL,reserved_by=NULL,lease_until=NULL,updated_at=CURRENT_TIMESTAMP
+    WHERE state IN ('claimed','reserved-by-wait')`,
     )
     .run().changes;
 }
 export function claimSwarmDelivery(
   runId: string,
-  terminalRevision: number,
+  kind: SwarmDeliveryKind,
+  revision: number,
   claimId: string,
   dbh: Database.Database = db,
 ): SwarmDelivery | undefined {
@@ -11873,15 +12032,16 @@ export function claimSwarmDelivery(
     const result = dbh
       .prepare(
         `UPDATE swarm_delivery_outbox SET state='claimed',claim_id=?,error=NULL,updated_at=CURRENT_TIMESTAMP
-      WHERE run_id=? AND terminal_revision=? AND state='pending'`,
+      WHERE run_id=? AND kind=? AND revision=? AND state='pending'`,
       )
-      .run(claimId, runId, terminalRevision);
-    return result.changes ? getSwarmDelivery(runId, terminalRevision, dbh) : undefined;
+      .run(claimId, runId, kind, revision);
+    return result.changes ? getSwarmDelivery(runId, kind, revision, dbh) : undefined;
   })();
 }
 export function releaseSwarmDelivery(
   runId: string,
-  terminalRevision: number,
+  kind: SwarmDeliveryKind,
+  revision: number,
   claimId: string,
   error?: string,
   dbh: Database.Database = db,
@@ -11890,26 +12050,94 @@ export function releaseSwarmDelivery(
     dbh
       .prepare(
         `UPDATE swarm_delivery_outbox SET state='pending',claim_id=NULL,error=?,updated_at=CURRENT_TIMESTAMP
-    WHERE run_id=? AND terminal_revision=? AND state='claimed' AND claim_id=?`,
+    WHERE run_id=? AND kind=? AND revision=? AND state='claimed' AND claim_id=?`,
       )
-      .run(error ?? null, runId, terminalRevision, claimId).changes === 1
+      .run(error ?? null, runId, kind, revision, claimId).changes === 1
+  );
+}
+export function reserveSwarmDelivery(
+  runId: string,
+  kind: SwarmDeliveryKind,
+  revision: number,
+  waitId: string,
+  leaseUntil: number,
+  dbh: Database.Database = db,
+): boolean {
+  if (!waitId) throw new Error('Espera Swarm sem identidade.');
+  return (
+    dbh
+      .prepare(
+        `UPDATE swarm_delivery_outbox SET state='reserved-by-wait',reserved_by=?,lease_until=?,updated_at=CURRENT_TIMESTAMP
+    WHERE run_id=? AND kind=? AND revision=? AND (state='pending' OR (state='reserved-by-wait' AND reserved_by=?))`,
+      )
+      .run(waitId, leaseUntil, runId, kind, revision, waitId).changes === 1
+  );
+}
+export function renewSwarmDeliveryLeases(waitId: string, leaseUntil: number, dbh: Database.Database = db): number {
+  return dbh
+    .prepare(
+      `UPDATE swarm_delivery_outbox SET lease_until=?,updated_at=CURRENT_TIMESTAMP
+    WHERE state='reserved-by-wait' AND reserved_by=?`,
+    )
+    .run(leaseUntil, waitId).changes;
+}
+export function releaseSwarmDeliveryReservations(waitId: string, dbh: Database.Database = db): number {
+  return dbh
+    .prepare(
+      `UPDATE swarm_delivery_outbox SET state='pending',reserved_by=NULL,lease_until=NULL,updated_at=CURRENT_TIMESTAMP
+    WHERE state='reserved-by-wait' AND reserved_by=?`,
+    )
+    .run(waitId).changes;
+}
+export function consumeSwarmDelivery(
+  runId: string,
+  kind: SwarmDeliveryKind,
+  revision: number,
+  waitId: string,
+  turnId: string,
+  dbh: Database.Database = db,
+): boolean {
+  return (
+    dbh
+      .prepare(
+        `UPDATE swarm_delivery_outbox SET state='consumed-by-turn',turn_id=?,reserved_by=NULL,lease_until=NULL,updated_at=CURRENT_TIMESTAMP
+    WHERE run_id=? AND kind=? AND revision=? AND state='reserved-by-wait' AND (reserved_by=? OR ?='')`,
+      )
+      .run(turnId, runId, kind, revision, waitId, waitId).changes === 1
+  );
+}
+export function cancelSwarmDelivery(
+  runId: string,
+  kind: SwarmDeliveryKind,
+  revision: number,
+  reason: string,
+  dbh: Database.Database = db,
+): boolean {
+  return (
+    dbh
+      .prepare(
+        `UPDATE swarm_delivery_outbox SET state='undeliverable',error=?,reserved_by=NULL,lease_until=NULL,updated_at=CURRENT_TIMESTAMP
+    WHERE run_id=? AND kind=? AND revision=? AND state IN ('pending','reserved-by-wait')`,
+      )
+      .run(reason, runId, kind, revision).changes === 1
   );
 }
 export function completeSwarmDelivery(
   runId: string,
-  terminalRevision: number,
+  kind: SwarmDeliveryKind,
+  revision: number,
   claimId: string,
   status: 'delivered' | 'undeliverable',
   reason?: string,
   dbh: Database.Database = db,
 ): boolean {
   if (status === 'delivered') {
-    const delivery = getSwarmDelivery(runId, terminalRevision, dbh);
-    const kind = delivery?.runStatus === 'aborted' ? 'event' : 'response';
+    const delivery = getSwarmDelivery(runId, kind, revision, dbh);
+    const messageKind = delivery?.runStatus === 'aborted' ? 'event' : 'response';
     if (
       !dbh
-        .prepare('SELECT 1 FROM swarm_chat_receipts WHERE run_id=? AND terminal_revision=? AND kind=?')
-        .get(runId, terminalRevision, kind)
+        .prepare('SELECT 1 FROM swarm_chat_receipts WHERE run_id=? AND delivery_kind=? AND revision=? AND kind=?')
+        .get(runId, kind, revision, messageKind)
     )
       throw new Error('Entrega Swarm sem mensagem final persistida.');
   }
@@ -11917,9 +12145,9 @@ export function completeSwarmDelivery(
     dbh
       .prepare(
         `UPDATE swarm_delivery_outbox SET state=?,claim_id=NULL,error=?,updated_at=CURRENT_TIMESTAMP
-    WHERE run_id=? AND terminal_revision=? AND state='claimed' AND claim_id=?`,
+    WHERE run_id=? AND kind=? AND revision=? AND state='claimed' AND claim_id=?`,
       )
-      .run(status, reason ?? null, runId, terminalRevision, claimId).changes === 1
+      .run(status, reason ?? null, runId, kind, revision, claimId).changes === 1
   );
 }
 
@@ -11927,8 +12155,9 @@ export function persistSwarmChatMessageOnce(
   input: {
     sessionId: string;
     runId: string;
-    terminalRevision: number;
-    kind: 'event' | 'response';
+    kind: SwarmDeliveryKind;
+    revision: number;
+    messageKind: 'event' | 'response';
     content: string;
     claimId?: string;
     metadata?: string;
@@ -11936,11 +12165,13 @@ export function persistSwarmChatMessageOnce(
   dbh: Database.Database = db,
 ): { messageId: number; inserted: boolean } {
   return dbh.transaction(() => {
-    const delivery = getSwarmDelivery(input.runId, input.terminalRevision, dbh);
+    const delivery = getSwarmDelivery(input.runId, input.kind, input.revision, dbh);
     if (!delivery || delivery.sessionId !== input.sessionId) throw new Error('Entrega Swarm não pertence à sessão.');
     const prior = dbh
-      .prepare('SELECT message_id FROM swarm_chat_receipts WHERE run_id=? AND terminal_revision=? AND kind=?')
-      .get(input.runId, input.terminalRevision, input.kind) as { message_id: number } | undefined;
+      .prepare(
+        'SELECT message_id FROM swarm_chat_receipts WHERE run_id=? AND delivery_kind=? AND revision=? AND kind=?',
+      )
+      .get(input.runId, input.kind, input.revision, input.messageKind) as { message_id: number } | undefined;
     if (prior) return { messageId: prior.message_id, inserted: false };
     if (delivery.state !== 'claimed' || !input.claimId || delivery.claimId !== input.claimId) {
       throw new Error('Claim Swarm ausente ou expirado.');
@@ -11948,10 +12179,17 @@ export function persistSwarmChatMessageOnce(
     const session = dbh.prepare('SELECT status FROM sessions WHERE id=?').get(input.sessionId) as
       { status: string } | undefined;
     if (!session || session.status === 'trashed') throw new Error('Sessão Swarm removida.');
-    const role = input.kind === 'event' ? 'system' : 'assistant';
+    const role = input.messageKind === 'event' ? 'system' : 'assistant';
     const metadata = JSON.stringify({
       ...(input.metadata ? (JSON.parse(input.metadata) as Record<string, unknown>) : {}),
-      swarm: { runId: input.runId, terminalRevision: input.terminalRevision, kind: input.kind },
+      swarm: {
+        runId: input.runId,
+        deliveryKind: input.kind,
+        revision: input.revision,
+        slug: delivery.slug,
+        attemptId: delivery.attemptId,
+        kind: input.messageKind,
+      },
     });
     const result = dbh
       .prepare('INSERT INTO messages (session_id,role,content,metadata) VALUES (?,?,?,?)')
@@ -11959,12 +12197,12 @@ export function persistSwarmChatMessageOnce(
     const messageId = Number(result.lastInsertRowid);
     dbh
       .prepare(
-        'INSERT INTO swarm_chat_receipts (run_id,terminal_revision,kind,session_id,message_id) VALUES (?,?,?,?,?)',
+        'INSERT INTO swarm_chat_receipts (run_id,delivery_kind,revision,kind,session_id,message_id) VALUES (?,?,?,?,?,?)',
       )
-      .run(input.runId, input.terminalRevision, input.kind, input.sessionId, messageId);
+      .run(input.runId, input.kind, input.revision, input.messageKind, input.sessionId, messageId);
     dbh.prepare('UPDATE sessions SET updated_at=CURRENT_TIMESTAMP WHERE id=?').run(input.sessionId);
-    if (input.kind === 'response' || delivery.runStatus === 'aborted') {
-      completeSwarmDelivery(input.runId, input.terminalRevision, input.claimId, 'delivered', undefined, dbh);
+    if (input.messageKind === 'response' || delivery.runStatus === 'aborted') {
+      completeSwarmDelivery(input.runId, input.kind, input.revision, input.claimId, 'delivered', undefined, dbh);
     }
     return { messageId, inserted: true };
   })();

@@ -20,6 +20,7 @@ import {
 } from '../agent-runtime/subagent-dispatch';
 import { resolveChatInheritedEffort } from '../agent-runtime/chat-effort-inheritance';
 import { acquireKimiSlot } from '../agent-runtime/kimi-concurrency';
+import { isSwarmConductionToolName } from '../swarm/aggregation-policy';
 import { randomUUID } from 'node:crypto';
 
 const logger = createLogger('kimi-sdk-session');
@@ -175,9 +176,12 @@ export async function createChatKimiSession(opts: CreateChatKimiSessionOptions):
 
   let handle: CliRunHandle;
   try {
-    if (!opts.swarmReadOnly && sessionTools.externalTools.length > 0) {
+    const bridgeTools = opts.swarmReadOnly
+      ? sessionTools.externalTools.filter((tool) => isSwarmConductionToolName(tool.name))
+      : sessionTools.externalTools;
+    if (bridgeTools.length > 0) {
       bridge = await startKimiMcpBridge({
-        tools: sessionTools.externalTools,
+        tools: bridgeTools,
         serverName: 'LionClaw Bridge',
       });
     }

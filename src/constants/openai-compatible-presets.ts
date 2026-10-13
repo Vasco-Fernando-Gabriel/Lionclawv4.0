@@ -35,6 +35,18 @@ export const OPENAI_COMPATIBLE_PRESETS: OpenAiCompatiblePresetEntry[] = [
         notes: 'Modelo principal atual da API Moonshot/Kimi.',
       },
       {
+        id: 'kimi-k2.7-code',
+        displayName: 'Kimi K2.7 Code',
+        contextWindow: 262_144,
+        notes: 'Variante de codigo do K2.7 na API Moonshot. $0.95 input / $4 output, cache read $0.19.',
+      },
+      {
+        id: 'kimi-k2.7-code-highspeed',
+        displayName: 'Kimi K2.7 Code Highspeed',
+        contextWindow: 262_144,
+        notes: 'Variante highspeed do K2.7 Code: 2x o custo ($1.90 input / $8 output, cache read $0.38).',
+      },
+      {
         id: 'moonshot-v1-128k',
         displayName: 'Moonshot v1 128k',
         contextWindow: 128_000,
@@ -68,6 +80,16 @@ export const OPENAI_COMPATIBLE_PRESETS: OpenAiCompatiblePresetEntry[] = [
       {
         id: 'kimi-k2.6',
         displayName: 'Kimi K2.6',
+        contextWindow: 262_144,
+      },
+      {
+        id: 'kimi-k2.7-code',
+        displayName: 'Kimi K2.7 Code',
+        contextWindow: 262_144,
+      },
+      {
+        id: 'kimi-k2.7-code-highspeed',
+        displayName: 'Kimi K2.7 Code Highspeed',
         contextWindow: 262_144,
       },
       {
@@ -130,9 +152,16 @@ export const OPENAI_COMPATIBLE_PRESETS: OpenAiCompatiblePresetEntry[] = [
         contextWindow: 1_000_000,
       },
       {
+        id: 'deepseek-flash',
+        displayName: 'DeepSeek Flash (V4.1)',
+        contextWindow: 1_000_000,
+        notes: 'DeepSeek-V4.1-Flash. $0.15 input (cache miss), $0.003 (cache hit), $0.60 output por 1M fora de pico.',
+      },
+      {
         id: 'deepseek-v4-flash',
         displayName: 'DeepSeek V4 Flash',
         contextWindow: 1_000_000,
+        notes: 'Alias legado de deepseek-flash (servido pelo V4.1-Flash, mesmo preco).',
       },
       {
         id: 'deepseek-chat',
@@ -156,11 +185,15 @@ export const OPENAI_COMPATIBLE_PRESETS: OpenAiCompatiblePresetEntry[] = [
         id: 'MiniMax-M2.7',
         displayName: 'MiniMax M2.7',
         contextWindow: 196_608,
+        notes:
+          'PAYG do M2.7 termina em 18/11/2026. No M Plan / Token Plan e roteado para o M3.1 Flash Preview a partir de 19/10/2026.',
       },
       {
         id: 'MiniMax-M2.7-highspeed',
         displayName: 'MiniMax M2.7 Highspeed',
         contextWindow: 196_608,
+        notes:
+          'PAYG do M2.7 termina em 18/11/2026. No M Plan / Token Plan e roteado para o M3.1 Flash Preview a partir de 19/10/2026.',
       },
       {
         id: 'MiniMax-M2.5',
@@ -176,6 +209,7 @@ export const OPENAI_COMPATIBLE_PRESETS: OpenAiCompatiblePresetEntry[] = [
         id: 'M2-her',
         displayName: 'MiniMax M2-her',
         contextWindow: 196_608,
+        notes: 'Retirado pela MiniMax.',
       },
       {
         id: 'MiniMax-M3',

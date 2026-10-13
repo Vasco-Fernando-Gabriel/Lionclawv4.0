@@ -12,7 +12,7 @@ import {
   DEVELOPMENT_V2_RESETABLE_PHASES_AFTER_LOCK,
   isValidPhaseForProject,
 } from '../../../src/types/pipeline';
-import { getPhaseNumberForAgent, getPhaseAgentId } from '../pipeline-engine/phase-helpers';
+import { getPhaseNumberForAgent, getPhaseAgentId } from '../pipeline-engine';
 
 describe('DEVELOPMENT_V2_PIPELINE_PHASES', () => {
   it('has exactly 17 phases', () => {

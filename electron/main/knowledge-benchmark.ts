@@ -17,9 +17,9 @@ import {
 const logger = createLogger('knowledge-benchmark');
 
 const MODEL_MAP = {
-  sonnet: 'claude-sonnet-4-6',
-  opus: 'claude-opus-4-7',
-  haiku: 'claude-haiku-4-5-20251001',
+  sonnet: 'claude-sonnet-5-5',
+  opus: 'claude-opus-5-5',
+  haiku: 'claude-haiku-5-5',
 } as const;
 
 const COHERE_RATE_LIMIT_MS = 650;

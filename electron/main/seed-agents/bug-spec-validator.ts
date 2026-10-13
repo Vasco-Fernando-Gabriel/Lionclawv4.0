@@ -10,7 +10,7 @@ export const bugSpecValidator: Omit<AgentConfig, 'sortOrder'> = {
   name: 'Bug Spec Validator',
   description:
     'Fase 5 do pipeline bug: audita a SPEC contra o plano de correcao aprovado e o codigo real, corrige gaps objetivos e pergunta o que exige decisao. Nao enriquece nem infla escopo.',
-  model: 'claude-sonnet-4-6',
+  model: 'claude-sonnet-5-5',
   effort: 'high' as const,
   thinking: 'enabled' as const,
   thinkingBudget: 6000,

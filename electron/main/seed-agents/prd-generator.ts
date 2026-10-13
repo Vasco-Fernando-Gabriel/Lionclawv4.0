@@ -7,7 +7,7 @@ export const prdGenerator: Omit<AgentConfig, 'sortOrder'> = {
   name: 'PRD Generator',
   description:
     'Gera user stories, requisitos funcionais e nao-funcionais a partir do discovery-notes.md. Tambem gera o documento PRD completo com resumo executivo, personas, requisitos e metricas de sucesso.',
-  model: 'claude-sonnet-4-6',
+  model: 'claude-sonnet-5-5',
   effort: 'high' as const,
   thinking: 'enabled' as const,
   thinkingBudget: 10000,

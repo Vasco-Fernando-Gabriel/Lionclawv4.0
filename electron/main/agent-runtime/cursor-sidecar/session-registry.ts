@@ -12,6 +12,7 @@ export interface CursorSessionKeyParts {
   agentId: string;
   cwd: string;
   projectId?: string;
+  scope?: { runId: string; slug: string; generation: number };
 }
 
 export interface CursorSessionRecord {
@@ -21,7 +22,8 @@ export interface CursorSessionRecord {
 }
 
 export function buildCursorSessionKey(parts: CursorSessionKeyParts): string {
-  return `${parts.projectId ?? 'standalone'}::${parts.agentId}::${path.resolve(parts.cwd)}`;
+  const base = `${parts.projectId ?? 'standalone'}::${parts.agentId}::${path.resolve(parts.cwd)}`;
+  return parts.scope ? `${base}::${parts.scope.runId}::${parts.scope.slug}::${parts.scope.generation}` : base;
 }
 
 export function cursorSessionStoreDir(sessionKey: string): string {

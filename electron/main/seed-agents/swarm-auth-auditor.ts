@@ -1,21 +1,20 @@
 import type { AgentConfig } from '../../../src/types';
 import { SWARM_CONTRACT } from './_shared/swarm-contract';
-import { CODEX_DEFAULT_MODEL } from '../../../src/constants/codex-models';
+import { CLAUDE_DEFAULT_MODEL } from '../../../src/constants/claude-models';
 
 export const swarmAuthAuditor: Omit<AgentConfig, 'sortOrder'> = {
   id: 'swarm-auth-auditor',
   name: 'Swarm Auth Auditor',
   description: 'Você é um auditor de autenticação e autorização. Sua lente é EXCLUSIVAMENTE controle de acesso.',
-  model: CODEX_DEFAULT_MODEL,
-  runtime: 'codex',
+  model: CLAUDE_DEFAULT_MODEL,
+  runtime: 'cloud',
   squad: 'swarm',
-  codexConfig: { model: CODEX_DEFAULT_MODEL, sandbox: 'read-only', reasoningEffort: 'high' },
   effort: 'high',
   thinking: 'adaptive',
   maxTurns: 80,
   maxToolRounds: 50,
   allowedTools: ['Read', 'Grep', 'Glob', 'Bash', 'Write'],
-  mcpServers: [],
+  mcpServers: ['repo-graph'],
   skills: [],
   isActive: true,
   systemPrompt:

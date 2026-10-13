@@ -7,7 +7,7 @@ export const featTechDatabase: Omit<AgentConfig, 'sortOrder'> = {
   name: 'Feature Tech Database',
   description:
     'Analisa migrations e schema existentes no repo, propoe ALTER TABLE / CREATE TABLE para a feature. Salva decisoes na secao Database do PRD.md.',
-  model: 'claude-sonnet-4-6',
+  model: 'claude-sonnet-5-5',
   effort: 'high' as const,
   thinking: 'adaptive' as const,
   maxTurns: 80,
